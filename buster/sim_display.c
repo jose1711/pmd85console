@@ -20,6 +20,10 @@ limitations under the License.
 
 /* MODIFIED
 
+ -Modified:
+
+  void DSPInitialize ()
+
  -Added:
 
  void DSPRenderMenu (int screen_width, int screen_height, int index)
@@ -218,6 +222,24 @@ void DSPPaintHandler ()
 }
 
 
+/** Saves the current screen content as a BMP file.
+ *
+ *  Reads back the renderer output, so it works without a connected display.
+ *
+ *  @arg pPath Target file name.
+ */
+void DSPSaveScreenshot (const char *pPath)
+{
+  int iWidth, iHeight;
+  SDL_CheckZero (SDL_GetRendererOutputSize (pRenderer, &iWidth, &iHeight));
+  SDL_Surface *pSurface;
+  SDL_CheckNotNull (pSurface = SDL_CreateRGBSurfaceWithFormat (0, iWidth, iHeight, 32, SDL_PIXELFORMAT_ARGB8888));
+  SDL_CheckZero (SDL_RenderReadPixels (pRenderer, NULL, SDL_PIXELFORMAT_ARGB8888, pSurface->pixels, pSurface->pitch));
+  SDL_CheckZero (SDL_SaveBMP (pSurface, pPath));
+  SDL_FreeSurface (pSurface);
+}
+
+
 //--------------------------------------------------------------------------
 // Callback handlers
 
@@ -322,7 +344,8 @@ void DSPLogoShutdown ()
 }
 
 
-void DSPRenderText (int screen_width, int screen_height) {
+void DSPRenderText (int screen_width, int screen_height)
+{
   TTF_Font *textFont;
   SDL_Surface* textSurface;
   SDL_Texture* textTexture;
@@ -382,7 +405,8 @@ void DSPRenderText (int screen_width, int screen_height) {
 }
 
 
-void DSPRenderImage (int screen_width, int screen_height) {
+void DSPRenderImage (int screen_width, int screen_height)
+{
   SDL_Surface* imageSurface;
   SDL_Texture* imageTexture;
   SDL_Rect imageRectangle;
@@ -403,7 +427,8 @@ void DSPRenderImage (int screen_width, int screen_height) {
 }
 
 
-void DSPRenderLogo (int screen_width, int screen_height) {
+void DSPRenderLogo (int screen_width, int screen_height)
+{
   SDL_Surface* logoSurface;
   SDL_Texture* logoTexture;
   SDL_Rect logoRectangle;
@@ -425,7 +450,8 @@ void DSPRenderLogo (int screen_width, int screen_height) {
 }
 
 
-void DSPRenderMenu (int screen_width, int screen_height, int index) {
+void DSPRenderMenu (int screen_width, int screen_height, int index)
+{
   SDL_Rect frameRectangle;
   SDL_Rect frameRectangleInner;
 
