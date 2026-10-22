@@ -21,6 +21,7 @@ limitations under the License.
 /* MODIFIED
 
  - Removed options.
+ - Larger buffers, thread safe sound generation, bounded latency.
 
 */
 
@@ -35,10 +36,10 @@ limitations under the License.
 static int iArgSamplingRate = 48000;
 
 /// Software buffer size. What buffer size to use for software storing the samples, expressed in milliseconds.
-static int iArgSoftwareBuffer = 100;
+static int iArgSoftwareBuffer = 200;
 
 /// Hardware buffer size. What buffer size to use for hardware playing the samples, expressed in milliseconds.
-static int iArgHardwareBuffer = 10;
+static int iArgHardwareBuffer = 50;
 
 
 //--------------------------------------------------------------------------
@@ -62,6 +63,16 @@ static pthread_mutex_t sAudioBufferLock;
 static int iLastClock;
 /// Last written value of simulated speaker.
 static byte iLastSpeaker;
+/// Last sample played, repeated on buffer underrun.
+static byte bLastSample;
+/// Maximum number of buffered samples, excess is dropped to bound latency.
+static int iMaxBuffered;
+
+/// Statistics, printed on shutdown when PMD_SNDSTATS is set.
+static int iStatCallbacks;
+static int iStatUnderruns;
+static long iStatUnderrunSamples;
+static long iStatDroppedSamples;
 
 /// Speaker frequency mask.
 #define PMD_SPEAKER_FREQUENCY   (3 << 0)
@@ -85,46 +96,78 @@ byte *SNDIncrementInBuffer (byte *pPosition)
 
 
 /** Flushes the cyclic audio buffer.
+ *
+ *  Must be called with the buffer lock held.
  */
 void SNDFlushBuffer ()
 {
-  CheckZero (pthread_mutex_lock (&sAudioBufferLock));
   pAudioBufferHead = pAudioBufferTail;
-  CheckZero (pthread_mutex_unlock (&sAudioBufferLock));
+}
+
+
+/** Drops oldest samples above the latency limit.
+ *
+ *  Must be called with the buffer lock held.
+ */
+void SNDTrimBuffer ()
+{
+  int iBuffered = pAudioBufferTail - pAudioBufferHead;
+  if (iBuffered < 0) iBuffered += iAudioBufferSize;
+  int iExcess = iBuffered - iMaxBuffered;
+  if (iExcess > 0)
+  {
+    iStatDroppedSamples += iExcess;
+    pAudioBufferHead += iExcess;
+    if (pAudioBufferHead >= pAudioBuffer + iAudioBufferSize)
+    {
+      pAudioBufferHead -= iAudioBufferSize;
+    }
+  }
 }
 
 
 /** Reads pattern from the cyclic audio buffer.
+ *
+ *  Must be called with the buffer lock held.
  *
  *  @arg pBuffer The buffer to fill.
  *  @arg iCount  The number of samples.
  */
 void SNDReadBuffer (byte *pBuffer, int iCount)
 {
-  byte bData = 0;
-  CheckZero (pthread_mutex_lock (&sAudioBufferLock));
+  int iMissing = 0;
   for (int i = 0 ; i < iCount ; i ++)
   {
     if (pAudioBufferHead != pAudioBufferTail)
     {
-      bData = *pAudioBufferHead;
+      bLastSample = *pAudioBufferHead;
       pAudioBufferHead = SNDIncrementInBuffer (pAudioBufferHead);
     }
-    *pBuffer = bData;
+    else
+    {
+      iMissing ++;
+    }
+    *pBuffer = bLastSample;
     pBuffer ++;
   }
-  CheckZero (pthread_mutex_unlock (&sAudioBufferLock));
+  iStatCallbacks ++;
+  if (iMissing > 0)
+  {
+    iStatUnderruns ++;
+    iStatUnderrunSamples += iMissing;
+  }
 }
 
 
 /** Writes pattern to the cyclic audio buffer.
+ *
+ *  Must be called with the buffer lock held.
  *
  *  @arg iSample The value to put.
  *  @arg iCount  The number of samples.
  */
 void SNDWriteBuffer (byte bSample, int iCount)
 {
-  CheckZero (pthread_mutex_lock (&sAudioBufferLock));
   for (int i = 0 ; i < iCount ; i ++)
   {
     (*pAudioBufferTail) = bSample;
@@ -134,7 +177,6 @@ void SNDWriteBuffer (byte bSample, int iCount)
       pAudioBufferHead = SNDIncrementInBuffer (pAudioBufferHead);
     }
   }
-  CheckZero (pthread_mutex_unlock (&sAudioBufferLock));
 }
 
 
@@ -145,16 +187,19 @@ void SNDWriteBuffer (byte bSample, int iCount)
  */
 void SNDSynchronize ()
 {
+  CheckZero (pthread_mutex_lock (&sAudioBufferLock));
   // Synchronize the time.
   iLastClock = iProcessorClock;
   // Synchronize the buffer.
   SNDFlushBuffer ();
+  CheckZero (pthread_mutex_unlock (&sAudioBufferLock));
 }
 
 
 /** Generate sound.
  *
  *  Calculates position and generates sound.
+ *  Must be called with the buffer lock held.
  *
  *  @arg iSpeaker Speaker register value.
  */
@@ -163,14 +208,19 @@ void SNDGenerate (byte iSpeaker)
   // Calculate current position in the cyclic audio buffer
   // based on the known sampling rate and the known clock
   // frequency.
+  // Use 64 bit arithmetic, the product overflows int after ~22 ms.
   int iDeltaInClocks = iProcessorClock - iLastClock;
-  int iDeltaInSamples = (iDeltaInClocks * iArgSamplingRate) / PMD_CLOCK;
+  if (iDeltaInClocks <= 0) return;
+  int iDeltaInSamples = ((int64_t) iDeltaInClocks * iArgSamplingRate) / PMD_CLOCK;
+
+  // Writing more than the buffer holds is pointless.
+  if (iDeltaInSamples > iAudioBufferSize) iDeltaInSamples = iAudioBufferSize;
 
   // Fill the buffer with the required number of samples.
   SNDWriteBuffer ((iSpeaker & PMD_SPEAKER_ENABLE) ? 255 : 0, iDeltaInSamples);
 
   // Avoid accumulative error by only advancing the clock by sample value.
-  iDeltaInClocks = (iDeltaInSamples * PMD_CLOCK) / iArgSamplingRate;
+  iDeltaInClocks = ((int64_t) iDeltaInSamples * PMD_CLOCK) / iArgSamplingRate;
   iLastClock += iDeltaInClocks;
 }
 
@@ -188,10 +238,12 @@ void SNDGenerate (byte iSpeaker)
  */
 void SNDWriteSpeaker (byte iData)
 {
+  CheckZero (pthread_mutex_lock (&sAudioBufferLock));
   // Generate whatever sound was heard until now.
   SNDGenerate (iLastSpeaker);
   // Set what sound is heard from now on.
   iLastSpeaker = iData;
+  CheckZero (pthread_mutex_unlock (&sAudioBufferLock));
 }
 
 
@@ -206,10 +258,16 @@ void SNDWriteSpeaker (byte iData)
  */
 void SNDFillBufferCallback (void *pParameters, byte *pBuffer, int iLength)
 {
+  // The callback runs in the audio thread, concurrently
+  // with the processor thread writing the speaker.
+  CheckZero (pthread_mutex_lock (&sAudioBufferLock));
   // Generate whatever sound was heard until now.
   SNDGenerate (iLastSpeaker);
+  // Keep latency bounded when emulation runs ahead of audio clock.
+  SNDTrimBuffer ();
   // Fill the buffer with the generated sound.
   SNDReadBuffer (pBuffer, iLength);
+  CheckZero (pthread_mutex_unlock (&sAudioBufferLock));
 }
 
 
@@ -226,6 +284,9 @@ void SNDInitialize ()
   CheckZero (pthread_mutex_lock (&sAudioBufferLock));
   pAudioBufferHead = pAudioBuffer;
   pAudioBufferTail = pAudioBuffer;
+  iLastClock = iProcessorClock;
+  iLastSpeaker = 0;
+  bLastSample = 0;
   CheckZero (pthread_mutex_unlock (&sAudioBufferLock));
 
   // Prepare audio parameters ...
@@ -243,6 +304,9 @@ void SNDInitialize ()
   assert (sAudioSpec.freq == iArgSamplingRate);
   assert (sAudioSpec.format == AUDIO_U8);
 
+  // Allow two hardware buffers of samples to be queued ...
+  iMaxBuffered = 2 * sAudioSpec.samples;
+
   // Start the callback ...
   SDL_PauseAudio (0);
 }
@@ -252,6 +316,12 @@ void SNDShutdown ()
 {
   // Close the audio device ...
   SDL_CloseAudio ();
+
+  if (getenv ("PMD_SNDSTATS"))
+  {
+    printf ("SND stats: callbacks %d, underruns %d (%ld samples), dropped %ld samples\n",
+            iStatCallbacks, iStatUnderruns, iStatUnderrunSamples, iStatDroppedSamples);
+  }
 
   // Free the audio buffer mutex ...
   CheckZero (pthread_mutex_destroy (&sAudioBufferLock));

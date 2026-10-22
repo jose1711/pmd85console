@@ -199,8 +199,8 @@ static void EmulationInitialize (int gameIndex)
   printf("DSP initializing..\n");
   KBDInitialize ();
   printf("KBD initializing..\n");
-  //SNDInitialize ();
-  //printf("SND initializing..\n");
+  SNDInitialize ();
+  printf("SND initializing..\n");
   TAPInitialize ();
   printf("Tape initializing..\n");
  
@@ -217,8 +217,8 @@ static void EmulationShutdown ()
 
   TAPShutdown ();
   printf("TAP shutdown..\n");
-  //SNDShutdown ();
-  //printf("SND shutdown..\n");
+  SNDShutdown ();
+  printf("SND shutdown..\n");
   KBDShutdown ();
   printf("KBD shutdown..\n");
   DSPShutdown();
