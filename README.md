@@ -175,7 +175,57 @@ SIMPMD
 
 <pre>
 make clean
-make
+make PMD_BUILD=RELEASE PMD_SHARE=/usr/share/simpmd/
+</pre>
+
+`PMD_SHARE` is the directory (with trailing slash) holding ROMs `M1`/`M2`, `atari-classic.ttf`, logos `*.bmp` and
+game tapes in one flat directory, see <a href="buster/README.md">buster/README.md</a>.
+
+RUN
+
+<pre>
+bin/simpmd                  # logo -> menu: select game [<-][->], start [Enter], load [MGLD 03][Enter], quit [Esc]
+
+# Start game directly (skip logo and menu), index: 0 FLAPPY, 1 BOULDER, 2 MANIC+, 3 FRED
+PMD_AUTOSTART=0 bin/simpmd
+
+# Start and load game automatically, no keyboard needed (examples, tested)
+PMD_AUTOSTART=0 PMD_KEYS='MGLD 03|____H__ ____' bin/simpmd                  # FLAPPY: load, [H] play, [Space] skip controls
+PMD_AUTOSTART=3 PMD_KEYS='MGLD 03|____H__ ____' bin/simpmd                  # FRED: load, [H] play, [Space] skip info
+PMD_AUTOSTART=1 PMD_KEYS='MGLD 03|________H' bin/simpmd                     # BOULDER: load (~20s), [H] game menu
+</pre>
+
+Environment variables (test mode):
+
+<pre>
+PMD_AUTOSTART=<0-3>     Skip logo and menu, start selected game.
+PMD_KEYS=<text>         Type text on the PMD-85 keyboard, '|' is [Enter], '_' is 2s pause.
+PMD_SCREENSHOT=<file>   Save screen as BMP after PMD_SCREENSHOT_MS and exit.
+PMD_SCREENSHOT_MS=<ms>  Screenshot delay, default 3000.
+PMD_KEY_MS=<ms>         Key press/release time of PMD_KEYS, default 150.
+PMD_SNDSTATS=1          Print sound underrun statistics on exit.
+</pre>
+
+Keys after `MGLD 03|` depend on the game, add `_` pauses so the tape load finishes first (BOULDER ~20s, FLAPPY/FRED ~8s).
+Known limits: BOULDER stays in its game menu (second `H` is not accepted by `PMD_KEYS`), MANIC+ does not load
+(stops at `02/? MANIC+`, with `MGLD 00` as well as `MGLD 03`).
+
+GAMES
+
+Screenshots captured with `PMD_SCREENSHOT` (examples above).
+
+| FLAPPY | FRED | BOULDER DASH (game menu) |
+|:------:|:----:|:------------------------:|
+| ![FLAPPY](screenshots/flappy.png "flappy") | ![FRED](screenshots/fred.png "fred") | ![BOULDER](screenshots/boulder.png "boulder") |
+
+HEADLESS
+
+No monitor needed, video goes to software renderer and sound to file `sdlaudio.raw`:
+
+<pre>
+cd /tmp
+PMD_AUTOSTART=0 PMD_KEYS='MGLD 03|____H__ ____' PMD_SCREENSHOT=/tmp/game.bmp PMD_SCREENSHOT_MS=34000 \
+SDL_VIDEODRIVER=dummy SDL_RENDER_DRIVER=software SDL_AUDIODRIVER=disk bin/simpmd
 </pre>
 
 FILE
