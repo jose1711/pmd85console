@@ -241,13 +241,36 @@ int main (int iArgC, const char *apArgV [])
   SDL_ShowCursor (0);
   // Get fullscreen resolution
   SDL_CheckZero (SDL_GetCurrentDisplayMode(0, &fullscreen));
-  //Logo
-  DSPLogoInitialize ();
-  DSPRenderLogo (fullscreen.w, fullscreen.h);
-  DSPLogoShutdown ();
-  // Menu
-  DSPMenuInitialize ();
-  DSPRenderMenu (fullscreen.w, fullscreen.h, gameIndex);
+  // Test mode: PMD_AUTOSTART=<0-3> skips logo and menu, PMD_KEYS=<text> types
+  // the text on the simulated keyboard ('|' is Enter, '_' a 2 s pause), PMD_SCREENSHOT=<file>
+  // saves the screen after PMD_SCREENSHOT_MS (default 3000) and exits.
+  // PMD_KEY_MS is the key press and release time of PMD_KEYS (default 150).
+  const char *pKeys = getenv ("PMD_KEYS");
+  int iKeyPos = 0;
+  bool bKeyDown = false;
+  Uint32 iKeyTime = SDL_GetTicks () + 1500;
+  const char *pKeyMs = getenv ("PMD_KEY_MS");
+  int iKeyMs = pKeyMs ? atoi (pKeyMs) : 150;
+  const char *pAutostart = getenv ("PMD_AUTOSTART");
+  const char *pScreenshot = getenv ("PMD_SCREENSHOT");
+  const char *pScreenshotMs = getenv ("PMD_SCREENSHOT_MS");
+  Uint32 iScreenshotTime = SDL_GetTicks () + (pScreenshotMs ? atoi (pScreenshotMs) : 3000);
+  if (pAutostart)
+  {
+    gameIndex = atoi (pAutostart) & 3;
+    EmulationInitialize (gameIndex);
+    inMenu = false;
+  }
+  else
+  {
+    //Logo
+    DSPLogoInitialize ();
+    DSPRenderLogo (fullscreen.w, fullscreen.h);
+    DSPLogoShutdown ();
+    // Menu
+    DSPMenuInitialize ();
+    DSPRenderMenu (fullscreen.w, fullscreen.h, gameIndex);
+  }
   // Event loop
   SDL_Event sEvent;
 
@@ -291,13 +314,39 @@ int main (int iArgC, const char *apArgV [])
       case SDL_USEREVENT:
         if (!inMenu) {
           DSPPaintHandler ();
+          if (pKeys && pKeys [iKeyPos] && SDL_GetTicks () >= iKeyTime) {
+            SDL_KeyboardEvent sKey = {};
+            char cKey = pKeys [iKeyPos];
+            if (cKey == '_') {
+              iKeyPos ++;
+              iKeyTime = SDL_GetTicks () + 2000;
+            } else {
+            sKey.keysym.sym = (cKey == '|') ? SDLK_RETURN : (cKey >= 'A' && cKey <= 'Z') ? cKey + 32 : cKey;
+            sKey.state = bKeyDown ? SDL_RELEASED : SDL_PRESSED;
+            KBDEventHandler (&sKey);
+            if (bKeyDown) iKeyPos ++;
+            bKeyDown = !bKeyDown;
+            iKeyTime = SDL_GetTicks () + iKeyMs;
+            }
+          }
+          if (pScreenshot && SDL_GetTicks () >= iScreenshotTime) {
+            DSPSaveScreenshot (pScreenshot);
+            SIMRequestShutdown ();
+          }
         }
+        break;
+      case SDL_QUIT:
+        SIMRequestShutdown ();
         break;
     }
   }
 
-  // Menu shutdown
-  DSPMenuShutdown ();
+  // Emulation or menu shutdown
+  if (inMenu) {
+    DSPMenuShutdown ();
+  } else {
+    EmulationShutdown ();
+  }
   // Quit
   SDL_Quit ();
 
