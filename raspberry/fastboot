@@ -1,0 +1,55 @@
+#!/bin/sh
+# Faster boot on Raspberry Pi OS (Trixie, NetworkManager + netplan + cloud-init), tested on Pi A+.
+# Usage: sudo ./fastboot [apply|revert] [ethernet-interface, default eth0]
+#
+# apply:
+#  - disables cloud-init (first boot setup, ~65 s),
+#  - masks rpi-resize-swap-file (~46 s) and NetworkManager-wait-online,
+#  - replaces the netplan generated NetworkManager profile of the ethernet interface with a native
+#    NetworkManager keyfile (netplan generate made NetworkManager run `systemctl daemon-reload`
+#    4 times at start, ~30 s each on a slow SD card),
+#  - masks Pi 5 only tests rp1-test and glamor-test.
+# Only DHCP ethernet is recreated, Wi-Fi profiles from netplan are NOT (they are backed up).
+# Originals are saved in /root/fastboot-backup, `revert` restores them.
+
+set -eu
+
+ACTION=${1:-apply}
+IFACE=${2:-eth0}
+BACKUP=/root/fastboot-backup
+MASK="rpi-resize-swap-file.service NetworkManager-wait-online.service rp1-test.service glamor-test.service"
+
+[ "$(id -u)" = 0 ] || { echo "run as root" >&2; exit 1; }
+
+case "$ACTION" in
+apply)
+  # Netplan profiles are backed up first, network must come up from the new keyfile after reboot.
+  mkdir -p "$BACKUP"
+  cp -an /etc/netplan/. "$BACKUP/"
+
+  touch /etc/cloud/cloud-init.disabled
+  systemctl mask $MASK
+  [ -e /lib/netplan/00-network-manager-all.yaml ] && chmod 600 /lib/netplan/00-network-manager-all.yaml
+
+  if ls /etc/netplan/90-NM-*.yaml >/dev/null 2>&1; then
+    nmcli -g NAME con show | grep -qx "$IFACE" || \
+      nmcli con add type ethernet ifname "$IFACE" con-name "$IFACE" connection.autoconnect yes \
+        connection.autoconnect-priority 100 ipv4.method auto ipv6.method auto >/dev/null
+    [ -e "/etc/NetworkManager/system-connections/$IFACE.nmconnection" ] || \
+      { echo "profile $IFACE was not saved, netplan files left untouched" >&2; exit 1; }
+    rm -f /etc/netplan/90-NM-*.yaml
+  fi
+  echo "done, reboot and check: systemd-analyze; systemd-analyze critical-chain"
+  ;;
+revert)
+  rm -f /etc/cloud/cloud-init.disabled
+  systemctl unmask $MASK
+  [ -d "$BACKUP" ] && cp -a "$BACKUP"/. /etc/netplan/
+  nmcli con delete "$IFACE" 2>/dev/null || true
+  echo "reverted, reboot"
+  ;;
+*)
+  echo "usage: $0 [apply|revert] [interface]" >&2
+  exit 1
+  ;;
+esac
