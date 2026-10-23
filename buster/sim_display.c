@@ -265,11 +265,31 @@ Uint32 DSPPaintTimerCallback (Uint32 iInterval, void *pArgs)
 // Initialization and shutdown
 
 
+/** Window size multiplier, PMD_SCALE environment variable (default 3). */
+static int DSPWindowScale ()
+{
+  const char *pScale = getenv ("PMD_SCALE");
+  int iScale = pScale ? atoi (pScale) : 3;
+  return (iScale > 0 ? iScale : 1);
+}
+
+
+/** Window flags: fullscreen on the console (KMSDRM), resizable elsewhere. */
+static Uint32 DSPWindowFlags ()
+{
+  const char *pDriver = SDL_GetCurrentVideoDriver ();
+  if (pDriver && strcmp (pDriver, "KMSDRM") == 0)
+    return (SDL_WINDOW_FULLSCREEN_DESKTOP);
+  return (SDL_WINDOW_RESIZABLE);
+}
+
+
 void DSPInitialize ()
 {
   // Initialize the video resources.
   SDL_CheckNotNull (pWindow = SDL_CreateWindow ("SimPMD", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                                                PMD_VRAM_WIDTH * PMD_PIXEL_COUNT, PMD_VRAM_HEIGHT, 0));
+                                                PMD_VRAM_WIDTH * PMD_PIXEL_COUNT * DSPWindowScale (), PMD_VRAM_HEIGHT * DSPWindowScale (),
+                                                DSPWindowFlags ()));
   SDL_CheckNotNull (pRenderer = SDL_CreateRenderer (pWindow, -1, SDL_RENDERER_ACCELERATED));
   SDL_CheckNotNull (pTexture = SDL_CreateTexture (pRenderer, SDL_PIXELFORMAT_RGB332, SDL_TEXTUREACCESS_STREAMING,
                                                   PMD_VRAM_WIDTH * PMD_PIXEL_COUNT, PMD_VRAM_HEIGHT));
@@ -286,10 +306,15 @@ void DSPInitialize ()
 
 void DSPMenuInitialize ()
 {
+  // Menu and logo are laid out for the display resolution, keep it as logical size.
+  SDL_DisplayMode sMode;
+  SDL_CheckZero (SDL_GetCurrentDisplayMode (0, &sMode));
+  int iDisplayW = sMode.w, iDisplayH = sMode.h;
   // Initialize the video resources.
   SDL_CheckNotNull (mWindow = SDL_CreateWindow ("SimPMD - Menu", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                                                PMD_VRAM_WIDTH * PMD_PIXEL_COUNT, PMD_VRAM_HEIGHT, 0));
+                                                iDisplayW, iDisplayH, DSPWindowFlags ()));
   SDL_CheckNotNull (mRenderer = SDL_CreateRenderer (mWindow, -1, SDL_RENDERER_ACCELERATED));
+  SDL_CheckZero (SDL_RenderSetLogicalSize (mRenderer, iDisplayW, iDisplayH));
   //TTF
   TTF_Init();
   // Clear screen.
@@ -301,10 +326,15 @@ void DSPMenuInitialize ()
 
 void DSPLogoInitialize ()
 {
+  // Menu and logo are laid out for the display resolution, keep it as logical size.
+  SDL_DisplayMode sMode;
+  SDL_CheckZero (SDL_GetCurrentDisplayMode (0, &sMode));
+  int iDisplayW = sMode.w, iDisplayH = sMode.h;
   // Initialize the video resources.
   SDL_CheckNotNull (lWindow = SDL_CreateWindow ("SimPMD - Logo", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                                                PMD_VRAM_WIDTH * PMD_PIXEL_COUNT, PMD_VRAM_HEIGHT, 0));
+                                                iDisplayW, iDisplayH, DSPWindowFlags ()));
   SDL_CheckNotNull (lRenderer = SDL_CreateRenderer (lWindow, -1, SDL_RENDERER_ACCELERATED));
+  SDL_CheckZero (SDL_RenderSetLogicalSize (lRenderer, iDisplayW, iDisplayH));
   // Clear screen.
   SDL_CheckZero (SDL_SetRenderDrawColor (lRenderer, 0, 0, 0, SDL_ALPHA_OPAQUE));
   SDL_CheckZero (SDL_RenderClear (lRenderer));

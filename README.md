@@ -204,6 +204,7 @@ PMD_SCREENSHOT=<file>   Save screen as BMP after PMD_SCREENSHOT_MS and exit.
 PMD_SCREENSHOT_MS=<ms>  Screenshot delay, default 3000.
 PMD_KEY_MS=<ms>         Key press/release time of PMD_KEYS, default 150.
 PMD_SNDSTATS=1          Print sound underrun statistics on exit.
+PMD_SCALE=<n>           Window size multiplier (288x256 * n), default 3; window is resizable.
 </pre>
 
 Keys after `MGLD 03|` depend on the game, add `_` pauses so the tape load finishes first (BOULDER ~20s, FLAPPY/FRED ~8s).
