@@ -81,8 +81,7 @@ systemctl disable avahi-daemon bluetooth paxctld rsync triggerhappy triggerhappy
                   dphys-swapfile networking dhcpcd ssh getty@tty1 rc-local wifi-country keyboard-setup \
                   alsa-restore systemd-rfkill
 
-cp raspberry/pmd85.service /etc/systemd/system/
-systemctl enable pmd85.service
+raspberry/deploy.sh [-p port] [-i key] [-n] [-o] user@host   (from the PC: sync, build, data, service; see below)
 
 apt-get install vim mc ntpdate
 
@@ -228,13 +227,25 @@ To add a game, copy its tape to the share directory and add a line to `games.lst
 Start a game of the list directly (test mode): `PMD_GAME=BLUDISTE bin/simpmd`. `PMD_KEYS` replaces the automatic
 load command.
 
+DEPLOY AND SERVICE
+
+`raspberry/deploy.sh [-p port] [-i identity] [-n] [-o] [user@]host` copies `simpmd` and `raspberry` to the Pi, installs
+missing build packages, builds (`PMD_SHARE=$HOME/share/`), installs the tapes and `games.lst` to `~/share`
+(existing files are kept, `games.lst` is replaced) and installs and starts `pmd85.service` (`-n` skips the service,
+`-o` overclocks, takes effect after reboot). The service starts the emulator at boot. Esc in the main menu quits
+the emulator and halts the machine, `systemctl stop/restart pmd85` does not. Settings (`PMD_WEB`, `PMD_WEB_TOKEN`,
+`PMD_RES`, ...) go to `~/pmd85.env`, one `VAR=value` per line, `chmod 600`. Log: `/tmp/pmd85.log`.
+
 REMOTE CONTROL
 
 `PMD_WEB=<port>` starts a small web server, open `http://<host>:<port>/?t=<token>` in a browser (PC or phone) to see
 the screen of the simulated machine and to play: keyboard keys and an on-screen gamepad are sent to the emulator
 and work in the menu and in the games (up and down are [E] and [Y]). `PMD_WEB_TOKEN=<secret>` is required in the
 URL (`?t=`), without a token everybody on the network can control the machine. The screen is read from the video
-memory (12 KB per frame), there is no sound. Esc in the main menu asks for confirmation, it quits the emulator.
+memory (12 KB per frame), there is no sound (it plays on the Pi), traffic is plain HTTP, use it on a trusted network only.
+Set it in `~/pmd85.env`: `PMD_WEB=8085` and `PMD_WEB_TOKEN=<secret>`. Esc in the main menu asks for confirmation, it
+quits the emulator and halts the Pi, Esc in a game returns to the menu. The first typed key waits until the
+simulated processor has run 2 s, so the load command is not lost on a slow Pi.
 
 GAMEPAD
 
@@ -253,7 +264,7 @@ Pads without an SDL controller mapping use a common layout (hat or axes 0/1 = D-
 Keys after `MGLD 03|` depend on the game, add `_` pauses so the tape load finishes first (BOULDER ~20s, FLAPPY/FRED ~8s).
 MANIC+ loads with `MGLD 02` (not 00 or 03), [Enter] starts the game:
 `PMD_AUTOSTART=2 PMD_KEYS='MGLD 02|____________|' bin/simpmd`.
-Known limit: BOULDER stays in its game menu (second `H` is not accepted by `PMD_KEYS`).
+BOULDER: the second `H` may be lost, `PMD_KEY_MS=400` makes it pass.
 
 GAMES
 
