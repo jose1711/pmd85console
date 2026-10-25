@@ -226,7 +226,11 @@ once the tape stops loading, so selecting a game is enough. `PMD_AUTOLOAD=0` tur
 To add a game, copy its tape to the share directory and add a line to `games.lst`.
 An optional fourth column `REMAP` changes keys for one game (`Left=Left Shift,Right=V`, SDL key names, also
 for the gamepad and the browser): AUTO steers with [Shift] (left) and [V] (right) on the PMD 85, here with the
-cursor keys. ZED does the same. INVADERS moves the ship by 3 steps with the fast arrows [End] and [PageDown] (the keys LLEFT and RRIGHT of the PMD 85), the gamepad [LB] and [RB] send them there. The web page has buttons for them and for the digits (INVADERS asks for the difficulty 0-4).
+cursor keys. ZED does the same.
+A fifth column `PAD` sets the buttons of the web remote control for a game, `Label:key,...` (SDL key names),
+for example `Left:Left,Fast left:End,Fire:Space,0:0`; games without it get the default set (E, Y, cursor keys,
+Space, Enter, H, I, Shift, RCL, Esc) and the menus get a short one. The keys known from the code of the games
+are listed in `games.lst` (INVADERS: fast arrows, fire and the difficulty digits; AUTO, ZED, MANIC, SASKO, ...). INVADERS moves the ship by 3 steps with the fast arrows [End] and [PageDown] (the keys LLEFT and RRIGHT of the PMD 85), the gamepad [LB] and [RB] send them there. The difficulty (0-3, 4 is not playable) can be chosen with the gamepad: D-pad up = 0, D-pad down = 1, [X] = 2, [Y] = 3. 
 Start a game of the list directly (test mode): `PMD_GAME=BLUDISTE bin/simpmd`. `PMD_KEYS` replaces the automatic
 load command.
 

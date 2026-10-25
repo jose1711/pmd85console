@@ -83,7 +83,13 @@ struct tGame
   std::string sNote;
   /// Keys of the game remapped to other PMD 85 keys, "Left=Left Shift,Right=V" (SDL key names).
   std::string sRemap;
+  /// Buttons of the web remote control, "Label:key,..." (SDL key names), empty for the default set.
+  std::string sPad;
 };
+/// Buttons of the web remote control for the running game and in the menus.
+static const char *pPadGame = "E up:e,Y down:z,Left:Left,Right:Right,Space:Space,Enter:Return,H:h,I:i,Shift:Left Shift,RCL:Keypad +,Esc:Escape";
+static const char *pPadMenu = "E up:e,Y down:z,Left:Left,Right:Right,Enter:Return,Esc:Escape";
+static std::string sPad = pPadMenu;
 /// Keys remapped for the running game, host key to PMD 85 key.
 static std::map <SDL_Keycode, SDL_Keycode> oRemap;
 /// Keys typed on the simulated keyboard after the start of a game (the load command, PMD_KEYS in test mode).
@@ -240,7 +246,8 @@ static std::string AutoloadKeys (const std::string &sNote)
 static std::string WebState ()
 {
   std::string sState = std::string ("{\"mode\":\"") + (!inMenu ? "game" : inList ? "list" : "menu") + "\",\"index\":" +
-                       std::to_string (inList ? listIndex : gameIndex) + ",\"featured\":[\"FLAPPY\",\"BOULDER\",\"MANIC\",\"FRED\"],\"games\":[";
+                       std::to_string (inList ? listIndex : gameIndex) + ",\"pad\":\"" + (inMenu ? pPadMenu : sPad.c_str ()) +
+                       "\",\"featured\":[\"FLAPPY\",\"BOULDER\",\"MANIC\",\"FRED\"],\"games\":[";
   for (size_t i = 0 ; i < oGames.size () ; i ++)
     sState += std::string (i ? "," : "") + "\"" + oGames [i].sTape + "\"";
   return (sState + "]}");
@@ -252,6 +259,7 @@ static std::string WebState ()
 static void KeysRemap (const std::string &sTape)
 {
   oRemap.clear ();
+  sPad = pPadGame;
   std::string sName = sTape;
   size_t iShare = strlen (PMD_SHARE);
   if (sName.compare (0, iShare, PMD_SHARE) == 0)
@@ -260,6 +268,8 @@ static void KeysRemap (const std::string &sTape)
   {
     if (oGames [i].sTape != sName)
       continue;
+    if (!oGames [i].sPad.empty ())
+      sPad = oGames [i].sPad;
     const std::string &sRemap = oGames [i].sRemap;
     size_t iPos = 0;
     while (iPos < sRemap.size ())
@@ -331,6 +341,12 @@ static void GamesLoad ()
     {
       sGame.sRemap = sGame.sNote.substr (iThird + 1);
       sGame.sNote.erase (iThird);
+      size_t iFourth = sGame.sRemap.find (';');
+      if (iFourth != std::string::npos)
+      {
+        sGame.sPad = sGame.sRemap.substr (iFourth + 1);
+        sGame.sRemap.erase (iFourth);
+      }
     }
     oGames.push_back (sGame);
   }
