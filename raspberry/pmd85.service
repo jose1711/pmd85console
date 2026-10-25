@@ -7,6 +7,8 @@ After=systemd-remount-fs.service
 User=@USER@
 SupplementaryGroups=video audio input render
 WorkingDirectory=@HOME@/share
+# Optional settings, one VAR=value per line, e.g. PMD_WEB=8085 and PMD_WEB_TOKEN=<secret> (remote control from a browser)
+EnvironmentFile=-@HOME@/pmd85.env
 # Esc in the emulator exits it and halts the machine; a stop/restart of the unit (SIGTERM) does not.
 ExecStartPre=-/bin/rm -f /tmp/pmd85.halt
 ExecStart=/bin/bash -c 'trap "STOP=1" TERM; @HOME@/pmd85console/simpmd/bin/simpmd > /tmp/pmd85.log 2>&1; rc=$?; [ -z "$STOP" ] && [ $rc -eq 0 ] && touch /tmp/pmd85.halt; exit $rc'
