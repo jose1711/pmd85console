@@ -71,6 +71,8 @@ static std::ofstream oTapeOutput;
 
 /// Last value of simulated clock at input.
 static int iLastInputClock;
+/// Time of the last byte read from the tape in ms (SDL ticks + 1), 0 if nothing was read yet.
+static std::atomic <Uint32> iLastInputTime (0);
 /// Last value of simulated clock at output.
 static int iLastOutputClock;
 
@@ -195,6 +197,7 @@ byte TAPReadData ()
   if (TAPStatusRxRDY ())
   {
     iLastInputClock = iProcessorClock;
+    iLastInputTime = SDL_GetTicks () + 1;
     return (oTapeInput.get ());
   }
   return (0);
@@ -230,7 +233,13 @@ byte TAPReadStatus ()
 
 void TAPInitialize ()
 {
-  // Nothing really ...
+  iLastInputTime = 0;
+}
+
+
+Uint32 TAPLastRead ()
+{
+  return (iLastInputTime);
 }
 
 

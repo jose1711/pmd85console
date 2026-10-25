@@ -188,6 +188,7 @@ void TAPWriteData (byte iData);
 byte TAPReadStatus ();
 void TAPInitialize ();
 void TAPShutdown ();
+Uint32 TAPLastRead ();
 bool TAPNextInputFile (std::vector <std::string> oArgTapeInputs);
 bool TAPNextOutputFile (std::vector <std::string> oArgTapeOutputs);
 

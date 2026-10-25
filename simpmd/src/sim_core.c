@@ -81,6 +81,15 @@ struct tGame
   /// Note shown in the list, the commands to type.
   std::string sNote;
 };
+/// Keys typed on the simulated keyboard after the start of a game (the load command, PMD_KEYS in test mode).
+static std::string sKeys;
+/// Position in the keys, key press or release.
+static int iKeyPos;
+static bool bKeyDown;
+/// Time of the next key event.
+static Uint32 iKeyTime;
+/// Key press and release time.
+static int iKeyMs = 150;
 /// All games of the list menu.
 static std::vector <tGame> oGames;
 /// The list menu is shown instead of the four games.
@@ -196,6 +205,57 @@ static void InitializePMD2 ()
 }
 
 
+/** Keys that load a game: the commands of the note of games.lst, "MGLD 00, JUMP 2000" is typed as
+ *  "MGLD 00|" and, after the tape stops loading ('~'), "JUMP 2000|".
+ */
+static std::string AutoloadKeys (const std::string &sNote)
+{
+  std::string sResult;
+  size_t iPos = 0;
+  while (iPos < sNote.size ())
+  {
+    size_t iEnd = sNote.find (',', iPos);
+    if (iEnd == std::string::npos)
+      iEnd = sNote.size ();
+    std::string sPart = sNote.substr (iPos, iEnd - iPos);
+    iPos = iEnd + 1;
+    while (!sPart.empty () && sPart [0] == ' ')
+      sPart.erase (0, 1);
+    if (sPart.compare (0, 4, "MGLD") == 0)
+      sResult += sPart + "|";
+    else if (sPart.compare (0, 4, "JUMP") == 0)
+      sResult += "~" + sPart + "|";
+  }
+  return (sResult);
+}
+
+
+/** Start typing the keys of a game: PMD_KEYS in test mode, otherwise the load command from the games list
+ *  (PMD_AUTOLOAD=0 turns it off).
+ */
+static void KeysStart (const std::string &sTape)
+{
+  sKeys.clear ();
+  const char *pKeys = getenv ("PMD_KEYS");
+  const char *pAutoload = getenv ("PMD_AUTOLOAD");
+  if (pKeys)
+    sKeys = pKeys;
+  else if (!pAutoload || atoi (pAutoload) != 0)
+  {
+    std::string sName = sTape;
+    size_t iShare = strlen (PMD_SHARE);
+    if (sName.compare (0, iShare, PMD_SHARE) == 0)
+      sName.erase (0, iShare);
+    for (size_t i = 0 ; i < oGames.size () ; i ++)
+      if (oGames [i].sTape == sName)
+        sKeys = AutoloadKeys (oGames [i].sNote);
+  }
+  iKeyPos = 0;
+  bKeyDown = false;
+  iKeyTime = SDL_GetTicks () + 1500;
+}
+
+
 /** Load the games list, lines NAME;MODEL;NOTE, '#' starts a comment.
  */
 static void GamesLoad ()
@@ -249,6 +309,8 @@ static void EmulationInitialize (const std::string &sTape, int iModel)
   gameIn.push_back(sTape);
   TAPNextInputFile(gameIn);
 
+  KeysStart (sTape);
+
   if (iModel == 2)
     InitializePMD2();
   else
@@ -273,6 +335,7 @@ static void EmulationInitialize (const std::string &sTape, int iModel)
 /// Shutdown emulation
 static void EmulationShutdown ()
 {
+  sKeys.clear ();
   CPUTerminateThread ();
   printf("CPU Thread shutdown..\n");
 
@@ -309,12 +372,8 @@ int main (int iArgC, const char *apArgV [])
   // the text on the simulated keyboard ('|' is Enter, '_' a 2 s pause), PMD_SCREENSHOT=<file>
   // saves the screen after PMD_SCREENSHOT_MS (default 3000) and exits.
   // PMD_KEY_MS is the key press and release time of PMD_KEYS (default 150).
-  const char *pKeys = getenv ("PMD_KEYS");
-  int iKeyPos = 0;
-  bool bKeyDown = false;
-  Uint32 iKeyTime = SDL_GetTicks () + 1500;
   const char *pKeyMs = getenv ("PMD_KEY_MS");
-  int iKeyMs = pKeyMs ? atoi (pKeyMs) : 150;
+  iKeyMs = pKeyMs ? atoi (pKeyMs) : 150;
   const char *pAutostart = getenv ("PMD_AUTOSTART");
   const char *pGame = getenv ("PMD_GAME");
   GamesLoad ();
@@ -454,12 +513,21 @@ int main (int iArgC, const char *apArgV [])
               fflush (pLog);
             }
           }
-          if (pKeys && pKeys [iKeyPos] && SDL_GetTicks () >= iKeyTime) {
+          if (iKeyPos < (int) sKeys.size () && SDL_GetTicks () >= iKeyTime) {
             SDL_KeyboardEvent sKey = {};
-            char cKey = pKeys [iKeyPos];
+            char cKey = sKeys [iKeyPos];
             if (cKey == '_') {
               iKeyPos ++;
               iKeyTime = SDL_GetTicks () + 2000;
+            } else if (cKey == '~') {
+              // Wait until the tape stops loading, nothing was read for 2 s.
+              Uint32 iLastRead = TAPLastRead ();
+              if (iLastRead != 0 && SDL_GetTicks () - iLastRead > 2000) {
+                iKeyPos ++;
+                iKeyTime = SDL_GetTicks () + 500;
+              } else {
+                iKeyTime = SDL_GetTicks () + 200;
+              }
             } else {
             sKey.keysym.sym = (cKey == '|') ? SDLK_RETURN : (cKey == '<') ? SDLK_LEFT : (cKey == '>') ? SDLK_RIGHT : (cKey == '^') ? SDLK_LSHIFT
                             : (cKey >= 'A' && cKey <= 'Z') ? cKey + 32 : cKey;

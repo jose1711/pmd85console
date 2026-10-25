@@ -58,7 +58,7 @@ limitations under the License.
 static const char *menuText[7] = {
   "PMD-85 Retro console",
   "1] Vyber hru pomoci sipek <- -> a stiskni [ Enter ].",
-  "2] Pro spusteni hry napis 'MGLD 03' ('MGLD 02' u MANIC) a stiskni [ Enter ].",
+  "2] Hra se nahraje sama (prikaz MGLD se napise automaticky).",
   "3] Dalsi hry: sipka nahoru [ E ] otevre seznam vsech her.",
   "4] Pro ukonceni hry stiskni [ Esc ].",
   "5] Pro konec stiskni [ Esc ].",
