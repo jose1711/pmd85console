@@ -1184,6 +1184,8 @@ void InstIN ()
 {
   CPU_LOG_INST_B (IN);
   int iPort = MemFetchByte ();
+  // The system 8255 is decoded only partially, 0x84-0x87 (and the others matching the mask) alias 0xF4-0xF7.
+  if ((iPort & 0x8C) == 0x84) iPort |= 0xF0;
   switch (iPort)
   {
     case 0x1E:  RegA = TAPReadData ();
@@ -1206,6 +1208,8 @@ void InstOUT ()
 {
   CPU_LOG_INST_B (OUT);
   int iPort = MemFetchByte ();
+  // The system 8255 is decoded only partially, 0x84-0x87 (and the others matching the mask) alias 0xF4-0xF7.
+  if ((iPort & 0x8C) == 0x84) iPort |= 0xF0;
   switch (iPort)
   {
     case 0x1E:  TAPWriteData (RegA);
