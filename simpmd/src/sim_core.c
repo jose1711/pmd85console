@@ -461,7 +461,8 @@ int main (int iArgC, const char *apArgV [])
               iKeyPos ++;
               iKeyTime = SDL_GetTicks () + 2000;
             } else {
-            sKey.keysym.sym = (cKey == '|') ? SDLK_RETURN : (cKey >= 'A' && cKey <= 'Z') ? cKey + 32 : cKey;
+            sKey.keysym.sym = (cKey == '|') ? SDLK_RETURN : (cKey == '<') ? SDLK_LEFT : (cKey == '>') ? SDLK_RIGHT : (cKey == '^') ? SDLK_LSHIFT
+                            : (cKey >= 'A' && cKey <= 'Z') ? cKey + 32 : cKey;
             sKey.state = bKeyDown ? SDL_RELEASED : SDL_PRESSED;
             KBDEventHandler (&sKey);
             if (bKeyDown) iKeyPos ++;

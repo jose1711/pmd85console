@@ -200,7 +200,8 @@ Environment variables (test mode):
 <pre>
 PMD_AUTOSTART=<0-3>     Skip logo and menu, start selected game.
 PMD_GAME=<name>         Skip logo and menu, start a game of games.lst (any of the list).
-PMD_KEYS=<text>         Type text on the PMD-85 keyboard, '|' is [Enter], '_' is 2s pause.
+PMD_KEYS=<text>         Type text on the PMD-85 keyboard, '|' is [Enter], '_' is 2s pause, '<' '>' are the cursor
+                        keys left and right, '^' is [Shift], E and Y are up and down in the games.
 PMD_SCREENSHOT=<file>   Save screen as BMP after PMD_SCREENSHOT_MS and exit.
 PMD_SCREENSHOT_MS=<ms>  Screenshot delay, default 3000.
 PMD_KEY_MS=<ms>         Key press/release time of PMD_KEYS, default 150.
