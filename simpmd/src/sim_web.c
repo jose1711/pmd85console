@@ -130,7 +130,7 @@ addEventListener('keyup', e => { const n = name(e.key); if (!n) return; e.preven
 addEventListener('blur', () => [...down].forEach(release));
 
 // On-screen gamepad: up and down are the PMD 85 keys E and Y (host key Z).
-const pad = [['E up', 'e'], ['Y down', 'z'], ['Left', 'Left'], ['Right', 'Right'], ['Space', 'Space'], ['Enter', 'Return'],
+const pad = [['E up', 'e'], ['Y down', 'z'], ['Left', 'Left'], ['Right', 'Right'], ['Fast left', 'End'], ['Fast right', 'PageDown'], ['Space', 'Space'], ['Enter', 'Return'],
   ['H', 'h'], ['I', 'i'], ['V', 'v'], ['Shift', 'Left Shift'], ['RCL', 'Keypad +'], ['Esc', 'Escape']];
 for (const [label, key] of pad) {
   const b = document.createElement('button');
