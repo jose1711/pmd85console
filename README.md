@@ -236,6 +236,10 @@ missing build packages, builds (`PMD_SHARE=$HOME/share/`), installs the tapes an
 the emulator and halts the machine, `systemctl stop/restart pmd85` does not. Settings (`PMD_WEB`, `PMD_WEB_TOKEN`,
 `PMD_RES`, ...) go to `~/pmd85.env`, one `VAR=value` per line, `chmod 600`. Log: `/tmp/pmd85.log`.
 
+Sound goes straight to ALSA (PipeWire is slow here). The emulator asks for mono 8-bit, which HDMI refuses on `hw:`,
+so use the converting `plughw:` device: `SDL_AUDIODRIVER=alsa` and `AUDIODEV=plughw:0,0` for HDMI, `plughw:1,0` for the
+headphone jack (`aplay -l` lists the cards). Without them SDL picks the default device.
+
 REMOTE CONTROL
 
 `PMD_WEB=<port>` starts a small web server, open `http://<host>:<port>/?t=<token>` in a browser (PC or phone) to see
