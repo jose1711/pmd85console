@@ -237,6 +237,8 @@ int main (int iArgC, const char *apArgV [])
   // SDL Init
   SDL_CheckZero (SDL_Init (SDL_INIT_AUDIO | SDL_INIT_TIMER | SDL_INIT_VIDEO));
   printf("SDL Initializing..\n");
+  // Gamepads, their buttons arrive as key events (PMD_PAD overrides the keys)
+  GPDInitialize ();
   //Disable cursor
   SDL_ShowCursor (0);
   // Get fullscreen resolution
@@ -291,6 +293,7 @@ int main (int iArgC, const char *apArgV [])
       fprintf (pLog, "\n");
       fflush (pLog);
     }
+    GPDEventHandler (&sEvent);
     switch (sEvent.type)
     {
       case SDL_KEYUP:
@@ -377,6 +380,7 @@ int main (int iArgC, const char *apArgV [])
     EmulationShutdown ();
   }
   // Quit
+  GPDShutdown ();
   SDL_Quit ();
 
   return (0);
