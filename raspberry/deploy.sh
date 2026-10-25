@@ -48,6 +48,7 @@ fi
 mkdir -p ~/share simpmd/bin
 cp -n simpmd/data/roms/M* simpmd/data/font/* simpmd/data/logo/* \
 	simpmd/data/tapes/games-pmd1/* simpmd/data/tapes/games-pmd2/* ~/share/
+cp -f simpmd/data/games.lst ~/share/
 cd simpmd/src
 make clean
 make -j"$(nproc)" PMD_BUILD=RELEASE PMD_SHARE="$HOME/share/"
