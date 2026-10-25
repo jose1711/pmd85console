@@ -3,8 +3,15 @@ Description=PMD-85 Retro Console
 After=systemd-remount-fs.service
 
 [Service]
-ExecStart=/bin/bash -ce "/root/simpmd/bin/simpmd > /var/log/pmd85.log 2>&1 && /sbin/halt"
-WorkingDirectory=/root/simpmd/bin/
+# @USER@ and @HOME@ are substituted by deploy.sh
+User=@USER@
+SupplementaryGroups=video audio input render
+WorkingDirectory=@HOME@/share
+ExecStart=@HOME@/pmd85console/simpmd/bin/simpmd
+StandardOutput=file:/tmp/pmd85.log
+StandardError=inherit
+# Halt the machine when the emulator exits normally (Esc); runs as root
+ExecStopPost=+/bin/sh -c '[ "$SERVICE_RESULT" = success ] && /sbin/halt || true'
 
 [Install]
 WantedBy=multi-user.target
