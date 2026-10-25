@@ -131,7 +131,7 @@ addEventListener('keyup', e => { const n = name(e.key); if (!n) return; e.preven
 addEventListener('blur', () => [...down].forEach(release));
 
 // On-screen gamepad: the buttons come from the server (state.pad, "Label:key,..."), they depend on the game.
-// Up and down are the PMD 85 keys E and Y (host key Z).
+// Up and down are the PMD 85 keys E and Y (host key Z). "key&key" presses two keys at once.
 let padText = null;
 function buildPad(text) {
   padText = text;
@@ -140,11 +140,11 @@ function buildPad(text) {
   box.textContent = '';
   for (const item of text.split(',')) {
     const i = item.lastIndexOf(':');
-    const label = i < 0 ? item : item.slice(0, i), key = i < 0 ? item : item.slice(i + 1);
+    const label = i < 0 ? item : item.slice(0, i), keys = (i < 0 ? item : item.slice(i + 1)).split('&');
     const b = document.createElement('button');
     b.textContent = label;
-    b.addEventListener('pointerdown', e => { e.preventDefault(); b.classList.add('on'); press(key); });
-    for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(ev, () => { b.classList.remove('on'); release(key); });
+    b.addEventListener('pointerdown', e => { e.preventDefault(); b.classList.add('on'); keys.forEach(press); });
+    for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(ev, () => { b.classList.remove('on'); keys.forEach(release); });
     box.appendChild(b);
   }
 }

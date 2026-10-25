@@ -228,7 +228,7 @@ An optional fourth column `REMAP` changes keys for one game (`Left=Left Shift,Ri
 for the gamepad and the browser): AUTO steers with [Shift] (left) and [V] (right) on the PMD 85, here with the
 cursor keys. ZED does the same.
 A fifth column `PAD` sets the buttons of the web remote control for a game, `Label:key,...` (SDL key names),
-for example `Left:Left,Fast left:End,Fire:Space,0:0`; games without it get the default set (E, Y, cursor keys,
+for example `Left:Left,Fast left:End,Fire:Space,0:0`; `key&key` presses two keys at once (a mouse presses only one button), e.g. `Jump left:Left Shift&Left` in MANIC; games without it get the default set (E, Y, cursor keys,
 Space, Enter, H, I, Shift, RCL, Esc) and the menus get a short one. The keys known from the code of the games
 are listed in `games.lst` (INVADERS: fast arrows, fire and the difficulty digits; AUTO, ZED, MANIC, SASKO, ...). INVADERS moves the ship by 3 steps with the fast arrows [End] and [PageDown] (the keys LLEFT and RRIGHT of the PMD 85), the gamepad [LB] and [RB] send them there. The difficulty (0-3, 4 is not playable) can be chosen with the gamepad: D-pad up = 0, D-pad down = 1, [X] = 2, [Y] = 3. 
 Start a game of the list directly (test mode): `PMD_GAME=BLUDISTE bin/simpmd`. `PMD_KEYS` replaces the automatic
