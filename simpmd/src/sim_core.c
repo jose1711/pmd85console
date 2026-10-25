@@ -71,6 +71,23 @@ bool inMenu = true;
 /// Game Index
 int gameIndex = 0;
 
+/// Game from the games list (games.lst in the share directory).
+struct tGame
+{
+  /// Tape file name.
+  std::string sTape;
+  /// PMD 85 model, 1 or 2.
+  int iModel;
+  /// Note shown in the list, the commands to type.
+  std::string sNote;
+};
+/// All games of the list menu.
+static std::vector <tGame> oGames;
+/// The list menu is shown instead of the four games.
+static bool inList = false;
+/// Selected game of the list.
+static int listIndex = 0;
+
 
 //--------------------------------------------------------------------------
 // Simulator Control
@@ -172,15 +189,56 @@ static void InitializePMD1 ()
 /// Initialize a PMD 85-2 model.
 static void InitializePMD2 ()
 {
-  // Read the monitor image.
-  FillMemoryFromFile (0x8000, 4096, PMD_SHARE "M2");
+  // Read the monitor image, patched to read the tape the PMD 85-1 way (the only way the tape port is simulated).
+  FillMemoryFromFile (0x8000, 4096, PMD_SHARE "M2-Patched-Tape");
   // The entire 64k is read write.
   SetMemoryReadWrite (0x0000, 65536);
 }
 
 
+/** Load the games list, lines NAME;MODEL;NOTE, '#' starts a comment.
+ */
+static void GamesLoad ()
+{
+  std::ifstream oFile (PMD_SHARE "games.lst");
+  std::string sLine;
+  while (std::getline (oFile, sLine))
+  {
+    if (sLine.empty () || sLine [0] == '#')
+      continue;
+    size_t iFirst = sLine.find (';');
+    size_t iSecond = iFirst == std::string::npos ? iFirst : sLine.find (';', iFirst + 1);
+    if (iSecond == std::string::npos)
+      continue;
+    tGame sGame;
+    sGame.sTape = sLine.substr (0, iFirst);
+    sGame.iModel = atoi (sLine.substr (iFirst + 1, iSecond - iFirst - 1).c_str ()) == 2 ? 2 : 1;
+    sGame.sNote = sLine.substr (iSecond + 1);
+    oGames.push_back (sGame);
+  }
+}
+
+
+/// Draw the main menu or the games list.
+static void MenuRender ()
+{
+  if (!inList)
+  {
+    DSPRenderMenu (fullscreen.w, fullscreen.h, gameIndex);
+    return;
+  }
+  std::vector <std::string> oNames, oNotes;
+  for (size_t i = 0 ; i < oGames.size () ; i ++)
+  {
+    oNames.push_back (oGames [i].sTape);
+    oNotes.push_back ((oGames [i].iModel == 2 ? "PMD 85-2  " : "PMD 85-1  ") + oGames [i].sNote);
+  }
+  DSPRenderGameList (fullscreen.w, fullscreen.h, listIndex, oNames, oNotes);
+}
+
+
 /// Initialize emulation
-static void EmulationInitialize (int gameIndex)
+static void EmulationInitialize (const std::string &sTape, int iModel)
 {
   // Flush garbage
   FlushMemory(0x0000, 65536);
@@ -188,10 +246,13 @@ static void EmulationInitialize (int gameIndex)
   iProcessorClock = 0;
   // Set Tape
   gameIn.clear();
-  gameIn.push_back(gameSelect[gameIndex]);
+  gameIn.push_back(sTape);
   TAPNextInputFile(gameIn);
 
-  InitializePMD1();
+  if (iModel == 2)
+    InitializePMD2();
+  else
+    InitializePMD1();
   printf("Model initializing..\n");
   CPUInitialize ();
   printf("CPU initializing..\n");
@@ -255,13 +316,30 @@ int main (int iArgC, const char *apArgV [])
   const char *pKeyMs = getenv ("PMD_KEY_MS");
   int iKeyMs = pKeyMs ? atoi (pKeyMs) : 150;
   const char *pAutostart = getenv ("PMD_AUTOSTART");
+  const char *pGame = getenv ("PMD_GAME");
+  GamesLoad ();
   const char *pScreenshot = getenv ("PMD_SCREENSHOT");
   const char *pScreenshotMs = getenv ("PMD_SCREENSHOT_MS");
   Uint32 iScreenshotTime = SDL_GetTicks () + (pScreenshotMs ? atoi (pScreenshotMs) : 3000);
   if (pAutostart)
   {
     gameIndex = atoi (pAutostart) & 3;
-    EmulationInitialize (gameIndex);
+    EmulationInitialize (gameSelect[gameIndex], 1);
+    inMenu = false;
+  }
+  else if (pGame)
+  {
+    // Test mode: PMD_GAME=<name> starts a game of the games list.
+    size_t iFound = 0;
+    while (iFound < oGames.size () && oGames [iFound].sTape != pGame)
+      iFound ++;
+    if (iFound == oGames.size ())
+    {
+      fprintf (stderr, "PMD_GAME: '%s' is not in games.lst\n", pGame);
+      SDL_Quit ();
+      return (1);
+    }
+    EmulationInitialize (PMD_SHARE + oGames [iFound].sTape, oGames [iFound].iModel);
     inMenu = false;
   }
   else
@@ -272,7 +350,7 @@ int main (int iArgC, const char *apArgV [])
     DSPLogoShutdown ();
     // Menu
     DSPMenuInitialize ();
-    DSPRenderMenu (fullscreen.w, fullscreen.h, gameIndex);
+    MenuRender ();
   }
   // Event loop
   SDL_Event sEvent;
@@ -300,28 +378,58 @@ int main (int iArgC, const char *apArgV [])
       case SDL_KEYDOWN:
         if (inMenu) {
            if (sEvent.type == SDL_KEYDOWN) {
-             if (sEvent.key.keysym.sym == SDLK_ESCAPE) { 
-              SIMRequestShutdown ();
-             }
-             if (sEvent.key.keysym.sym == SDLK_LEFT) {
-               (gameIndex == 0) ? gameIndex = 3 : gameIndex--;
-               DSPRenderMenu (fullscreen.w, fullscreen.h, gameIndex);
-             }
-             if (sEvent.key.keysym.sym == SDLK_RIGHT) { 
-               (gameIndex == 3) ? gameIndex = 0 : gameIndex++;
-               DSPRenderMenu (fullscreen.w, fullscreen.h, gameIndex);
-             }
-             if (sEvent.key.keysym.sym == SDLK_RETURN) {
-               DSPMenuShutdown ();
-               EmulationInitialize (gameIndex);
-               inMenu = false;	
+             SDL_Keycode iSym = sEvent.key.keysym.sym;
+             // [E] and [Y] are the PMD 85 up and down, the gamepad sends them
+             bool bUp = (iSym == SDLK_UP || iSym == SDLK_e);
+             bool bDown = (iSym == SDLK_DOWN || iSym == SDLK_z);
+             if (inList) {
+               int iCount = (int) oGames.size ();
+               if (iSym == SDLK_ESCAPE) {
+                 inList = false;
+                 MenuRender ();
+               }
+               if (bUp || bDown || iSym == SDLK_LEFT || iSym == SDLK_RIGHT || iSym == SDLK_PAGEUP || iSym == SDLK_PAGEDOWN) {
+                 int iStep = bUp ? -1 : bDown ? 1 : (iSym == SDLK_LEFT || iSym == SDLK_PAGEUP) ? -10 : 10;
+                 // Single steps wrap around, pages stop at the ends.
+                 if (iStep == -1 || iStep == 1)
+                   listIndex = (listIndex + iStep + iCount) % iCount;
+                 else
+                   listIndex = std::max (0, std::min (iCount - 1, listIndex + iStep));
+                 MenuRender ();
+               }
+               if (iSym == SDLK_RETURN) {
+                 DSPMenuShutdown ();
+                 EmulationInitialize (PMD_SHARE + oGames [listIndex].sTape, oGames [listIndex].iModel);
+                 inMenu = false;
+               }
+             } else {
+               if (iSym == SDLK_ESCAPE) { 
+                SIMRequestShutdown ();
+               }
+               if (iSym == SDLK_LEFT) {
+                 (gameIndex == 0) ? gameIndex = 3 : gameIndex--;
+                 MenuRender ();
+               }
+               if (iSym == SDLK_RIGHT) { 
+                 (gameIndex == 3) ? gameIndex = 0 : gameIndex++;
+                 MenuRender ();
+               }
+               if (bUp && !oGames.empty ()) {
+                 inList = true;
+                 MenuRender ();
+               }
+               if (iSym == SDLK_RETURN) {
+                 DSPMenuShutdown ();
+                 EmulationInitialize (gameSelect[gameIndex], 1);
+                 inMenu = false;	
+               }
              }
            }
         } else {
           if (sEvent.key.keysym.sym == SDLK_ESCAPE) {
             EmulationShutdown ();
             DSPMenuInitialize ();
-            DSPRenderMenu (fullscreen.w, fullscreen.h, gameIndex);
+            MenuRender ();
             inMenu = true;
           } else {
             KBDEventHandler ((SDL_KeyboardEvent *) &sEvent);

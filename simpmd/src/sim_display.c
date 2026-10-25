@@ -55,12 +55,13 @@ limitations under the License.
 // HARDCODED DATA
 
 
-static const char *menuText[6] = {
+static const char *menuText[7] = {
   "PMD-85 Retro console",
   "1] Vyber hru pomoci sipek <- -> a stiskni [ Enter ].",
-  "2] Pro spusteni hry napis 'MGLD 03' a stiskni [ Enter ].",
-  "3] Pro ukonceni hry stiskni [ Esc ].",
-  "4] Pro konec stiskni [ Esc ].",
+  "2] Pro spusteni hry napis 'MGLD 03' ('MGLD 02' u MANIC) a stiskni [ Enter ].",
+  "3] Dalsi hry: sipka nahoru [ E ] otevre seznam vsech her.",
+  "4] Pro ukonceni hry stiskni [ Esc ].",
+  "5] Pro konec stiskni [ Esc ].",
   "Richard Bruna (c) 2019"
 };
 
@@ -409,11 +410,11 @@ void DSPRenderText (int screen_width, int screen_height)
   textFont = TTF_OpenFont (gameFont[0], FONT_HEIGHT);
 
   // Copyright
-  textSurface = TTF_RenderText_Solid (textFont, menuText[5], textColor);
+  textSurface = TTF_RenderText_Solid (textFont, menuText[6], textColor);
   textTexture = SDL_CreateTextureFromSurface (mRenderer, textSurface);
 
   textRectangle.h = FONT_HEIGHT;
-  textRectangle.w = FONT_WIDTH * strlen(menuText[5]);
+  textRectangle.w = FONT_WIDTH * strlen(menuText[6]);
   textRectangle.x = (screen_width - MENU_WIDTH)/2 + (MENU_WIDTH - textRectangle.w)/2;
   textRectangle.y = 665;
  
@@ -429,7 +430,7 @@ void DSPRenderText (int screen_width, int screen_height)
  
   SDL_RenderCopy (mRenderer, textTexture, NULL, &textRectangle);
   // Help text
-  for (int i = 1; i < 5; i++) {
+  for (int i = 1; i < 6; i++) {
     textSurface = TTF_RenderText_Solid (textFont, menuText[i], textColor);
     textTexture = SDL_CreateTextureFromSurface (mRenderer, textSurface);
 
@@ -528,6 +529,67 @@ void DSPRenderMenu (int screen_width, int screen_height, int index)
   DSPRenderText (screen_width, screen_height);
   DSPRenderImage (screen_width, screen_height);
  
+  SDL_RenderPresent (mRenderer);
+}
+
+
+/** Draw a text line on the menu renderer.
+ */
+static void DSPDrawText (TTF_Font *pFont, const std::string &sText, int iX, int iY)
+{
+  if (sText.empty ())
+    return;
+  SDL_Color sColor = {255, 255, 255, SDL_ALPHA_OPAQUE};
+  SDL_Surface *pSurface = TTF_RenderText_Solid (pFont, sText.c_str (), sColor);
+  if (!pSurface)
+    return;
+  SDL_Texture *pText = SDL_CreateTextureFromSurface (mRenderer, pSurface);
+  SDL_Rect sRect = {iX, iY, FONT_WIDTH * (int) sText.size (), FONT_HEIGHT};
+  SDL_RenderCopy (mRenderer, pText, NULL, &sRect);
+  SDL_DestroyTexture (pText);
+  SDL_FreeSurface (pSurface);
+}
+
+
+void DSPRenderGameList (int screen_width, int screen_height, int index, const std::vector <std::string> &oNames, const std::vector <std::string> &oNotes)
+{
+  const int iRowHeight = FONT_HEIGHT + 8;
+  const int iTop = 140;
+  const int iBottom = screen_height - 110;
+  int iRows = (iBottom - iTop) / iRowHeight;
+  if (iRows < 5)
+    iRows = 5;
+  int iCount = (int) oNames.size ();
+  int iFirst = index - iRows / 2;
+  if (iFirst > iCount - iRows)
+    iFirst = iCount - iRows;
+  if (iFirst < 0)
+    iFirst = 0;
+
+  TTF_Font *pFont = TTF_OpenFont (gameFont[0], FONT_HEIGHT);
+  if (!pFont)
+    return;
+  SDL_SetRenderDrawColor (mRenderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+  SDL_RenderClear (mRenderer);
+  SDL_SetRenderDrawColor (mRenderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+
+  int iX = (screen_width - MENU_WIDTH) / 2;
+  DSPDrawText (pFont, "Vsechny hry " + std::to_string (index + 1) + "/" + std::to_string (iCount), iX, 60);
+  for (int i = iFirst ; i < iCount && i < iFirst + iRows ; i ++)
+  {
+    int iY = iTop + (i - iFirst) * iRowHeight;
+    if (i == index)
+    {
+      SDL_Rect sFrame = {iX - 12, iY - 4, MENU_WIDTH + 24, iRowHeight};
+      SDL_RenderDrawRect (mRenderer, &sFrame);
+      SDL_Rect sInner = {sFrame.x + 1, sFrame.y + 1, sFrame.w - 2, sFrame.h - 2};
+      SDL_RenderDrawRect (mRenderer, &sInner);
+    }
+    DSPDrawText (pFont, oNames [i], iX, iY);
+    DSPDrawText (pFont, oNotes [i], iX + FONT_WIDTH * 14, iY);
+  }
+  DSPDrawText (pFont, "Sipky nebo [ E ] [ Y ]: vyber  <- -> strana  [ Enter ]: spust  [ Esc ]: zpet", iX, screen_height - 70);
+  TTF_CloseFont (pFont);
   SDL_RenderPresent (mRenderer);
 }
 
