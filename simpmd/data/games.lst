@@ -1,7 +1,8 @@
-# Games offered by the list menu (Up or [E] in the menu), one per line: NAME;MODEL;NOTE
+# Games offered by the list menu (Up or [E] in the menu), one per line: NAME;MODEL;NOTE[;REMAP]
 # NAME is the tape file in the share directory, MODEL is the PMD 85 model (1 or 2), NOTE is shown
-# in the list (the commands to type). Generated from simpmd/data/tapes and the table in simpmd/README.
-AUTO;1;MGLD 00, JUMP 2000
+# in the list (the commands to type), REMAP maps host keys to the PMD 85 keys a game reads (SDL key names,
+# e.g. Left=Left Shift,Right=V: AUTO steers with [Shift] and [V]). Generated from simpmd/data/tapes and the table in simpmd/README.
+AUTO;1;MGLD 00, JUMP 2000;Left=Left Shift,Right=V
 BLUDISTE;2;MGLD 00
 BOULD+3;2;MGLD 03
 BOULDER;1;MGLD 03

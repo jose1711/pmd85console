@@ -32,6 +32,7 @@ limitations under the License.
 
 #include "sim_common.h"
 #include <fstream>
+#include <map>
 
 //--------------------------------------------------------------------------
 // System Status Variables
@@ -80,7 +81,11 @@ struct tGame
   int iModel;
   /// Note shown in the list, the commands to type.
   std::string sNote;
+  /// Keys of the game remapped to other PMD 85 keys, "Left=Left Shift,Right=V" (SDL key names).
+  std::string sRemap;
 };
+/// Keys remapped for the running game, host key to PMD 85 key.
+static std::map <SDL_Keycode, SDL_Keycode> oRemap;
 /// Keys typed on the simulated keyboard after the start of a game (the load command, PMD_KEYS in test mode).
 static std::string sKeys;
 /// Position in the keys, key press or release.
@@ -242,6 +247,40 @@ static std::string WebState ()
 }
 
 
+/** Remap keys of the game from the games list (4th column REMAP), none for the other games.
+ */
+static void KeysRemap (const std::string &sTape)
+{
+  oRemap.clear ();
+  std::string sName = sTape;
+  size_t iShare = strlen (PMD_SHARE);
+  if (sName.compare (0, iShare, PMD_SHARE) == 0)
+    sName.erase (0, iShare);
+  for (size_t i = 0 ; i < oGames.size () ; i ++)
+  {
+    if (oGames [i].sTape != sName)
+      continue;
+    const std::string &sRemap = oGames [i].sRemap;
+    size_t iPos = 0;
+    while (iPos < sRemap.size ())
+    {
+      size_t iEnd = sRemap.find (',', iPos);
+      if (iEnd == std::string::npos)
+        iEnd = sRemap.size ();
+      std::string sPair = sRemap.substr (iPos, iEnd - iPos);
+      iPos = iEnd + 1;
+      size_t iEqual = sPair.find ('=');
+      if (iEqual == std::string::npos)
+        continue;
+      SDL_Keycode iFrom = SDL_GetKeyFromName (sPair.substr (0, iEqual).c_str ());
+      SDL_Keycode iTo = SDL_GetKeyFromName (sPair.substr (iEqual + 1).c_str ());
+      if (iFrom != SDLK_UNKNOWN && iTo != SDLK_UNKNOWN)
+        oRemap [iFrom] = iTo;
+    }
+  }
+}
+
+
 /** Start typing the keys of a game: PMD_KEYS in test mode, otherwise the load command from the games list
  *  (PMD_AUTOLOAD=0 turns it off).
  */
@@ -262,6 +301,7 @@ static void KeysStart (const std::string &sTape)
       if (oGames [i].sTape == sName)
         sKeys = AutoloadKeys (oGames [i].sNote);
   }
+  KeysRemap (sTape);
   iKeyPos = 0;
   bKeyDown = false;
   iKeyTime = SDL_GetTicks () + 1500;
@@ -286,6 +326,12 @@ static void GamesLoad ()
     sGame.sTape = sLine.substr (0, iFirst);
     sGame.iModel = atoi (sLine.substr (iFirst + 1, iSecond - iFirst - 1).c_str ()) == 2 ? 2 : 1;
     sGame.sNote = sLine.substr (iSecond + 1);
+    size_t iThird = sGame.sNote.find (';');
+    if (iThird != std::string::npos)
+    {
+      sGame.sRemap = sGame.sNote.substr (iThird + 1);
+      sGame.sNote.erase (iThird);
+    }
     oGames.push_back (sGame);
   }
 }
@@ -507,6 +553,9 @@ int main (int iArgC, const char *apArgV [])
             MenuRender ();
             inMenu = true;
           } else {
+            std::map <SDL_Keycode, SDL_Keycode>::const_iterator xRemap = oRemap.find (sEvent.key.keysym.sym);
+            if (xRemap != oRemap.end ())
+              sEvent.key.keysym.sym = xRemap->second;
             KBDEventHandler ((SDL_KeyboardEvent *) &sEvent);
           }
         }

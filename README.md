@@ -224,6 +224,9 @@ once the tape stops loading, so selecting a game is enough. `PMD_AUTOLOAD=0` tur
 [Up]/[Down] or [E]/[Y] select, [Left]/[Right] move by a page, [Enter] starts, [Esc] goes back to the menu.
 `simpmd/data/games.lst` lists the tapes of `simpmd/data/tapes` that work, according to the table in `simpmd/README`.
 To add a game, copy its tape to the share directory and add a line to `games.lst`.
+An optional fourth column `REMAP` changes keys for one game (`Left=Left Shift,Right=V`, SDL key names, also
+for the gamepad and the browser): AUTO steers with [Shift] (left) and [V] (right) on the PMD 85, here with the
+cursor keys.
 Start a game of the list directly (test mode): `PMD_GAME=BLUDISTE bin/simpmd`. `PMD_KEYS` replaces the automatic
 load command.
 
