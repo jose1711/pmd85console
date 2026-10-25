@@ -213,12 +213,13 @@ PMD_PAD=<input>=<key>,...  Gamepad keys, see below.
 GAMEPAD
 
 A gamepad (USB, or Bluetooth if paired in the OS) works in the menu and in the games, its buttons are
-translated to keyboard keys. Defaults: D-pad and left stick = cursor keys, [A] = Space, [B] and [Start] = Enter,
-[X] = H, [Back] = Escape (game back to menu, in the menu quit). [Y], [LB] and [RB] are not mapped.
+translated to keyboard keys. Defaults follow the instructions of the games: D-pad and left stick up/down = [E] and [Y] (the PMD 85 keys for
+up and down, host key Z), left/right = cursor keys, [A] = Space, [B] and [Start] = Enter, [X] = H, [Y] = I,
+[RB] = keypad plus (RCL), [Back] = Escape (game back to menu, in the menu quit), [LB] is not mapped.
 Override with `PMD_PAD`, inputs `up down left right a b x y lb rb back start`, keys are SDL key names:
 
 <pre>
-PMD_PAD='a=Space,b=Return,x=H,y=Z,lb=Left,rb=Right' bin/simpmd
+PMD_PAD='up=Up,down=Down,a=Space,lb=Left' bin/simpmd
 </pre>
 
 Pads without an SDL controller mapping use a common layout (hat or axes 0/1 = D-pad, buttons 0-7 = a b x y lb rb back start).
