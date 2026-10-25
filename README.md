@@ -204,6 +204,7 @@ PMD_KEYS=<text>         Type text on the PMD-85 keyboard, '|' is [Enter], '_' is
                         keys left and right, '^' is [Shift], E and Y are up and down in the games.
                         '~' waits until the tape stops loading (2s without a read).
 PMD_AUTOLOAD=0         Do not type the load command of the game automatically (default on).
+PMD_WEB=<port>          Remote control from a browser, see below. PMD_WEB_TOKEN=<secret> protects it.
 PMD_SCREENSHOT=<file>   Save screen as BMP after PMD_SCREENSHOT_MS and exit.
 PMD_SCREENSHOT_MS=<ms>  Screenshot delay, default 3000.
 PMD_KEY_MS=<ms>         Key press/release time of PMD_KEYS, default 150.
@@ -226,6 +227,14 @@ once the tape stops loading, so selecting a game is enough. `PMD_AUTOLOAD=0` tur
 To add a game, copy its tape to the share directory and add a line to `games.lst`.
 Start a game of the list directly (test mode): `PMD_GAME=BLUDISTE bin/simpmd`. `PMD_KEYS` replaces the automatic
 load command.
+
+REMOTE CONTROL
+
+`PMD_WEB=<port>` starts a small web server, open `http://<host>:<port>/?t=<token>` in a browser (PC or phone) to see
+the screen of the simulated machine and to play: keyboard keys and an on-screen gamepad are sent to the emulator
+and work in the menu and in the games (up and down are [E] and [Y]). `PMD_WEB_TOKEN=<secret>` is required in the
+URL (`?t=`), without a token everybody on the network can control the machine. The screen is read from the video
+memory (12 KB per frame), there is no sound. Esc in the main menu asks for confirmation, it quits the emulator.
 
 GAMEPAD
 

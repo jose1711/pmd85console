@@ -174,6 +174,9 @@ bool DSPResolution (int *, int *);
 void KBDInitialize ();
 void KBDShutdown ();
 
+void WEBInitialize (int iPort, const char *pToken, std::string (*pState) ());
+void WEBShutdown ();
+
 void GPDInitialize ();
 void GPDShutdown ();
 void GPDEventHandler (const SDL_Event *);

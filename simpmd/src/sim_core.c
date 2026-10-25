@@ -230,6 +230,18 @@ static std::string AutoloadKeys (const std::string &sNote)
 }
 
 
+/** State for the web remote control, JSON: mode (menu, list or game), selected index, names of the games.
+ */
+static std::string WebState ()
+{
+  std::string sState = std::string ("{\"mode\":\"") + (!inMenu ? "game" : inList ? "list" : "menu") + "\",\"index\":" +
+                       std::to_string (inList ? listIndex : gameIndex) + ",\"featured\":[\"FLAPPY\",\"BOULDER\",\"MANIC\",\"FRED\"],\"games\":[";
+  for (size_t i = 0 ; i < oGames.size () ; i ++)
+    sState += std::string (i ? "," : "") + "\"" + oGames [i].sTape + "\"";
+  return (sState + "]}");
+}
+
+
 /** Start typing the keys of a game: PMD_KEYS in test mode, otherwise the load command from the games list
  *  (PMD_AUTOLOAD=0 turns it off).
  */
@@ -377,6 +389,10 @@ int main (int iArgC, const char *apArgV [])
   const char *pAutostart = getenv ("PMD_AUTOSTART");
   const char *pGame = getenv ("PMD_GAME");
   GamesLoad ();
+  // Remote control from a browser: PMD_WEB=<port>, PMD_WEB_TOKEN=<secret> is required in the URL (?t=<secret>).
+  const char *pWeb = getenv ("PMD_WEB");
+  if (pWeb)
+    WEBInitialize (atoi (pWeb), getenv ("PMD_WEB_TOKEN"), WebState);
   const char *pScreenshot = getenv ("PMD_SCREENSHOT");
   const char *pScreenshotMs = getenv ("PMD_SCREENSHOT_MS");
   Uint32 iScreenshotTime = SDL_GetTicks () + (pScreenshotMs ? atoi (pScreenshotMs) : 3000);
@@ -557,6 +573,7 @@ int main (int iArgC, const char *apArgV [])
     EmulationShutdown ();
   }
   // Quit
+  WEBShutdown ();
   GPDShutdown ();
   SDL_Quit ();
 
