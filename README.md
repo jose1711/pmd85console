@@ -179,7 +179,7 @@ make PMD_BUILD=RELEASE PMD_SHARE=/usr/share/simpmd/
 </pre>
 
 `PMD_SHARE` is the directory (with trailing slash) holding ROMs `M1`/`M2-Patched-Tape`, `atari-classic.ttf`, logos `*.bmp`,
-`games.lst` and game tapes in one flat directory, see <a href="buster/README.md">buster/README.md</a>.
+`games.lst` and game tapes in one flat directory; `raspberry/deploy.sh` creates it (`~/share`).
 
 RUN
 
@@ -261,7 +261,6 @@ SDL_VIDEODRIVER=dummy SDL_RENDER_DRIVER=software SDL_AUDIODRIVER=disk bin/simpmd
 FILE
 
 <pre>
-                buster/ - Raspbian "Buster" install instructions by Jozef Říha - <a href="https://github.com/jose1711">jose1711</a>.
               openscad/ - 3D printable retro case.
              raspberry/ - Raspbery support scripts.
                 simpmd/ - Modified SDL2 PMD-85 emulator source code by Petr Tůma (c) 2008.
