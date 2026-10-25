@@ -55,7 +55,7 @@ static const char *pPage = R"HTML(<!doctype html>
 <title>PMD-85</title>
 <style>
 body{background:#111;color:#ddd;font:16px monospace;margin:0;display:flex;flex-direction:column;align-items:center;touch-action:manipulation}
-canvas{width:min(96vw,864px);image-rendering:pixelated;background:#000;margin-top:8px}
+canvas{width:min(96vw,864px,calc((100vh - 270px) * 1.125));image-rendering:pixelated;background:#000;margin-top:8px}
 #menu{width:min(96vw,864px);min-height:3em;white-space:pre-wrap;margin-top:6px}
 .sel{background:#ddd;color:#000}
 #pad{display:grid;grid-template-columns:repeat(4,70px);gap:6px;margin:10px 0 24px}
@@ -131,7 +131,7 @@ addEventListener('blur', () => [...down].forEach(release));
 
 // On-screen gamepad: up and down are the PMD 85 keys E and Y (host key Z).
 const pad = [['E up', 'e'], ['Y down', 'z'], ['Left', 'Left'], ['Right', 'Right'], ['Space', 'Space'], ['Enter', 'Return'],
-  ['H', 'h'], ['I', 'i'], ['Shift', 'Left Shift'], ['RCL', 'Keypad +'], ['Esc', 'Escape']];
+  ['H', 'h'], ['I', 'i'], ['V', 'v'], ['Shift', 'Left Shift'], ['RCL', 'Keypad +'], ['Esc', 'Escape']];
 for (const [label, key] of pad) {
   const b = document.createElement('button');
   b.textContent = label;
