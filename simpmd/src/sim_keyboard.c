@@ -106,14 +106,13 @@ void KBDWriteColumn (byte iData)
  *
  *  @arg pEvent The event to handle.
  */
-void KBDEventHandler (const SDL_KeyboardEvent *pEvent)
+static void KBDApply (SDL_Keycode iSym, Uint8 iState)
 {
-  //printf("%s key!\n",SDL_GetKeyName(pEvent->keysym.sym));
   // Find the location of the key in the key map
-  tKeyMap::iterator xLocation = oKeyMap.find (pEvent->keysym.sym);
+  tKeyMap::iterator xLocation = oKeyMap.find (iSym);
   if (xLocation != oKeyMap.end ())
   {
-    switch (pEvent->state)
+    switch (iState)
     {
       case SDL_PRESSED:
         // Pressing a key resets the relevant bit of the keyboard matrix
@@ -126,11 +125,11 @@ void KBDEventHandler (const SDL_KeyboardEvent *pEvent)
     }
   }
   // Shift keys have special handling
-  else switch (pEvent->keysym.sym)
+  else switch (iSym)
   {
     case SDLK_LSHIFT:
     case SDLK_RSHIFT:
-      switch (pEvent->state)
+      switch (iState)
       {
         case SDL_PRESSED:  iKeyShifts &= ~PMD_KBD_SHIFT_MASK; break;
         case SDL_RELEASED: iKeyShifts |=  PMD_KBD_SHIFT_MASK; break;
@@ -138,12 +137,64 @@ void KBDEventHandler (const SDL_KeyboardEvent *pEvent)
       break;
     case SDLK_LCTRL:
     case SDLK_RCTRL:
-      switch (pEvent->state)
+      switch (iState)
       {
         case SDL_PRESSED:  iKeyShifts &= ~PMD_KBD_STOP_MASK; break;
         case SDL_RELEASED: iKeyShifts |=  PMD_KBD_STOP_MASK; break;
       }
       break;
+  }
+}
+
+
+
+/** Minimal time a key stays pressed [ms].
+ *
+ *  The event loop can fall behind on a slow machine and deliver press and release
+ *  of a key at once, the emulated keyboard scan would then never see the key.
+ */
+#define PMD_KBD_HOLD_MS         60
+
+/// Time of the last press of a key.
+static std::map <SDL_Keycode, Uint32> oPressTime;
+/// Releases waiting for the minimal hold time, key and time of the release.
+static std::map <SDL_Keycode, Uint32> oPendingRelease;
+
+
+void KBDEventHandler (const SDL_KeyboardEvent *pEvent)
+{
+  SDL_Keycode iSym = pEvent->keysym.sym;
+  Uint32 iNow = SDL_GetTicks ();
+  switch (pEvent->state)
+  {
+    case SDL_PRESSED:
+      oPressTime [iSym] = iNow;
+      oPendingRelease.erase (iSym);
+      KBDApply (iSym, SDL_PRESSED);
+      break;
+    case SDL_RELEASED:
+      if (oPressTime.count (iSym) && iNow - oPressTime [iSym] < PMD_KBD_HOLD_MS)
+        oPendingRelease [iSym] = oPressTime [iSym] + PMD_KBD_HOLD_MS;
+      else
+        KBDApply (iSym, SDL_RELEASED);
+      break;
+  }
+}
+
+
+/** Releases the keys held for the minimal time, called periodically. */
+void KBDPoll ()
+{
+  Uint32 iNow = SDL_GetTicks ();
+  for (std::map <SDL_Keycode, Uint32>::iterator xKey = oPendingRelease.begin (); xKey != oPendingRelease.end ();)
+  {
+    if ((Sint32) (iNow - xKey->second) >= 0)
+    {
+      KBDApply (xKey->first, SDL_RELEASED);
+      oPendingRelease.erase (xKey++);
+    }
+    else
+      ++xKey;
   }
 }
 

@@ -168,6 +168,8 @@ byte KBDReadRow ();
 byte KBDReadColumn ();
 void KBDWriteColumn (byte iData);
 void KBDEventHandler (const SDL_KeyboardEvent *);
+void KBDPoll ();
+bool DSPResolution (int *, int *);
 void KBDInitialize ();
 void KBDShutdown ();
 

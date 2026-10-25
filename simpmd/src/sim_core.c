@@ -241,6 +241,7 @@ int main (int iArgC, const char *apArgV [])
   SDL_ShowCursor (0);
   // Get fullscreen resolution
   SDL_CheckZero (SDL_GetCurrentDisplayMode(0, &fullscreen));
+  DSPResolution (&fullscreen.w, &fullscreen.h);
   // Test mode: PMD_AUTOSTART=<0-3> skips logo and menu, PMD_KEYS=<text> types
   // the text on the simulated keyboard ('|' is Enter, '_' a 2 s pause), PMD_SCREENSHOT=<file>
   // saves the screen after PMD_SCREENSHOT_MS (default 3000) and exits.
@@ -273,10 +274,23 @@ int main (int iArgC, const char *apArgV [])
   }
   // Event loop
   SDL_Event sEvent;
+  // Debug: PMD_KEYLOG=<file> logs keyboard and window events.
+  const char *pKeyLog = getenv ("PMD_KEYLOG");
+  FILE *pLog = pKeyLog ? fopen (pKeyLog, "a") : NULL;
 
   while (!SIMQueryShutdown ())
   {
     SDL_WaitEvent (&sEvent);
+    if (pLog && sEvent.type != SDL_USEREVENT)
+    {
+      fprintf (pLog, "%u type=0x%x inMenu=%d focus=%p", SDL_GetTicks (), sEvent.type, inMenu, (void *) SDL_GetKeyboardFocus ());
+      if (sEvent.type == SDL_KEYDOWN || sEvent.type == SDL_KEYUP)
+        fprintf (pLog, " sym=%d (%s) repeat=%d", sEvent.key.keysym.sym, SDL_GetKeyName (sEvent.key.keysym.sym), sEvent.key.repeat);
+      if (sEvent.type == SDL_WINDOWEVENT)
+        fprintf (pLog, " win=%d", sEvent.window.event);
+      fprintf (pLog, "\n");
+      fflush (pLog);
+    }
     switch (sEvent.type)
     {
       case SDL_KEYUP:
@@ -313,7 +327,22 @@ int main (int iArgC, const char *apArgV [])
         break;
       case SDL_USEREVENT:
         if (!inMenu) {
+          KBDPoll ();
+          Uint32 iPaintStart = SDL_GetTicks ();
           DSPPaintHandler ();
+          // Drop paint events queued while painting, a slow machine would fall behind and delay the keys.
+          SDL_FlushEvent (SDL_USEREVENT);
+          if (pLog)
+          {
+            // Debug: paint duration and queue lag (events pending) every 25th frame.
+            static int iFrame = 0;
+            if (++iFrame % 25 == 0)
+            {
+              SDL_PumpEvents ();
+              fprintf (pLog, "%u paint=%ums pending=%d\n", SDL_GetTicks (), SDL_GetTicks () - iPaintStart, SDL_PeepEvents (NULL, 0, SDL_PEEKEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT));
+              fflush (pLog);
+            }
+          }
           if (pKeys && pKeys [iKeyPos] && SDL_GetTicks () >= iKeyTime) {
             SDL_KeyboardEvent sKey = {};
             char cKey = pKeys [iKeyPos];
