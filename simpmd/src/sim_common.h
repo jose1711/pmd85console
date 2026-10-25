@@ -173,6 +173,10 @@ bool DSPResolution (int *, int *);
 void KBDInitialize ();
 void KBDShutdown ();
 
+void GPDInitialize ();
+void GPDShutdown ();
+void GPDEventHandler (const SDL_Event *);
+
 void SNDSynchronize ();
 void SNDWriteSpeaker (byte iData);
 void SNDInitialize ();
