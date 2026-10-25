@@ -55,16 +55,20 @@ static const char *pPage = R"HTML(<!doctype html>
 <title>PMD-85</title>
 <style>
 body{background:#111;color:#ddd;font:16px monospace;margin:0;display:flex;flex-direction:column;align-items:center;touch-action:manipulation}
-canvas{width:min(96vw,864px,calc((100vh - 270px) * 1.125));image-rendering:pixelated;background:#000;margin-top:8px}
+canvas{width:min(96vw,864px,calc((100vh - 330px) * 1.125));image-rendering:pixelated;background:#000;margin-top:8px}
 #menu{width:min(96vw,864px);min-height:3em;white-space:pre-wrap;margin-top:6px}
 .sel{background:#ddd;color:#000}
-#pad{display:grid;grid-template-columns:repeat(4,70px);gap:6px;margin:10px 0 24px}
-button{height:56px;font:16px monospace;background:#333;color:#eee;border:1px solid #666;border-radius:8px;user-select:none;-webkit-user-select:none}
+#pad{display:grid;grid-template-columns:repeat(4,70px);gap:6px;margin:10px 0 6px}
+#nums{display:grid;grid-template-columns:repeat(10,40px);gap:6px;margin:0 0 24px}
+@media(max-width:520px){#nums{grid-template-columns:repeat(5,56px)}}
+#nums button{height:40px}
+button{height:46px;font:16px monospace;background:#333;color:#eee;border:1px solid #666;border-radius:8px;user-select:none;-webkit-user-select:none}
 button.on{background:#888}
 </style>
 <canvas id="c" width="288" height="256"></canvas>
 <div id="menu"></div>
 <div id="pad"></div>
+<div id="nums"></div>
 <script>
 const T = new URLSearchParams(location.search).get('t') || '';
 const q = p => p + (p.includes('?') ? '&' : '?') + 't=' + encodeURIComponent(T);
@@ -132,12 +136,13 @@ addEventListener('blur', () => [...down].forEach(release));
 // On-screen gamepad: up and down are the PMD 85 keys E and Y (host key Z).
 const pad = [['E up', 'e'], ['Y down', 'z'], ['Left', 'Left'], ['Right', 'Right'], ['Fast left', 'End'], ['Fast right', 'PageDown'], ['Space', 'Space'], ['Enter', 'Return'],
   ['H', 'h'], ['I', 'i'], ['V', 'v'], ['Shift', 'Left Shift'], ['RCL', 'Keypad +'], ['Esc', 'Escape']];
-for (const [label, key] of pad) {
+const nums = [...'1234567890'].map(n => [n, n]);
+for (const [label, key, box] of [...pad.map(p => [...p, 'pad']), ...nums.map(p => [...p, 'nums'])]) {
   const b = document.createElement('button');
   b.textContent = label;
   b.addEventListener('pointerdown', e => { e.preventDefault(); b.classList.add('on'); press(key); });
   for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(ev, () => { b.classList.remove('on'); release(key); });
-  document.getElementById('pad').appendChild(b);
+  document.getElementById(box).appendChild(b);
 }
 screen(); state();
 </script>
