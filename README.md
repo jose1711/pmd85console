@@ -205,7 +205,23 @@ PMD_SCREENSHOT_MS=<ms>  Screenshot delay, default 3000.
 PMD_KEY_MS=<ms>         Key press/release time of PMD_KEYS, default 150.
 PMD_SNDSTATS=1          Print sound underrun statistics on exit.
 PMD_SCALE=<n>           Window size multiplier (288x256 * n), default 3; window is resizable.
+PMD_RES=<w>x<h>         Video mode of the menu, logo and fullscreen (must be offered by the display).
+PMD_KEYLOG=<file>       Log keyboard and window events, paint duration and queue lag.
+PMD_PAD=<input>=<key>,...  Gamepad keys, see below.
 </pre>
+
+GAMEPAD
+
+A gamepad (USB, or Bluetooth if paired in the OS) works in the menu and in the games, its buttons are
+translated to keyboard keys. Defaults: D-pad and left stick = cursor keys, [A] = Space, [B] and [Start] = Enter,
+[X] = H, [Back] = Escape (game back to menu, in the menu quit). [Y], [LB] and [RB] are not mapped.
+Override with `PMD_PAD`, inputs `up down left right a b x y lb rb back start`, keys are SDL key names:
+
+<pre>
+PMD_PAD='a=Space,b=Return,x=H,y=Z,lb=Left,rb=Right' bin/simpmd
+</pre>
+
+Pads without an SDL controller mapping use a common layout (hat or axes 0/1 = D-pad, buttons 0-7 = a b x y lb rb back start).
 
 Keys after `MGLD 03|` depend on the game, add `_` pauses so the tape load finishes first (BOULDER ~20s, FLAPPY/FRED ~8s).
 Known limits: BOULDER stays in its game menu (second `H` is not accepted by `PMD_KEYS`), MANIC+ does not load
