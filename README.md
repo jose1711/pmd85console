@@ -215,7 +215,7 @@ GAMEPAD
 A gamepad (USB, or Bluetooth if paired in the OS) works in the menu and in the games, its buttons are
 translated to keyboard keys. Defaults follow the instructions of the games: D-pad and left stick up/down = [E] and [Y] (the PMD 85 keys for
 up and down, host key Z), left/right = cursor keys, [A] = Space, [B] and [Start] = Enter, [X] = H, [Y] = I,
-[RB] = keypad plus (RCL), [Back] = Escape (game back to menu, in the menu quit), [LB] is not mapped.
+[LB] = Shift (jump in MANIC+), [RB] = keypad plus (RCL), [Back] = Escape (game back to menu, in the menu quit).
 Override with `PMD_PAD`, inputs `up down left right a b x y lb rb back start`, keys are SDL key names:
 
 <pre>
@@ -225,8 +225,9 @@ PMD_PAD='up=Up,down=Down,a=Space,lb=Left' bin/simpmd
 Pads without an SDL controller mapping use a common layout (hat or axes 0/1 = D-pad, buttons 0-7 = a b x y lb rb back start).
 
 Keys after `MGLD 03|` depend on the game, add `_` pauses so the tape load finishes first (BOULDER ~20s, FLAPPY/FRED ~8s).
-Known limits: BOULDER stays in its game menu (second `H` is not accepted by `PMD_KEYS`), MANIC+ does not load
-(stops at `02/? MANIC+`, with `MGLD 00` as well as `MGLD 03`).
+MANIC+ loads with `MGLD 02` (not 00 or 03), [Enter] starts the game:
+`PMD_AUTOSTART=2 PMD_KEYS='MGLD 02|____________|' bin/simpmd`.
+Known limit: BOULDER stays in its game menu (second `H` is not accepted by `PMD_KEYS`).
 
 GAMES
 

@@ -47,13 +47,13 @@ static const char *apPadName [PAD_COUNT] =
 /// Default keys, taken from the instructions of the games: up and down are [E] and [Y] of the PMD 85
 /// keyboard (the host key Z, not the cursor keys, which are other keys on the PMD 85), left and right are
 /// the cursor keys, [A] is Space (action, start), [B] and [Start] are Enter (menu select), [X] is H (play),
-/// [Y] is I (information), [RB] is the keypad plus (RCL, speed up in FRED), [Back] is Escape (game back to
-/// menu, in the menu quit). [LB] is not mapped.
+/// [Y] is I (information), [LB] is Shift (jump in MANIC+), [RB] is the keypad plus (RCL, speed up in FRED,
+/// melody in MANIC+), [Back] is Escape (game back to menu, in the menu quit).
 static const SDL_Keycode aiPadDefault [PAD_COUNT] =
 {
   SDLK_e, SDLK_z, SDLK_LEFT, SDLK_RIGHT,
   SDLK_SPACE, SDLK_RETURN, SDLK_h, SDLK_i,
-  SDLK_UNKNOWN, SDLK_KP_PLUS, SDLK_ESCAPE, SDLK_RETURN
+  SDLK_LSHIFT, SDLK_KP_PLUS, SDLK_ESCAPE, SDLK_RETURN
 };
 
 /// Stick dead zone, the axis range is -32768 to 32767.
