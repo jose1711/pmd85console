@@ -529,7 +529,10 @@ int main (int iArgC, const char *apArgV [])
               fflush (pLog);
             }
           }
-          if (iKeyPos < (int) sKeys.size () && SDL_GetTicks () >= iKeyTime) {
+          // The first key waits until the simulated processor ran for 2 s, the monitor is not ready sooner and
+          // a slow machine (Raspberry Pi) loses the first keys when the time is only counted in real time.
+          bool bKeysReady = iKeyPos > 0 || bKeyDown || iProcessorClock >= 2 * PMD_CLOCK;
+          if (iKeyPos < (int) sKeys.size () && bKeysReady && SDL_GetTicks () >= iKeyTime) {
             SDL_KeyboardEvent sKey = {};
             char cKey = sKeys [iKeyPos];
             if (cKey == '_') {
