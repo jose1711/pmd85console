@@ -68,6 +68,14 @@ static byte bLastSample;
 /// Maximum number of buffered samples, excess is dropped to bound latency.
 static int iMaxBuffered;
 
+/// DC blocker state, the speaker is a 0/255 square wave and the constant level makes the output whistle.
+static float fDcInput;
+static float fDcOutput;
+/// DC blocker pole, ~8 Hz cutoff at 48 kHz.
+#define PMD_DC_BLOCK            0.999f
+/// Output amplitude, 1.0 is full range.
+#define PMD_VOLUME              0.5f
+
 /// Statistics, printed on shutdown when PMD_SNDSTATS is set.
 static int iStatCallbacks;
 static int iStatUnderruns;
@@ -76,6 +84,13 @@ static long iStatDroppedSamples;
 
 /// Speaker frequency mask.
 #define PMD_SPEAKER_FREQUENCY   (3 << 0)
+/// Speaker 1 kHz tone enable mask.
+#define PMD_SPEAKER_1KHZ        (1 << 0)
+/// Speaker 4 kHz tone enable mask.
+#define PMD_SPEAKER_4KHZ        (1 << 1)
+/// Clock bits toggling the tones, half period is 1024 (1 kHz) and 256 (4 kHz) clocks at 2.048 MHz.
+#define PMD_TONE_1KHZ_HALF      (1 << 10)
+#define PMD_TONE_4KHZ_HALF      (1 << 8)
 /// Speaker enable mask.
 #define PMD_SPEAKER_ENABLE      (1 << 2)
 
@@ -216,8 +231,16 @@ void SNDGenerate (byte iSpeaker)
   // Writing more than the buffer holds is pointless.
   if (iDeltaInSamples > iAudioBufferSize) iDeltaInSamples = iAudioBufferSize;
 
-  // Fill the buffer with the required number of samples.
-  SNDWriteBuffer ((iSpeaker & PMD_SPEAKER_ENABLE) ? 255 : 0, iDeltaInSamples);
+  // Fill the buffer with the required number of samples. The direct bit is the level itself,
+  // the other two bits gate free running 4 kHz and 1 kHz square waves derived from the clock.
+  for (int i = 0 ; i < iDeltaInSamples ; i ++)
+  {
+    unsigned int iClock = iLastClock + (unsigned int) (((int64_t) i * PMD_CLOCK) / iArgSamplingRate);
+    bool bOut = (iSpeaker & PMD_SPEAKER_ENABLE)
+             || ((iSpeaker & PMD_SPEAKER_4KHZ) && (iClock & PMD_TONE_4KHZ_HALF))
+             || ((iSpeaker & PMD_SPEAKER_1KHZ) && (iClock & PMD_TONE_1KHZ_HALF));
+    SNDWriteBuffer (bOut ? 255 : 0, 1);
+  }
 
   // Avoid accumulative error by only advancing the clock by sample value.
   iDeltaInClocks = ((int64_t) iDeltaInSamples * PMD_CLOCK) / iArgSamplingRate;
@@ -268,6 +291,14 @@ void SNDFillBufferCallback (void *pParameters, byte *pBuffer, int iLength)
   // Fill the buffer with the generated sound.
   SNDReadBuffer (pBuffer, iLength);
   CheckZero (pthread_mutex_unlock (&sAudioBufferLock));
+  // Remove the constant level and center the signal to the middle of the unsigned range.
+  for (int i = 0 ; i < iLength ; i ++)
+  {
+    float fInput = (float) pBuffer [i] - 128.0f;
+    fDcOutput = fInput - fDcInput + PMD_DC_BLOCK * fDcOutput;
+    fDcInput = fInput;
+    pBuffer [i] = (byte) (128.0f + PMD_VOLUME * fDcOutput);
+  }
 }
 
 
