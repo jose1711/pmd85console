@@ -274,12 +274,34 @@ static int DSPWindowScale ()
 }
 
 
+/** Screen resolution used by the menu, logo and fullscreen, PMD_RES=<w>x<h> (default desktop mode).
+ *
+ *  A lower resolution makes the slow Raspberry Pi paint faster.
+ *
+ *  @return True if the resolution comes from PMD_RES (real video mode change).
+ */
+bool DSPResolution (int *pWidth, int *pHeight)
+{
+  const char *pRes = getenv ("PMD_RES");
+  if (pRes && sscanf (pRes, "%dx%d", pWidth, pHeight) == 2 && *pWidth > 0 && *pHeight > 0)
+    return (true);
+  SDL_DisplayMode sMode;
+  SDL_CheckZero (SDL_GetCurrentDisplayMode (0, &sMode));
+  *pWidth = sMode.w;
+  *pHeight = sMode.h;
+  return (false);
+}
+
+
 /** Window flags: fullscreen on the console (KMSDRM), resizable elsewhere. */
 static Uint32 DSPWindowFlags ()
 {
   const char *pDriver = SDL_GetCurrentVideoDriver ();
   if (pDriver && strcmp (pDriver, "KMSDRM") == 0)
-    return (SDL_WINDOW_FULLSCREEN_DESKTOP);
+  {
+    int iWidth, iHeight;
+    return (DSPResolution (&iWidth, &iHeight) ? SDL_WINDOW_FULLSCREEN : SDL_WINDOW_FULLSCREEN_DESKTOP);
+  }
   return (SDL_WINDOW_RESIZABLE);
 }
 
@@ -287,9 +309,12 @@ static Uint32 DSPWindowFlags ()
 void DSPInitialize ()
 {
   // Initialize the video resources.
+  int iWindowW = PMD_VRAM_WIDTH * PMD_PIXEL_COUNT * DSPWindowScale ();
+  int iWindowH = PMD_VRAM_HEIGHT * DSPWindowScale ();
+  if (DSPWindowFlags () == SDL_WINDOW_FULLSCREEN)
+    DSPResolution (&iWindowW, &iWindowH);
   SDL_CheckNotNull (pWindow = SDL_CreateWindow ("SimPMD", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                                                PMD_VRAM_WIDTH * PMD_PIXEL_COUNT * DSPWindowScale (), PMD_VRAM_HEIGHT * DSPWindowScale (),
-                                                DSPWindowFlags ()));
+                                                iWindowW, iWindowH, DSPWindowFlags ()));
   SDL_CheckNotNull (pRenderer = SDL_CreateRenderer (pWindow, -1, SDL_RENDERER_ACCELERATED));
   SDL_CheckNotNull (pTexture = SDL_CreateTexture (pRenderer, SDL_PIXELFORMAT_RGB332, SDL_TEXTUREACCESS_STREAMING,
                                                   PMD_VRAM_WIDTH * PMD_PIXEL_COUNT, PMD_VRAM_HEIGHT));
@@ -307,9 +332,8 @@ void DSPInitialize ()
 void DSPMenuInitialize ()
 {
   // Menu and logo are laid out for the display resolution, keep it as logical size.
-  SDL_DisplayMode sMode;
-  SDL_CheckZero (SDL_GetCurrentDisplayMode (0, &sMode));
-  int iDisplayW = sMode.w, iDisplayH = sMode.h;
+  int iDisplayW, iDisplayH;
+  DSPResolution (&iDisplayW, &iDisplayH);
   // Initialize the video resources.
   SDL_CheckNotNull (mWindow = SDL_CreateWindow ("SimPMD - Menu", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
                                                 iDisplayW, iDisplayH, DSPWindowFlags ()));
@@ -327,9 +351,8 @@ void DSPMenuInitialize ()
 void DSPLogoInitialize ()
 {
   // Menu and logo are laid out for the display resolution, keep it as logical size.
-  SDL_DisplayMode sMode;
-  SDL_CheckZero (SDL_GetCurrentDisplayMode (0, &sMode));
-  int iDisplayW = sMode.w, iDisplayH = sMode.h;
+  int iDisplayW, iDisplayH;
+  DSPResolution (&iDisplayW, &iDisplayH);
   // Initialize the video resources.
   SDL_CheckNotNull (lWindow = SDL_CreateWindow ("SimPMD - Logo", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
                                                 iDisplayW, iDisplayH, DSPWindowFlags ()));
