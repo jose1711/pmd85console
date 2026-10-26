@@ -320,6 +320,24 @@ Override with `PMD_PAD`, inputs `up down left right a b x y lb rb back start`, k
 PMD_PAD='up=Up,down=Down,a=Space,lb=Left' bin/simpmd
 </pre>
 
+Bluetooth gamepad (NOT TESTED, only the USB gamepad is): the Pi A+ has no Bluetooth, a USB dongle is needed, `bluez` must be
+installed and running (`apt install bluez`, `systemctl enable --now bluetooth`), the gamepad is paired once and trusted
+so that it reconnects by itself:
+
+<pre>
+bluetoothctl
+  power on
+  agent on
+  scan on
+  pair <MAC>
+  trust <MAC>
+  connect <MAC>
+</pre>
+
+The service user needs the `input` group (pmd85.service has it). Not verified: whether a gamepad connected after the emulator
+started is picked up, the button mapping of controllers unknown to SDL (check with `evtest`), and the load of the USB
+dongle on the weak power supply.
+
 Pads without an SDL controller mapping use a common layout (hat or axes 0/1 = D-pad, buttons 0-7 = a b x y lb rb back start).
 
 Keys after `MGLD 03|` depend on the game, add `_` pauses so the tape load finishes first (BOULDER ~20s, FLAPPY/FRED ~8s).
