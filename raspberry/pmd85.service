@@ -10,11 +10,12 @@ WorkingDirectory=@HOME@/share
 # Optional settings, one VAR=value per line, e.g. PMD_WEB=8085 and PMD_WEB_TOKEN=<secret> (remote control from a browser)
 EnvironmentFile=-@HOME@/pmd85.env
 # Esc in the emulator exits it and halts the machine; a stop/restart of the unit (SIGTERM) does not.
+# Output of the emulator goes to the journal (kept over reboots, see journald-pmd85.conf).
 ExecStartPre=-/bin/rm -f /tmp/pmd85.halt
 # Wait for the monitor (up to PMD_HDMI_WAIT s, default 45); started without one, the emulator restarts when it appears.
 ExecStartPre=+/usr/local/sbin/pmd85-hdmi wait
 TimeoutStartSec=90
-ExecStart=/bin/bash -c 'trap "STOP=1" TERM; @HOME@/pmd85console/simpmd/bin/simpmd > /tmp/pmd85.log 2>&1; rc=$?; [ -z "$STOP" ] && [ $rc -eq 0 ] && touch /tmp/pmd85.halt; exit $rc'
+ExecStart=/bin/bash -c 'trap "STOP=1" TERM; @HOME@/pmd85console/simpmd/bin/simpmd; rc=$?; [ -z "$STOP" ] && [ $rc -eq 0 ] && touch /tmp/pmd85.halt; exit $rc'
 ExecStopPost=+/bin/sh -c 'if [ -f /tmp/pmd85.halt ]; then rm -f /tmp/pmd85.halt; /sbin/halt; fi'
 
 [Install]

@@ -64,6 +64,10 @@ sed "s|@USER@|$USER|g; s|@HOME@|$HOME|g" ~/pmd85console/raspberry/pmd85.service 
 sudo install -m 755 ~/pmd85console/raspberry/pmd85-hdmi /usr/local/sbin/pmd85-hdmi
 sudo install -m 644 ~/pmd85console/raspberry/99-pmd85-hdmi.rules /etc/udev/rules.d/99-pmd85-hdmi.rules
 sudo udevadm control --reload
+sudo install -d -g systemd-journal -m 2755 /var/log/journal
+sudo install -d /etc/systemd/journald.conf.d
+sudo install -m 644 ~/pmd85console/raspberry/journald-pmd85.conf /etc/systemd/journald.conf.d/pmd85.conf
+sudo systemctl restart systemd-journald
 sudo systemctl daemon-reload
 sudo systemctl enable pmd85.service
 systemctl cat pmd85.service | sed -n '1,12p'
