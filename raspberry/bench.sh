@@ -25,7 +25,7 @@ declare -A NS0
 for t in /proc/$PID/task/*; do TH0[$(basename $t)]=$(awk '{print $14"/"$15}' $t/stat); NS0[$(basename $t)]=$(awk '{print $1}' $t/schedstat); done
 sleep "$SECS"
 T1=$(ticks); S1=$(date +%s.%N)
-echo "game=$GAME secs=$SECS freq=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq) throttled=$(vcgencmd get_throttled)"
+echo "game=$GAME secs=$SECS mhz=$(( $(vcgencmd measure_clock arm | cut -d= -f2) / 1000000 )) throttled=$(vcgencmd get_throttled)"
 echo "cpu_total=$(echo "($T1-$T0)/$HZ/($S1-$S0)*100" | bc -l | xargs printf '%.1f')%"
 for t in /proc/$PID/task/*; do
 	id=$(basename $t); [ -n "${TH0[$id]:-}" ] || continue
