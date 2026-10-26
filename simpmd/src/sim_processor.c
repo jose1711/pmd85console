@@ -1180,6 +1180,9 @@ void InstSPHL ()
 
 // IN
 
+/// Output latch of the port C of the system 8255, the games read it back to change single bits (speaker).
+static byte iPortC = 0;
+
 void InstIN ()
 {
   CPU_LOG_INST_B (IN);
@@ -1195,6 +1198,8 @@ void InstIN ()
     case 0xF4:  RegA = KBDReadColumn ();
                 break;
     case 0xF5:  RegA = KBDReadRow ();
+                break;
+    case 0xF6:  RegA = iPortC;
                 break;
     default:    RegA = 0xFF;
                 break;
@@ -1216,7 +1221,21 @@ void InstOUT ()
                 break;
     case 0xF4:  KBDWriteColumn (RegA);
                 break;
-    case 0xF6:  SNDWriteSpeaker (RegA);
+    case 0xF6:  iPortC = RegA;
+                SNDWriteSpeaker (iPortC);
+                break;
+    case 0xF7:  if (RegA & 0x80)
+                {
+                  // Mode set clears the output latches.
+                  iPortC = 0;
+                }
+                else
+                {
+                  // Bit set/reset of one port C bit.
+                  byte iMask = 1 << ((RegA >> 1) & 7);
+                  iPortC = (RegA & 1) ? (iPortC | iMask) : (iPortC & ~iMask);
+                }
+                SNDWriteSpeaker (iPortC);
                 break;
   }
   iProcessorClock += 10;

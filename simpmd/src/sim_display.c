@@ -607,6 +607,10 @@ void DSPRenderMenu (int screen_width, int screen_height, int index)
   SDL_Rect frameRectangle;
   SDL_Rect frameRectangleInner;
 
+  // The display swaps buffers, without a clear the games list drawn earlier shows through in every other frame.
+  SDL_SetRenderDrawColor (mRenderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+  SDL_RenderClear (mRenderer);
+
   for (int i = 0; i < 4; i++) {
     frameRectangle.w = 200;
     frameRectangle.h = 260;
