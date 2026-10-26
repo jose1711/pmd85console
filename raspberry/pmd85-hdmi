@@ -1,0 +1,27 @@
+#!/bin/sh
+# HDMI helper of pmd85.service, installed as /usr/local/sbin/pmd85-hdmi.
+#   wait     (ExecStartPre) wait up to PMD_HDMI_WAIT seconds (default 45) for a connected HDMI output and
+#            remember whether there was one; never fails, so the emulator starts anyway (web remote only).
+#   hotplug  (udev, drm change) restart the service when a monitor appears that was not there at its start,
+#            the emulator cannot pick a display up later.
+connected() {
+	for s in "${PMD_DRM_DIR:-/sys/class/drm}"/card*-HDMI-A-*/status; do
+		[ -r "$s" ] && [ "$(cat "$s")" = connected ] && return 0
+	done
+	return 1
+}
+STATE=${PMD_HDMI_STATE:-/run/pmd85.hdmi}
+case "${1:-}" in
+	wait)
+		n=${PMD_HDMI_WAIT:-45}
+		while ! connected && [ "$n" -gt 0 ]; do sleep 1; n=$((n - 1)); done
+		if connected; then echo connected > $STATE; else echo disconnected > $STATE; fi
+		;;
+	hotplug)
+		if connected && [ "$(cat $STATE 2>/dev/null)" = disconnected ]; then
+			systemctl --no-block restart pmd85.service
+		fi
+		;;
+	*) echo "usage: $0 wait|hotplug" >&2; exit 2 ;;
+esac
+exit 0

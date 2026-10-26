@@ -61,6 +61,9 @@ if [ "$SERVICE" = 1 ]; then
 set -euo pipefail
 sed "s|@USER@|$USER|g; s|@HOME@|$HOME|g" ~/pmd85console/raspberry/pmd85.service \
 	| sudo tee /etc/systemd/system/pmd85.service >/dev/null
+sudo install -m 755 ~/pmd85console/raspberry/pmd85-hdmi /usr/local/sbin/pmd85-hdmi
+sudo install -m 644 ~/pmd85console/raspberry/99-pmd85-hdmi.rules /etc/udev/rules.d/99-pmd85-hdmi.rules
+sudo udevadm control --reload
 sudo systemctl daemon-reload
 sudo systemctl enable pmd85.service
 systemctl cat pmd85.service | sed -n '1,12p'

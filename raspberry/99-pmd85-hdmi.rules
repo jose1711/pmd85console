@@ -1,0 +1,2 @@
+# Restart the emulator when a monitor is connected after it started (see pmd85-hdmi).
+ACTION=="change", SUBSYSTEM=="drm", ENV{HOTPLUG}=="1", RUN+="/usr/local/sbin/pmd85-hdmi hotplug"
