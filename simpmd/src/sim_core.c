@@ -509,6 +509,9 @@ int main (int iArgC, const char *apArgV [])
       fflush (pLog);
     }
     GPDEventHandler (&sEvent);
+    // The window was exposed, resized or restored, paint the screen again even if it did not change.
+    if (sEvent.type == SDL_WINDOWEVENT)
+      DSPInvalidate ();
     switch (sEvent.type)
     {
       case SDL_KEYUP:

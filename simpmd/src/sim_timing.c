@@ -105,7 +105,7 @@ void TIMSleep (int iTicks)
     // Wait that real time delta and then see again how much time expired.
     struct timespec sSleep;
     sSleep.tv_nsec = iSleep % 1000000000;
-    sSleep.tv_sec += iSleep / 1000000000;
+    sSleep.tv_sec = iSleep / 1000000000;
     clock_nanosleep (CLOCK_MONOTONIC, 0, &sSleep, NULL);
   }
 }

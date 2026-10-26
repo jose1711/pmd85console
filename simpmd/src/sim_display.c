@@ -106,10 +106,14 @@ static SDL_Renderer *lRenderer;
 /// Paint timer.
 static SDL_TimerID iPaintTimer;
 
-// Display colors.
-#define DSP_COLOR_BLACK 0b00000000
-#define DSP_COLOR_WHITE 0b11111111
-#define DSP_COLOR_GRAY  0b10010010
+// Display colors (R, G, B). Gray is the former RGB332 value 0b10010010 as expanded by SDL.
+#define DSP_COLOR_BLACK 0x00, 0x00, 0x00
+#define DSP_COLOR_WHITE 0xFF, 0xFF, 0xFF
+#define DSP_COLOR_GRAY  0x92, 0x92, 0xAA
+
+/** Texture pixel format. ABGR8888 is what OpenGL ES uploads without any conversion, RGB332 would be
+ *  converted by SDL in software on every update. */
+#define DSP_TEXTURE_FORMAT      SDL_PIXELFORMAT_ABGR8888
 
 /// Base address of the video memory.
 #define PMD_VRAM_BASE           0xC000
@@ -131,8 +135,21 @@ static SDL_TimerID iPaintTimer;
 #define PMD_BLINK_RATE          512
 
 
+/// Width of the screen in pixels.
+#define PMD_SCREEN_WIDTH        (PMD_VRAM_WIDTH * PMD_PIXEL_COUNT)
+/// Width of the screen line in bytes.
+#define PMD_SCREEN_PITCH        (PMD_SCREEN_WIDTH * sizeof (Uint32))
+
 /// Rendered screen data.
-static byte abScreenData [PMD_VRAM_WIDTH * PMD_PIXEL_COUNT * PMD_VRAM_HEIGHT];
+static Uint32 aiScreenData [PMD_SCREEN_WIDTH * PMD_VRAM_HEIGHT];
+
+/// Pixels of a video memory byte, by color (0 black, 1 white, 2 gray) and the six pixel bits.
+static Uint32 aiPixelTable [3][1 << PMD_PIXEL_COUNT][PMD_PIXEL_COUNT];
+
+/// Visible video memory and blink phase of the last paint, an unchanged screen is not painted again.
+static byte abLastVideo [PMD_VRAM_WIDTH * PMD_VRAM_HEIGHT];
+static bool bLastBlink;
+static bool bLastValid = false;
 
 
 //--------------------------------------------------------------------------
@@ -150,46 +167,51 @@ bool DSPBlinkVisible ()
 }
 
 
+/** Prepare the table translating a video memory byte to its pixels.
+ */
+static void DSPInitializePixelTable ()
+{
+  SDL_PixelFormat *pFormat;
+  SDL_CheckNotNull (pFormat = SDL_AllocFormat (DSP_TEXTURE_FORMAT));
+  const Uint32 aiColors [3] = {SDL_MapRGB (pFormat, DSP_COLOR_BLACK),
+                               SDL_MapRGB (pFormat, DSP_COLOR_WHITE),
+                               SDL_MapRGB (pFormat, DSP_COLOR_GRAY)};
+  for (int iColor = 0 ; iColor < 3 ; iColor ++)
+    for (int iBits = 0 ; iBits < (1 << PMD_PIXEL_COUNT) ; iBits ++)
+      for (int iPixel = 0 ; iPixel < PMD_PIXEL_COUNT ; iPixel ++)
+        aiPixelTable [iColor][iBits][iPixel] = ((iBits >> iPixel) & 1) ? aiColors [iColor] : aiColors [0];
+  SDL_FreeFormat (pFormat);
+}
+
+
 /** Decode the screen content in 1:1 zoom.
  *
- *  Decodes the memory content of the simulated machine using
- *  direct writing to screen texture. Optimized for 1:1 zoom.
+ *  Decodes the memory content of the simulated machine
+ *  using direct writing to screen texture data. Optimized for 1:1 zoom.
+ *
+ *  @arg iFirst First line to decode.
+ *  @arg iCount Number of lines to decode.
  */
-void DSPDecodeScreen ()
+void DSPDecodeScreen (int iFirst, int iCount)
 {
   bool bBlinkVisible = DSPBlinkVisible ();
 
   // Traverse the memory content line by line and byte by byte
   // and paint the screen content as we go.
-  byte *pSource = abMemoryData + PMD_VRAM_BASE;
-  byte *pTarget = abScreenData;
-  for (int iLine = 0 ; iLine < PMD_VRAM_HEIGHT ; iLine ++)
+  byte *pSource = abMemoryData + PMD_VRAM_BASE + iFirst * (PMD_VRAM_WIDTH + PMD_VRAM_BLANK);
+  Uint32 *pTarget = aiScreenData + iFirst * PMD_SCREEN_WIDTH;
+  for (int iLine = 0 ; iLine < iCount ; iLine ++)
   {
     for (int iByte = 0 ; iByte < PMD_VRAM_WIDTH ; iByte ++)
     {
       byte iData = *pSource;
 
       // Determine the drawing color. All pixels in one byte share color.
-      byte iColor = (iData & PMD_PIXEL_GRAY) ? iColor = DSP_COLOR_GRAY
-                                             : iColor = DSP_COLOR_WHITE;
-      if ((iData & PMD_PIXEL_BLINK) && !bBlinkVisible) iColor = DSP_COLOR_BLACK;
+      int iColor = (iData & PMD_PIXEL_GRAY) ? 2 : 1;
+      if ((iData & PMD_PIXEL_BLINK) && !bBlinkVisible) iColor = 0;
 
-      // The inner cycle is unrolled for speed.
-
-#define DSPPaintPixel                                           \
-  *pTarget = (iData & 1) ? iColor : DSP_COLOR_BLACK;            \
-  iData >>= 1;                                                  \
-  pTarget ++;
-
-      DSPPaintPixel
-      DSPPaintPixel
-      DSPPaintPixel
-      DSPPaintPixel
-      DSPPaintPixel
-      DSPPaintPixel
-
-#undef DSPPaintPixel
-
+      memcpy (pTarget, aiPixelTable [iColor][iData & ((1 << PMD_PIXEL_COUNT) - 1)], PMD_PIXEL_COUNT * sizeof (Uint32));
+      pTarget += PMD_PIXEL_COUNT;
       pSource ++;
     }
 
@@ -207,17 +229,48 @@ void DSPDecodeScreen ()
  *  and paints the screen content accordingly, using
  *  direct writing and double buffering.
  */
+/** Force the next paint, e.g. after the window changed.
+ */
+void DSPInvalidate ()
+{
+  bLastValid = false;
+}
+
+
 void DSPPaintHandler ()
 {
   // TODO Consider using HQX ?
 
-  DSPDecodeScreen ();
+  // Painting a 1080p frame costs most of the CPU on a Raspberry Pi, skip frames that did not change
+  // and decode and upload only the lines between the first and the last changed one.
+  bool bBlink = DSPBlinkVisible ();
+  const byte *pVideo = abMemoryData + PMD_VRAM_BASE;
+  int iFirst = 0;
+  int iLast = PMD_VRAM_HEIGHT - 1;
+  if (bLastValid && bBlink == bLastBlink)
+  {
+    iFirst = 0;
+    while (iFirst < PMD_VRAM_HEIGHT && memcmp (pVideo + iFirst * (PMD_VRAM_WIDTH + PMD_VRAM_BLANK), abLastVideo + iFirst * PMD_VRAM_WIDTH, PMD_VRAM_WIDTH) == 0)
+      iFirst ++;
+    if (iFirst == PMD_VRAM_HEIGHT)
+      return;
+    while (memcmp (pVideo + iLast * (PMD_VRAM_WIDTH + PMD_VRAM_BLANK), abLastVideo + iLast * PMD_VRAM_WIDTH, PMD_VRAM_WIDTH) == 0)
+      iLast --;
+  }
+  for (int iLine = iFirst ; iLine <= iLast ; iLine ++)
+    memcpy (abLastVideo + iLine * PMD_VRAM_WIDTH, pVideo + iLine * (PMD_VRAM_WIDTH + PMD_VRAM_BLANK), PMD_VRAM_WIDTH);
+  bLastBlink = bBlink;
+  bLastValid = true;
+
+  int iCount = iLast - iFirst + 1;
+  DSPDecodeScreen (iFirst, iCount);
 
   // TODO Check if render clear is really needed ?
 
+  SDL_Rect sArea = {0, iFirst, PMD_SCREEN_WIDTH, iCount};
   SDL_CheckZero (SDL_SetRenderDrawColor (pRenderer, 0, 0, 0, SDL_ALPHA_OPAQUE));
   SDL_CheckZero (SDL_RenderClear (pRenderer));
-  SDL_CheckZero (SDL_UpdateTexture (pTexture, NULL, &abScreenData, PMD_VRAM_WIDTH * PMD_PIXEL_COUNT));
+  SDL_CheckZero (SDL_UpdateTexture (pTexture, &sArea, aiScreenData + iFirst * PMD_SCREEN_WIDTH, PMD_SCREEN_PITCH));
   SDL_CheckZero (SDL_RenderCopy (pRenderer, pTexture, NULL, NULL));
   SDL_RenderPresent (pRenderer);
 }
@@ -232,12 +285,17 @@ void DSPPaintHandler ()
 void DSPSaveScreenshot (const char *pPath)
 {
   int iWidth, iHeight;
+  DSPDecodeScreen (0, PMD_VRAM_HEIGHT);
+  SDL_CheckZero (SDL_UpdateTexture (pTexture, NULL, aiScreenData, PMD_SCREEN_PITCH));
+  SDL_CheckZero (SDL_RenderCopy (pRenderer, pTexture, NULL, NULL));
   SDL_CheckZero (SDL_GetRendererOutputSize (pRenderer, &iWidth, &iHeight));
   SDL_Surface *pSurface;
   SDL_CheckNotNull (pSurface = SDL_CreateRGBSurfaceWithFormat (0, iWidth, iHeight, 32, SDL_PIXELFORMAT_ARGB8888));
   SDL_CheckZero (SDL_RenderReadPixels (pRenderer, NULL, SDL_PIXELFORMAT_ARGB8888, pSurface->pixels, pSurface->pitch));
   SDL_CheckZero (SDL_SaveBMP (pSurface, pPath));
   SDL_FreeSurface (pSurface);
+  // The whole screen was decoded for this moment only, paint it again.
+  bLastValid = false;
 }
 
 
@@ -264,6 +322,29 @@ Uint32 DSPPaintTimerCallback (Uint32 iInterval, void *pArgs)
 
 //--------------------------------------------------------------------------
 // Initialization and shutdown
+
+
+/** Picture shape of the emulation window, PMD_ASPECT environment variable.
+ *
+ *  stretch (default) fills the whole window, square keeps square pixels (288:256),
+ *  4:3 is the shape of the original PMD-85 monitor. Black bars fill the rest of the window.
+ */
+static void DSPApplyAspect ()
+{
+  const char *pAspect = getenv ("PMD_ASPECT");
+  if (!pAspect || strcmp (pAspect, "stretch") == 0)
+    return;
+  if (strcmp (pAspect, "square") == 0)
+  {
+    SDL_CheckZero (SDL_RenderSetLogicalSize (pRenderer, PMD_SCREEN_WIDTH, PMD_VRAM_HEIGHT));
+  }
+  else if (strcmp (pAspect, "4:3") == 0)
+  {
+    SDL_CheckZero (SDL_RenderSetLogicalSize (pRenderer, 1024, 768));
+  }
+  else
+    fprintf (stderr, "PMD_ASPECT: '%s' is not stretch, square or 4:3\n", pAspect);
+}
 
 
 /** Window size multiplier, PMD_SCALE environment variable (default 3). */
@@ -317,8 +398,10 @@ void DSPInitialize ()
   SDL_CheckNotNull (pWindow = SDL_CreateWindow ("SimPMD", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
                                                 iWindowW, iWindowH, DSPWindowFlags ()));
   SDL_CheckNotNull (pRenderer = SDL_CreateRenderer (pWindow, -1, SDL_RENDERER_ACCELERATED));
-  SDL_CheckNotNull (pTexture = SDL_CreateTexture (pRenderer, SDL_PIXELFORMAT_RGB332, SDL_TEXTUREACCESS_STREAMING,
-                                                  PMD_VRAM_WIDTH * PMD_PIXEL_COUNT, PMD_VRAM_HEIGHT));
+  SDL_CheckNotNull (pTexture = SDL_CreateTexture (pRenderer, DSP_TEXTURE_FORMAT, SDL_TEXTUREACCESS_STREAMING,
+                                                  PMD_SCREEN_WIDTH, PMD_VRAM_HEIGHT));
+  DSPApplyAspect ();
+  DSPInitializePixelTable ();
   //SDL_CheckTrue (SDL_SetHint (SDL_HINT_RENDER_SCALE_QUALITY, 0));
 
   // Clear screen.
@@ -326,6 +409,10 @@ void DSPInitialize ()
   SDL_CheckZero (SDL_RenderClear (pRenderer));
   SDL_RenderPresent (pRenderer);
   // Start the timer that paints the screen repeatedly ...
+  const char *pRefresh = getenv ("PMD_REFRESH");
+  if (pRefresh && atoi (pRefresh) > 0)
+    iArgRefresh = atoi (pRefresh);
+  bLastValid = false;
   iPaintTimer = SDL_AddTimer (iArgRefresh, DSPPaintTimerCallback, NULL);
 }
 
@@ -408,6 +495,8 @@ void DSPRenderText (int screen_width, int screen_height)
   SDL_Color textColor = {255,255,255};// white
 
   textFont = TTF_OpenFont (gameFont[0], FONT_HEIGHT);
+  if (!textFont)
+    return;
 
   // Copyright
   textSurface = TTF_RenderText_Solid (textFont, menuText[6], textColor);
@@ -419,6 +508,8 @@ void DSPRenderText (int screen_width, int screen_height)
   textRectangle.y = 665;
  
   SDL_RenderCopy (mRenderer, textTexture, NULL, &textRectangle);
+  SDL_DestroyTexture (textTexture);
+  SDL_FreeSurface (textSurface);
   // About
   textSurface = TTF_RenderText_Solid (textFont, menuText[0], textColor);
   textTexture = SDL_CreateTextureFromSurface (mRenderer, textSurface);
@@ -429,6 +520,8 @@ void DSPRenderText (int screen_width, int screen_height)
   textRectangle.y = 100;
  
   SDL_RenderCopy (mRenderer, textTexture, NULL, &textRectangle);
+  SDL_DestroyTexture (textTexture);
+  SDL_FreeSurface (textSurface);
   // Help text
   for (int i = 1; i < 6; i++) {
     textSurface = TTF_RenderText_Solid (textFont, menuText[i], textColor);
@@ -440,6 +533,8 @@ void DSPRenderText (int screen_width, int screen_height)
     textRectangle.y = 100 + FONT_HEIGHT + 2 + i * (FONT_HEIGHT + 2);// 2-px v-spacing 
 
     SDL_RenderCopy (mRenderer, textTexture, NULL, &textRectangle);
+    SDL_DestroyTexture (textTexture);
+    SDL_FreeSurface (textSurface);
   }
   // Game text
   for (int i = 0; i < 4; i++) {
@@ -452,10 +547,11 @@ void DSPRenderText (int screen_width, int screen_height)
     textRectangle.y = 310 + FRAME_WIDTH + 15;// 15px text spacing
 
     SDL_RenderCopy (mRenderer, textTexture, NULL, &textRectangle);
+    SDL_DestroyTexture (textTexture);
+    SDL_FreeSurface (textSurface);
   }
 
-  SDL_FreeSurface (textSurface);
-  SDL_DestroyTexture (textTexture);
+  TTF_CloseFont (textFont);
 }
 
 
@@ -467,6 +563,8 @@ void DSPRenderImage (int screen_width, int screen_height)
 
   for (int i = 0; i < 4; i++) {
     imageSurface = SDL_LoadBMP (gameLogo[i]);
+    if (!imageSurface)
+      continue;
     imageTexture = SDL_CreateTextureFromSurface (mRenderer, imageSurface);
  
     imageRectangle.w = IMAGE_WIDTH;
@@ -475,9 +573,9 @@ void DSPRenderImage (int screen_width, int screen_height)
     imageRectangle.y = 320 + 13;
   
     SDL_RenderCopy (mRenderer, imageTexture, NULL, &imageRectangle);
+    SDL_DestroyTexture (imageTexture);
+    SDL_FreeSurface (imageSurface);
   }
-  SDL_FreeSurface (imageSurface);
-  SDL_DestroyTexture (imageTexture);
 }
 
 

@@ -150,6 +150,7 @@ void CPUInitialize ();
 void CPUShutdown ();
 
 void DSPPaintHandler ();
+void DSPInvalidate ();
 void DSPSaveScreenshot (const char *pPath);
 void DSPResizeHandler ();
 void DSPInitialize ();

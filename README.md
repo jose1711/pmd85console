@@ -209,6 +209,9 @@ PMD_SCREENSHOT_MS=<ms>  Screenshot delay, default 3000.
 PMD_KEY_MS=<ms>         Key press/release time of PMD_KEYS, default 150.
 PMD_SNDSTATS=1          Print sound underrun statistics on exit.
 PMD_SCALE=<n>           Window size multiplier (288x256 * n), default 3; window is resizable.
+PMD_ASPECT=<shape>      Picture shape: stretch (default, fills the window), square (square pixels) or 4:3
+                        (original PMD-85 monitor); the rest of the window is black.
+PMD_REFRESH=<ms>        Screen paint period, default 40; only changed lines are decoded and uploaded.
 PMD_RES=<w>x<h>         Video mode of the menu, logo and fullscreen (must be offered by the display).
 PMD_KEYLOG=<file>       Log keyboard and window events, paint duration and queue lag.
 PMD_PAD=<input>=<key>,...  Gamepad keys, see below.
@@ -242,6 +245,9 @@ missing build packages, builds (`PMD_SHARE=$HOME/share/`), installs the tapes an
 `-o` overclocks, takes effect after reboot). The service starts the emulator at boot. Esc in the main menu quits
 the emulator and halts the machine, `systemctl stop/restart pmd85` does not. Settings (`PMD_WEB`, `PMD_WEB_TOKEN`,
 `PMD_RES`, ...) go to `~/pmd85.env`, one `VAR=value` per line, `chmod 600`. Log: `/tmp/pmd85.log`.
+
+`raspberry/bench.sh GAME [secs] [warmup]` (on the Pi) stops the service, runs one game and prints CPU use per thread, memory
+and the throttling state, then starts the service again.
 
 Sound goes straight to ALSA (PipeWire is slow here). The emulator asks for mono 8-bit, which HDMI refuses on `hw:`,
 so use the converting `plughw:` device: `SDL_AUDIODRIVER=alsa` and `AUDIODEV=plughw:0,0` for HDMI, `plughw:1,0` for the
