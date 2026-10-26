@@ -1384,9 +1384,61 @@ void CPUReset ()
 }
 
 
+//--------------------------------------------------------------------------
+// Slowed-down processor
+//
+// The video processor of the PMD 85 steals memory cycles from the processor, a machine cycle that touches the
+// memory is longer than on a plain 8080 (CALL takes 20 clocks instead of 17, LHLD 19 instead of 16, ...) and the
+// second machine cycle waits one more clock when the clock count is odd. The durations are those of GPMD85Emulator
+// (R. Borik, ChipCpu8080P), the games' delay loops and sounds depend on them. PMD_SLOWCPU=0 turns it off.
+
+/// Duration of the instructions in clocks, a taken conditional call or return is handled separately.
+static const byte abSlowDuration [256] =
+{
+   4, 11,  8,  5,  5,  5,  7,  4,  4, 10,  7,  5,  5,  5,  7,  4,
+   4, 11,  8,  5,  5,  5,  7,  4,  4, 10,  7,  5,  5,  5,  7,  4,
+   4, 11, 18,  5,  5,  5,  7,  4,  4, 10, 19,  5,  5,  5,  7,  4,
+   4, 11, 14,  5, 10, 10, 10,  4,  4, 10, 15,  5,  5,  5,  7,  4,
+   5,  5,  5,  5,  5,  5,  7,  5,  5,  5,  5,  5,  5,  5,  7,  5,
+   5,  5,  5,  5,  5,  5,  7,  5,  5,  5,  5,  5,  5,  5,  7,  5,
+   5,  5,  5,  5,  5,  5,  7,  5,  5,  5,  5,  5,  5,  5,  7,  5,
+   8,  8,  8,  8,  8,  8,  5,  8,  5,  5,  5,  5,  5,  5,  7,  5,
+   4,  4,  4,  4,  4,  4,  7,  4,  4,  4,  4,  4,  4,  4,  7,  4,
+   4,  4,  4,  4,  4,  4,  7,  4,  4,  4,  4,  4,  4,  4,  7,  4,
+   4,  4,  4,  4,  4,  4,  7,  4,  4,  4,  4,  4,  4,  4,  7,  4,
+   4,  4,  4,  4,  4,  4,  7,  4,  4,  4,  4,  4,  4,  4,  7,  4,
+   5, 11, 11, 11, 13, 12,  7, 12,  5, 11, 11, 11, 13, 20,  7, 12,
+   5, 11, 11, 10, 13, 12,  7, 12,  5, 11, 11, 11, 13, 20,  7, 12,
+   5, 11, 11, 20, 13, 12,  7, 12,  5,  5, 11,  4, 13, 20,  7, 12,
+   5, 11, 11,  4, 13, 12,  7, 12,  5,  5, 11,  4, 13, 20,  7, 12
+};
+
+/// Slowed-down processor is on.
+static bool bSlowProcessor = true;
+
+/** Duration of the instruction in clocks when the processor is slowed down by the video processor.
+ *
+ *  @arg bCode The opcode.
+ *  @arg iPlain Clocks the plain 8080 needs, tells whether a conditional call or return was taken.
+ *  @arg iStart Clock count at the start of the instruction.
+ */
+static inline int CPUSlowDuration (byte bCode, int iPlain, int iStart)
+{
+  int iDuration = abSlowDuration [bCode];
+  if ((bCode & 0xC7) == 0xC0 && iPlain > 5)         // Rcc taken
+    iDuration = 13;
+  else if ((bCode & 0xC7) == 0xC4 && iPlain > 11)   // Ccc taken
+    iDuration = 20;
+  return (iDuration + (iStart & 1));
+}
+
+
 /// Executes the processor instructions.
 void *CPUThread (void *pArgs)
 {
+  const char *pSlow = getenv ("PMD_SLOWCPU");
+  bSlowProcessor = !pSlow || atoi (pSlow) != 0;
+
   // Synchronize the simulated clock and the actual time.
   SNDSynchronize ();
   TIMSynchronize ();
@@ -1421,8 +1473,11 @@ void *CPUThread (void *pArgs)
 #endif
 
       // How to get your branch predictor to hate you ...
+      int iStart = iProcessorClock;
       byte bCode = MemFetchByte ();
       apInstructionTable [bCode] ();
+      if (__builtin_expect (bSlowProcessor, true))
+        iProcessorClock = iStart + CPUSlowDuration (bCode, iProcessorClock - iStart, iStart);
 
 #if defined(DEBUG_CPU_TRACE_INSTRUCTIONS) | defined(DEBUG_CPU_TRACE_REGISTERS)
 
