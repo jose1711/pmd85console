@@ -1,7 +1,55 @@
+# Random scene per boot (Math.Random is seeded by plymouth), progress bar of blocks, blinking cursor.
+SCENES = 7;          # keep in sync with scenes.count (make-splash.py)
+BLOCKS = 20;
 
-splash_image = Image("pmd85_830_570.png");
+Window.SetBackgroundTopColor(0, 0, 0);
+Window.SetBackgroundBottomColor(0, 0, 0);
+
+scene = Math.Int(Math.Random() * SCENES) + 1;
+if (scene > SCENES) scene = SCENES;
+
+splash_image = Image("scene-" + scene + ".png");
+
+# scale down only, small screens
+scale = Window.GetHeight() * 0.8 / splash_image.GetHeight();
+if (scale > 1) scale = 1;
+if (scale < 1) splash_image = splash_image.Scale(splash_image.GetWidth() * scale, splash_image.GetHeight() * scale);
 
 splash_sprite = Sprite(splash_image);
+splash_sprite.SetX(Window.GetWidth() / 2 - splash_image.GetWidth() / 2);
+splash_y = Window.GetHeight() * 0.06;
+splash_sprite.SetY(splash_y);
 
-splash_sprite.SetX(Window.GetWidth()/2 - splash_image.GetWidth()/2);
-splash_sprite.SetY(Window.GetHeight()/2 - splash_image.GetHeight()/2);
+block_image = Image("block.png");
+bw = block_image.GetWidth();
+bh = block_image.GetHeight();
+step = bw + 6;
+bar_x = Window.GetWidth() / 2 - (BLOCKS * step - 6) / 2;
+bar_y = splash_y + splash_image.GetHeight() + Window.GetHeight() * 0.04;
+if (bar_y + bh > Window.GetHeight() - 4) bar_y = Window.GetHeight() - bh - 4;
+
+for (i = 0; i < BLOCKS; i++) {
+    block[i] = Sprite(block_image);
+    block[i].SetX(bar_x + i * step);
+    block[i].SetY(bar_y);
+    block[i].SetOpacity(0.15);
+}
+
+progress = 0;
+tick = 0;
+
+fun refresh_callback () {
+    tick++;
+    filled = Math.Int(progress * BLOCKS);
+    for (i = 0; i < BLOCKS; i++) {
+        if (i < filled) block[i].SetOpacity(1);
+        else if (i == filled && Math.Int(tick / 15) % 2 == 0) block[i].SetOpacity(1);   # blinking cursor
+        else block[i].SetOpacity(0.15);
+    }
+}
+Plymouth.SetRefreshFunction(refresh_callback);
+
+fun boot_progress_callback (time, prog) {
+    progress = prog;
+}
+Plymouth.SetBootProgressFunction(boot_progress_callback);
