@@ -44,6 +44,44 @@ HARDWARE
 4x <a target="_blank" href="https://www.ges.cz/cz/esst-m2-2x6-GES06814889.html">Screw</a> (M2.2x6mm)
 </pre>
 
+INSTALLATION (Raspberry Pi Imager, Raspberry Pi OS Trixie Lite 32-bit, tested on Pi A+)
+
+<pre>
+1. Raspberry Pi Imager: device Raspberry Pi Zero/1 (the A+ is ARMv6), OS "Raspberry Pi OS (other)" ->
+   "Raspberry Pi OS Lite (32-bit)", then in the customisation dialog set:
+     hostname        pmd85
+     user + password pmd85 / <password>
+     wireless LAN    SSID, password, country (skip when using Ethernet)
+     services        enable SSH (password or public key)
+   Write the card, put it into the Pi (monitor connected and switched on), power on, wait for the first boot
+   (several minutes on the A+, it resizes the card and applies the settings).
+
+2. From the PC (the Pi needs the network, sudo without password is needed by deploy.sh):
+     ssh pmd85@pmd85.local 'echo "pmd85 ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/010_pmd85'
+     raspberry/deploy.sh pmd85@pmd85.local
+   It builds on the Pi (about 10 minutes), installs ROMs, tapes and `games.lst` to ~/share and installs and
+   starts pmd85.service, the HDMI wait/hotplug script and the persistent journal (see DEPLOY AND SERVICE).
+
+3. Faster boot (cloud-init, swap resize and network wait take about 2 minutes on the A+):
+     scp raspberry/fastboot pmd85@pmd85.local: ; ssh pmd85@pmd85.local 'sudo ./fastboot apply'
+   `fastboot revert` restores the originals. Wi-Fi profiles are not recreated, only DHCP Ethernet.
+
+4. Splash screen (random scene on every boot, see PLYMOUTH below), on the Pi:
+     sudo apt install plymouth plymouth-themes
+     sudo cp -r theme-pmd85 /usr/share/plymouth/themes/        # copy the directory to the Pi first
+     sudo plymouth-set-default-theme -R theme-pmd85            # rebuilds the initramfs, takes minutes
+   /boot/firmware/cmdline.txt needs `quiet splash plymouth.ignore-serial-consoles` (the Imager image has them).
+
+5. Settings (optional), ~/pmd85.env, `chmod 600`, one VAR=value per line, then `sudo systemctl restart pmd85`:
+     PMD_WEB=8085  PMD_WEB_TOKEN=<secret>     remote control from a browser
+     SDL_AUDIODRIVER=alsa  AUDIODEV=plughw:0,0   HDMI sound (plughw:1,0 is the headphone jack)
+
+6. Check: `systemctl status pmd85`, `journalctl -b -u pmd85` (log of the emulator, kept over reboots),
+   `vcgencmd get_throttled` (0x0 is OK; 0x50005 means a weak power supply, expect crackling and slowdowns).
+</pre>
+
+Old manual installation notes (Raspbian Stretch, 2018):
+
 RPI
 
 <pre>
@@ -250,7 +288,7 @@ missing build packages, builds (`PMD_SHARE=$HOME/share/`), installs the tapes an
 (existing files are kept, `games.lst` is replaced) and installs and starts `pmd85.service` (`-n` skips the service,
 `-o` overclocks, takes effect after reboot). The service starts the emulator at boot. Esc in the main menu quits
 the emulator and halts the machine, `systemctl stop/restart pmd85` does not. Settings (`PMD_WEB`, `PMD_WEB_TOKEN`,
-`PMD_RES`, ...) go to `~/pmd85.env`, one `VAR=value` per line, `chmod 600`. Log: `/tmp/pmd85.log`.
+`PMD_RES`, ...) go to `~/pmd85.env`, one `VAR=value` per line, `chmod 600`. Log: `journalctl -b -u pmd85` (persistent journal, `journald-pmd85.conf`).
 
 `raspberry/bench.sh GAME [secs] [warmup]` (on the Pi) stops the service, runs one game and prints CPU use per thread, memory
 and the throttling state, then starts the service again.
