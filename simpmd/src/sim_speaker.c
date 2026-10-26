@@ -73,6 +73,8 @@ static float fDcInput;
 static float fDcOutput;
 /// DC blocker pole, ~8 Hz cutoff at 48 kHz.
 #define PMD_DC_BLOCK            0.999f
+/// Filter output below this level is silence, it is flushed to zero.
+#define PMD_DC_FLOOR            0.001f
 /// Output amplitude, 1.0 is full range.
 #define PMD_VOLUME              0.5f
 
@@ -81,6 +83,11 @@ static int iStatCallbacks;
 static int iStatUnderruns;
 static long iStatUnderrunSamples;
 static long iStatDroppedSamples;
+static long iStatOverwrittenSamples;
+/// Statistics level, 2 logs the events with their time (at most one line per 100 ms).
+static int iStatLevel;
+static Uint32 iLogLast;
+static int iLogSuppressed;
 
 /// Speaker frequency mask.
 #define PMD_SPEAKER_FREQUENCY   (3 << 0)
@@ -97,6 +104,19 @@ static long iStatDroppedSamples;
 
 //--------------------------------------------------------------------------
 // Buffer operations
+
+/** Logs a buffer event when PMD_SNDSTATS=2, events within 100 ms of the last line are only counted.
+ */
+static void SNDLogEvent (const char *pEvent, long iSamples)
+{
+  if (iStatLevel < 2) return;
+  Uint32 iNow = SDL_GetTicks ();
+  if (iLogLast != 0 && iNow - iLogLast < 100) { iLogSuppressed ++; return; }
+  fprintf (stderr, "SND %u ms: %s %ld samples (+%d events within 100 ms)\n", iNow, pEvent, iSamples, iLogSuppressed);
+  iLogLast = iNow;
+  iLogSuppressed = 0;
+}
+
 
 /// Increments pointer in the cyclic audio buffer.
 byte *SNDIncrementInBuffer (byte *pPosition)
@@ -132,6 +152,7 @@ void SNDTrimBuffer ()
   if (iExcess > 0)
   {
     iStatDroppedSamples += iExcess;
+    SNDLogEvent ("dropped (buffer over latency limit)", iExcess);
     pAudioBufferHead += iExcess;
     if (pAudioBufferHead >= pAudioBuffer + iAudioBufferSize)
     {
@@ -170,6 +191,7 @@ void SNDReadBuffer (byte *pBuffer, int iCount)
   {
     iStatUnderruns ++;
     iStatUnderrunSamples += iMissing;
+    SNDLogEvent ("underrun", iMissing);
   }
 }
 
@@ -190,6 +212,8 @@ void SNDWriteBuffer (byte bSample, int iCount)
     if (pAudioBufferTail == pAudioBufferHead)
     {
       pAudioBufferHead = SNDIncrementInBuffer (pAudioBufferHead);
+      iStatOverwrittenSamples ++;
+      SNDLogEvent ("buffer full, oldest sample overwritten", 1);
     }
   }
 }
@@ -296,6 +320,9 @@ void SNDFillBufferCallback (void *pParameters, byte *pBuffer, int iLength)
   {
     float fInput = (float) pBuffer [i] - 128.0f;
     fDcOutput = fInput - fDcInput + PMD_DC_BLOCK * fDcOutput;
+    // Silence decays the filter state to denormals, which the VFP of the Raspberry Pi 1 handles by a
+    // trap to the kernel on every sample (a quarter of the core).
+    if (fDcOutput > -PMD_DC_FLOOR && fDcOutput < PMD_DC_FLOOR) fDcOutput = 0.0f;
     fDcInput = fInput;
     pBuffer [i] = (byte) (128.0f + PMD_VOLUME * fDcOutput);
   }
@@ -308,6 +335,16 @@ void SNDFillBufferCallback (void *pParameters, byte *pBuffer, int iLength)
 
 void SNDInitialize ()
 {
+  const char *pStats = getenv ("PMD_SNDSTATS");
+  iStatLevel = pStats ? atoi (pStats) : 0;
+  // Tuning, PMD_SNDRATE in Hz and PMD_SNDBUF (hardware buffer) in milliseconds.
+  const char *pRate = getenv ("PMD_SNDRATE");
+  if (pRate && atoi (pRate) > 0)
+    iArgSamplingRate = atoi (pRate);
+  const char *pBuffer = getenv ("PMD_SNDBUF");
+  if (pBuffer && atoi (pBuffer) > 0)
+    iArgHardwareBuffer = atoi (pBuffer);
+
   // Initialize the cyclic audio buffer ...
   iAudioBufferSize = (iArgSoftwareBuffer * iArgSamplingRate) / 1000;
   pAudioBuffer = new byte [iAudioBufferSize];
@@ -348,10 +385,10 @@ void SNDShutdown ()
   // Close the audio device ...
   SDL_CloseAudio ();
 
-  if (getenv ("PMD_SNDSTATS"))
+  if (iStatLevel > 0)
   {
-    printf ("SND stats: callbacks %d, underruns %d (%ld samples), dropped %ld samples\n",
-            iStatCallbacks, iStatUnderruns, iStatUnderrunSamples, iStatDroppedSamples);
+    printf ("SND stats: callbacks %d, underruns %d (%ld samples), dropped %ld samples, overwritten %ld samples\n",
+            iStatCallbacks, iStatUnderruns, iStatUnderrunSamples, iStatDroppedSamples, iStatOverwrittenSamples);
   }
 
   // Free the audio buffer mutex ...

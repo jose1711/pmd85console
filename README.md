@@ -207,7 +207,9 @@ PMD_WEB=<port>          Remote control from a browser, see below. PMD_WEB_TOKEN=
 PMD_SCREENSHOT=<file>   Save screen as BMP after PMD_SCREENSHOT_MS and exit.
 PMD_SCREENSHOT_MS=<ms>  Screenshot delay, default 3000.
 PMD_KEY_MS=<ms>         Key press/release time of PMD_KEYS, default 150.
-PMD_SNDSTATS=1          Print sound underrun statistics on exit.
+PMD_SNDSTATS=1          Print sound underrun statistics on exit; 2 also logs each underrun/drop with its time to stderr.
+PMD_SNDRATE=<Hz>        Sound sampling rate, default 48000.
+PMD_SNDBUF=<ms>         Sound hardware buffer, default 50 (rounded up to a power of two of samples).
 PMD_SCALE=<n>           Window size multiplier (288x256 * n), default 3; window is resizable.
 PMD_ASPECT=<shape>      Picture shape: stretch (default, fills the window), square (square pixels) or 4:3
                         (original PMD-85 monitor); the rest of the window is black.
