@@ -225,7 +225,7 @@ make PMD_BUILD=RELEASE PMD_SHARE=/usr/share/simpmd/
 RUN
 
 <pre>
-bin/simpmd                  # logo -> menu: select game [<-][->], start [Enter] (the load command is typed automatically), quit [Esc]
+bin/simpmd                  # logo -> menu: select game [<-][->], start [Enter] (the load command is typed automatically), quit [hold Esc]
 
 # Start game directly (skip logo and menu), index: 0 FLAPPY, 1 BOULDER, 2 MANIC+, 3 FRED
 PMD_AUTOSTART=0 bin/simpmd
@@ -249,6 +249,8 @@ PMD_WEB=<port>          Remote control from a browser, see below. PMD_WEB_TOKEN=
 PMD_SCREENSHOT=<file>   Save screen as BMP after PMD_SCREENSHOT_MS and exit.
 PMD_SCREENSHOT_MS=<ms>  Screenshot delay, default 3000.
 PMD_KEY_MS=<ms>         Key press/release time of PMD_KEYS, default 150.
+PMD_ESC_MS=<ms>         Hold time of Esc (back from a game or the list, quit in the main menu), default 800, 0 = at once.
+PMD_BEEPSLOW=1          The monitor beep delay of the games (note length, e.g. INVADERS hits) as in the PMD 85-2/2A ROM.
 PMD_SNDSTATS=1          Print sound underrun statistics on exit; 2 also logs each underrun/drop with its time to stderr.
 PMD_SNDRATE=<Hz>        Sound sampling rate, default 48000.
 PMD_SNDBUF=<ms>         Sound hardware buffer, default 50 (rounded up to a power of two of samples).
@@ -268,7 +270,7 @@ in the share directory (one `NAME;MODEL;NOTE` line per tape, `NAME` is the tape 
 PMD 85-1 or PMD 85-2 ROM `M1` or `M2-Patched-Tape`, `NOTE` is shown in the list, the commands to type).
 The emulator types them itself after the start of a game: `MGLD 00` and, for `MGLD 00, JUMP 2000`, the `JUMP`
 once the tape stops loading, so selecting a game is enough. `PMD_AUTOLOAD=0` turns it off (type the commands by hand).
-[Up]/[Down] or [E]/[Y] select, [Left]/[Right] move by a page, [Enter] starts, [Esc] goes back to the menu.
+[Up]/[Down] or [E]/[Y] select, [Left]/[Right] move by a page, [Enter] starts, [Esc] (hold it ~1 s) goes back to the menu.
 `simpmd/data/games.lst` lists the tapes of `simpmd/data/tapes` that work, according to the table in `simpmd/README`.
 To add a game, copy its tape to the share directory and add a line to `games.lst`.
 An optional fourth column `REMAP` changes keys for one game (`Left=Left Shift,Right=V`, SDL key names, also

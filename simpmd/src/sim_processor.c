@@ -1185,7 +1185,11 @@ static byte iPortC = 0;
 
 /// Test of the sound timing (PMD_BEEPSLOW=1): the delay loop of the model 1 monitor beep routine (DCR E, JNZ at 0x88B5)
 /// takes 15 clocks per round, the model 2/2A one 87 (4x XTHL more), so notes of the games sound ~5.5 times longer there.
+/// The loop is slowed down only when called by the beep routine (return address 0x88B1) with a note table in RAM
+/// (a game), the other delays of the monitor and its key click (table in ROM) keep their timing, otherwise the
+/// typing of the autoload commands would take forever.
 #define PMD_BEEP_LOOP           0x88B5
+#define PMD_BEEP_CALLER         0x88B1
 #define PMD_BEEP_EXTRA          72
 static word iBeepLoop = getenv ("PMD_BEEPSLOW") && atoi (getenv ("PMD_BEEPSLOW")) ? PMD_BEEP_LOOP : 0;
 
@@ -1484,7 +1488,9 @@ void *CPUThread (void *pArgs)
       apInstructionTable [bCode] ();
       if (__builtin_expect (bSlowProcessor, true))
         iProcessorClock = iStart + CPUSlowDuration (bCode, iProcessorClock - iStart, iStart);
-      if (__builtin_expect (iBeepLoop != 0, false) && RegPC == iBeepLoop)
+      if (__builtin_expect (iBeepLoop != 0, false) && RegPC == iBeepLoop
+          && (MemReadByte (RegSP) | (MemReadByte (RegSP + 1) << 8)) == PMD_BEEP_CALLER
+          && RegHL < 0x8000)
         iProcessorClock += PMD_BEEP_EXTRA;
 
 #if defined(DEBUG_CPU_TRACE_INSTRUCTIONS) | defined(DEBUG_CPU_TRACE_REGISTERS)

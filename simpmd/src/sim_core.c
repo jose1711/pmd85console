@@ -371,6 +371,42 @@ static void MenuRender ()
 }
 
 
+/// Esc leaves a game, the games list or the program only when it is held for PMD_ESC_MS (default 800, 0 = at once),
+/// a short press by mistake does nothing.
+static int iEscHoldMs = 800;
+static Uint32 iEscEvent = (Uint32) -1;
+static int iEscSerial = 0;
+static bool bEscDown = false;
+
+static Uint32 EscTimerCallback (Uint32 iInterval, void *pSerial)
+{
+  SDL_Event sEvent;
+  SDL_zero (sEvent);
+  sEvent.type = iEscEvent;
+  sEvent.user.code = (Sint32) (intptr_t) pSerial;
+  SDL_PushEvent (&sEvent);
+  return (0);
+}
+
+static void EmulationShutdown ();
+
+/// What Esc does: back from a game to the menu, from the games list to the main menu, quit in the main menu.
+static void EscapeAction ()
+{
+  if (!inMenu) {
+    EmulationShutdown ();
+    DSPMenuInitialize ();
+    MenuRender ();
+    inMenu = true;
+  } else if (inList) {
+    inList = false;
+    MenuRender ();
+  } else {
+    SIMRequestShutdown ();
+  }
+}
+
+
 /// Initialize emulation
 static void EmulationInitialize (const std::string &sTape, int iModel)
 {
@@ -489,6 +525,10 @@ int main (int iArgC, const char *apArgV [])
     DSPMenuInitialize ();
     MenuRender ();
   }
+  const char *pEscMs = getenv ("PMD_ESC_MS");
+  if (pEscMs && atoi (pEscMs) >= 0)
+    iEscHoldMs = atoi (pEscMs);
+  iEscEvent = SDL_RegisterEvents (1);
   // Event loop
   SDL_Event sEvent;
   // Debug: PMD_KEYLOG=<file> logs keyboard and window events.
@@ -512,6 +552,35 @@ int main (int iArgC, const char *apArgV [])
     // The window was exposed, resized or restored, paint the screen again even if it did not change.
     if (sEvent.type == SDL_WINDOWEVENT)
       DSPInvalidate ();
+    if (iEscEvent != (Uint32) -1 && sEvent.type == iEscEvent)
+    {
+      // The hold time of Esc has passed, unless the key was released meanwhile.
+      if (bEscDown && sEvent.user.code == iEscSerial)
+      {
+        bEscDown = false;
+        iEscSerial ++;
+        EscapeAction ();
+      }
+      continue;
+    }
+    if ((sEvent.type == SDL_KEYDOWN || sEvent.type == SDL_KEYUP) && sEvent.key.keysym.sym == SDLK_ESCAPE && iEscHoldMs > 0)
+    {
+      if (sEvent.type == SDL_KEYDOWN)
+      {
+        if (!sEvent.key.repeat)
+        {
+          // A new press restarts the hold, even when the release of the previous one was lost.
+          bEscDown = true;
+          SDL_AddTimer (iEscHoldMs, EscTimerCallback, (void *) (intptr_t) ++iEscSerial);
+        }
+      }
+      else
+      {
+        bEscDown = false;
+        iEscSerial ++;
+      }
+      continue;
+    }
     switch (sEvent.type)
     {
       case SDL_KEYUP:
