@@ -374,7 +374,8 @@ static void MenuRender ()
 /// Esc leaves a game, the games list or the program only when it is held for PMD_ESC_MS (default 800, 0 = at once),
 /// a short press by mistake does nothing.
 static int iEscHoldMs = 800;
-static Uint32 iEscEvent = (Uint32) -1;
+/// Own event type, SDL_USEREVENT is the paint timer of the display.
+static const Uint32 iEscEvent = SDL_USEREVENT + 1;
 static int iEscSerial = 0;
 static bool bEscDown = false;
 
@@ -528,7 +529,6 @@ int main (int iArgC, const char *apArgV [])
   const char *pEscMs = getenv ("PMD_ESC_MS");
   if (pEscMs && atoi (pEscMs) >= 0)
     iEscHoldMs = atoi (pEscMs);
-  iEscEvent = SDL_RegisterEvents (1);
   // Event loop
   SDL_Event sEvent;
   // Debug: PMD_KEYLOG=<file> logs keyboard and window events.
@@ -552,7 +552,7 @@ int main (int iArgC, const char *apArgV [])
     // The window was exposed, resized or restored, paint the screen again even if it did not change.
     if (sEvent.type == SDL_WINDOWEVENT)
       DSPInvalidate ();
-    if (iEscEvent != (Uint32) -1 && sEvent.type == iEscEvent)
+    if (sEvent.type == iEscEvent)
     {
       // The hold time of Esc has passed, unless the key was released meanwhile.
       if (bEscDown && sEvent.user.code == iEscSerial)
