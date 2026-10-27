@@ -1443,6 +1443,9 @@ static inline int CPUSlowDuration (byte bCode, int iPlain, int iStart)
 }
 
 
+/// Simulated clock when TIMAdvance has to synchronize next (sim_timing.c), checked inline to save a call per instruction.
+extern int iTimingDue;
+
 /// Executes the processor instructions.
 void *CPUThread (void *pArgs)
 {
@@ -1501,7 +1504,8 @@ void *CPUThread (void *pArgs)
 #endif
 
       // Advance real time to match simulated time.
-      TIMAdvance ();
+      if (__builtin_expect ((int) (iProcessorClock - iTimingDue) >= 0, false))
+        TIMAdvance ();
     //}
 
     // We were asked to suspend the simulation temporarily.

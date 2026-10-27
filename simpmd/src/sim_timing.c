@@ -37,6 +37,8 @@ static int iArgPrecision = PMD_CLOCK / 1000;
 static struct timespec sLastTime;
 /// Last synchronized value of simulated clock
 static int iLastClock;
+/// Simulated clock of the next synchronization, the processor loop checks it inline (see TIMAdvance).
+int iTimingDue = 0;
 
 
 //--------------------------------------------------------------------------
@@ -47,6 +49,7 @@ void TIMSynchronize ()
 {
   clock_gettime (CLOCK_MONOTONIC, &sLastTime);
   iLastClock = iProcessorClock;
+  iTimingDue = iLastClock + iArgPrecision;
 }
 
 
@@ -73,6 +76,7 @@ void TIMAdvance ()
 
     // Update the last simulated clock.
     iLastClock = iProcessorClock;
+    iTimingDue = iLastClock + iArgPrecision;
   }
 }
 

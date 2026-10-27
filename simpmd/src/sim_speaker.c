@@ -64,8 +64,8 @@ static int iLastClock;
 /// Last written value of simulated speaker.
 static byte iLastSpeaker;
 /// Position inside the sample being generated and the part of it the speaker was high (units of 1/PMD_CLOCK sample).
-static int64_t iSamplePhase = 0;
-static int64_t iSampleLevel = 0;
+static uint32_t iSamplePhase = 0;
+static uint32_t iSampleLevel = 0;
 /// Last sample played, repeated on buffer underrun.
 static byte bLastSample;
 /// Maximum number of buffered samples, excess is dropped to bound latency.
@@ -251,30 +251,39 @@ void SNDGenerate (byte iSpeaker)
   // INVADERS is made of pulses shorter than one sample), so every sample is the average level over its span
   // instead of the level at one instant (point sampling loses short pulses and aliases the rest).
   // Time is counted in units of 1/PMD_CLOCK sample, a sample is PMD_CLOCK units long.
+  // No division in the loop (the Raspberry Pi 1 has no divide instruction, a 64 bit division is a library call).
   int iDeltaInClocks = iProcessorClock - iLastClock;
   if (iDeltaInClocks <= 0) return;
-  int64_t iUnits = (int64_t) iDeltaInClocks * iArgSamplingRate;
+  uint64_t iUnits = (uint64_t) iDeltaInClocks * iArgSamplingRate;
 
   // Writing more than the buffer holds is pointless.
-  if (iUnits > (int64_t) iAudioBufferSize * PMD_CLOCK) iUnits = (int64_t) iAudioBufferSize * PMD_CLOCK;
+  uint64_t iMaxUnits = (uint64_t) iAudioBufferSize * PMD_CLOCK;
+  if (iUnits > iMaxUnits) iUnits = iMaxUnits;
 
-  int64_t iDone = 0;
+  bool bDirect = (iSpeaker & PMD_SPEAKER_ENABLE) != 0;
+  bool bTones = !bDirect && (iSpeaker & PMD_SPEAKER_FREQUENCY) != 0;
+  uint64_t iDone = 0;
   while (iDone < iUnits)
   {
-    int64_t iStep = PMD_CLOCK - iSamplePhase;
-    if (iStep > iUnits - iDone) iStep = iUnits - iDone;
+    uint32_t iStep = PMD_CLOCK - iSamplePhase;
+    uint64_t iLeft = iUnits - iDone;
+    if (iStep > iLeft) iStep = (uint32_t) iLeft;
     // The direct bit is the level itself, the other two bits gate free running 4 kHz and 1 kHz square waves
     // derived from the clock (those are sampled at the start of the step, they are slow).
-    unsigned int iClock = iLastClock + (unsigned int) (iDone / iArgSamplingRate);
-    bool bOut = (iSpeaker & PMD_SPEAKER_ENABLE)
-             || ((iSpeaker & PMD_SPEAKER_4KHZ) && (iClock & PMD_TONE_4KHZ_HALF))
-             || ((iSpeaker & PMD_SPEAKER_1KHZ) && (iClock & PMD_TONE_1KHZ_HALF));
+    bool bOut = bDirect;
+    if (bTones)
+    {
+      unsigned int iClock = iLastClock + (unsigned int) (iDone / iArgSamplingRate);
+      bOut = ((iSpeaker & PMD_SPEAKER_4KHZ) && (iClock & PMD_TONE_4KHZ_HALF))
+          || ((iSpeaker & PMD_SPEAKER_1KHZ) && (iClock & PMD_TONE_1KHZ_HALF));
+    }
     if (bOut) iSampleLevel += iStep;
     iSamplePhase += iStep;
     iDone += iStep;
     if (iSamplePhase >= PMD_CLOCK)
     {
-      SNDWriteBuffer ((byte) ((iSampleLevel * 255 + PMD_CLOCK / 2) / PMD_CLOCK), 1);
+      // The level is at most PMD_CLOCK, 32 bits are enough and the division by a constant is a multiplication.
+      SNDWriteBuffer ((byte) ((iSampleLevel * 255u + PMD_CLOCK / 2) / PMD_CLOCK), 1);
       iSamplePhase = 0;
       iSampleLevel = 0;
     }
