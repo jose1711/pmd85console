@@ -1183,6 +1183,12 @@ void InstSPHL ()
 /// Output latch of the port C of the system 8255, the games read it back to change single bits (speaker).
 static byte iPortC = 0;
 
+/// Test of the sound timing (PMD_BEEPSLOW=1): the delay loop of the model 1 monitor beep routine (DCR E, JNZ at 0x88B5)
+/// takes 15 clocks per round, the model 2/2A one 87 (4x XTHL more), so notes of the games sound ~5.5 times longer there.
+#define PMD_BEEP_LOOP           0x88B5
+#define PMD_BEEP_EXTRA          72
+static word iBeepLoop = getenv ("PMD_BEEPSLOW") && atoi (getenv ("PMD_BEEPSLOW")) ? PMD_BEEP_LOOP : 0;
+
 void InstIN ()
 {
   CPU_LOG_INST_B (IN);
@@ -1478,6 +1484,8 @@ void *CPUThread (void *pArgs)
       apInstructionTable [bCode] ();
       if (__builtin_expect (bSlowProcessor, true))
         iProcessorClock = iStart + CPUSlowDuration (bCode, iProcessorClock - iStart, iStart);
+      if (__builtin_expect (iBeepLoop != 0, false) && RegPC == iBeepLoop)
+        iProcessorClock += PMD_BEEP_EXTRA;
 
 #if defined(DEBUG_CPU_TRACE_INSTRUCTIONS) | defined(DEBUG_CPU_TRACE_REGISTERS)
 
