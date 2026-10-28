@@ -72,9 +72,30 @@ static volatile byte iKeyColumn;
 
 /** Read from keyboard row register.
  */
+/// Reads of the keyboard row by the simulated processor, and those that returned a pressed key (for typing PMD_KEYS).
+static volatile uint32 iScanCount;
+static volatile uint32 iSeenCount;
+
 byte KBDReadRow ()
 {
-  return (iKeyShifts & abKeyMatrix [iKeyColumn]);
+  byte iRow = iKeyShifts & abKeyMatrix [iKeyColumn];
+  iScanCount ++;
+  // The bits 0-4 are the keys of the column, 5 and 6 [Shift] and [Stop]; all set is nothing pressed.
+  if ((iRow & 0x7F) != 0x7F)
+    iSeenCount ++;
+  return (iRow);
+}
+
+/// Number of keyboard row reads so far, it grows only while the program scans the keyboard (waits for a key).
+uint32 KBDScanCount ()
+{
+  return (iScanCount);
+}
+
+/// Number of keyboard row reads that saw a pressed key.
+uint32 KBDSeenCount ()
+{
+  return (iSeenCount);
 }
 
 

@@ -111,6 +111,10 @@ apt-get install libgl1-mesa-dri
 raspi-config > Advanced > GPU mem > 128
 raspi-config > Advanced > Overclocking > Medium
 
+Overclocking helps: on the Raspberry Pi A+ the emulation and the sound (the speaker samples are generated in real time,
+a late emulation thread is a dropout) need the headroom. The Medium preset is 900 MHz (`arm_freq=900`, `over_voltage=2`
+in `/boot/firmware/config.txt`); a good power supply is required, undervoltage throttles the clock back.
+
 dphys-swapfile swapoff
 dphys-swapfile uninstall
 
@@ -243,7 +247,8 @@ PMD_AUTOSTART=<0-3>     Skip logo and menu, start selected game.
 PMD_GAME=<name>         Skip logo and menu, start a game of games.lst (any of the list).
 PMD_KEYS=<text>         Type text on the PMD-85 keyboard, '|' is [Enter], '_' is 2s pause, '<' '>' are the cursor
                         keys left and right, '^' is [Shift], E and Y are up and down in the games.
-                        '~' waits until the tape stops loading (2s without a read).
+                        '~' waits until the tape stops loading (PMD_TAPE_IDLE_MS without a read).
+PMD_TAPE_IDLE_MS=<ms>   Idle time of the tape for '~' (the autoload of JUMP), default 6000.
 PMD_AUTOLOAD=0         Do not type the load command of the game automatically (default on).
 PMD_WEB=<port>          Remote control from a browser, see below. PMD_WEB_TOKEN=<secret> protects it.
 PMD_SCREENSHOT=<file>   Save screen as BMP after PMD_SCREENSHOT_MS and exit.
@@ -280,8 +285,89 @@ A fifth column `PAD` sets the buttons of the web remote control for a game, `Lab
 for example `Left:Left,Fast left:End,Fire:Space,0:0`; `key&key` presses two keys at once (a mouse presses only one button), e.g. `Jump left:Left Shift&Left` in MANIC; games without it get the default set (E, Y, cursor keys,
 Space, Enter, H, I, Shift, RCL, Esc) and the menus get a short one. The keys known from the code of the games
 are listed in `games.lst` (INVADERS: fast arrows, fire and the difficulty digits; AUTO, ZED, MANIC, SASKO, ...). INVADERS moves the ship by 3 steps with the fast arrows [End] and [PageDown] (the keys LLEFT and RRIGHT of the PMD 85), the gamepad [LB] and [RB] send them there. The difficulty (0-3, 4 is not playable) can be chosen with the gamepad: D-pad up = 0, D-pad down = 1, [X] = 2, [Y] = 3. 
+A sixth column `KEYS` is a free text with the controls of the game (without diacritics); the games list shows it under
+the list for the selected game, "neznamo" is shown for games without it (many games do not print their keys).
 Start a game of the list directly (test mode): `PMD_GAME=BLUDISTE bin/simpmd`. `PMD_KEYS` replaces the automatic
 load command.
+
+KEYBOARD MAPPING
+
+PC keys are mapped by SDL key code (the meaning of the key, not its position), the table is `oKeyMap` in
+`simpmd/src/sim_keyboard.c`. Letters, digits, [Space], [Enter], `,` `.` `/` and `;` are the same keys on the PMD 85.
+The rest, with the PMD 85 key name:
+
+| PC | PMD 85 |
+|---|---|
+| [Y] | Z (the PMD 85 has QWERTZ, so [Z] is on the PC [Y] and the PC [Z] is Y) |
+| [F1]-[F12] | K0-K11 |
+| [Insert], [Delete], Numpad [+] | WRK, CD, RCL |
+| [Home], [Up], [PageUp] | INS, DEL, CLR |
+| [Left] or [Backspace], [Right], Numpad [5] | LEFT, RIGHT, HOME |
+| [Down] | END |
+| [End], [PageDown] | LLEFT, RRIGHT (fast left and right, 3 steps) |
+| `-`, `=` | underscore, curly brace |
+| `[`, `]` | at sign, backslash |
+| `'`, `` ` `` | colon, brace |
+| [Shift] (either) | SHIFT |
+| [Ctrl] (either) | STOP |
+
+Reference: what to press on the PC to get a character on the PMD 85-2 (US layout, checked in the emulator by typing every
+key without and with [Shift]; the key caps are those of a PMD 85-2, see
+[a photo of the keyboard](https://cdn.aukro.cz/images/sk1758901075719/pocitac-tesla-pmd-85-2-so-zasuvnym-modulom-basic-g-85-2-neskusane-241607459.jpeg),
+a sales listing that may disappear). On the PMD 85 the symbol written top left on a key is the one with [Shift].
+
+| PC key | PMD 85 key | without [Shift] | with [Shift] |
+|---|---|---|---|
+| `1` ... `9` | `1` ... `9` | `1` ... `9` | `!` `"` `#` `$` `%` `&` `'` `(` `)` |
+| `0` | `0` | `0` | **`-`** (the key shows an overline) |
+| `-` | `= _` | `_` | `=` |
+| `[` | `` ` @ `` | `@` | `` ` `` |
+| `]` | `^ \` | `\` | `^` |
+| `;` | `+ ;` | `;` | `+` |
+| `'` | `* :` | `:` | `*` |
+| `` ` `` | `[ ]` | `[` | `]` |
+| `,` `.` `/` | `< ,` `> .` `? /` | `,` `.` `/` | `<` `>` `?` |
+| `Y` | `Z` | `z` | `Z` |
+| `Z` | `Y` | `y` | `Y` |
+| other letters, [Space] | same | letters | capitals |
+| [Left] or [Backspace], Numpad [5], [Right] | `<-`, `HOME` (arrow up left), `->` | | |
+| [Home], [Up], [PageUp] | `PTL INS`, `DEL`, `CLR` | | |
+| [End], [Down], [PageDown] | `\|<-`, `END`, `->\|` | | |
+| [Insert], [Delete], Numpad [+] | `WRK`, `C-D`, `RCL` | | |
+| [F1] ... [F12] | `K0` ... `K11` | | |
+| [Enter] | `EOL` | | |
+| [Shift] (either) | red up arrow key = Shift | | |
+| [Ctrl] (either) | `STOP` | | |
+
+The key `{ }` of the PMD 85 is the PC key with the code `+` (SDL `SDLK_PLUS`), which a US keyboard does not have
+([Shift]+[=] is still the `=` key), so it can not be typed there; its characters were not checked. [RST] and the second red
+arrow key (right of `/`) are not mapped. The keys are matched by the key code, a keyboard layout that puts the
+digits behind [Shift] (Slovak, Czech) changes the table.
+
+What the PMD 85 keys do (only what is documented; the keys are also in the manuals of the PMD 85, not in this repository):
+
+- [STOP] (Ctrl here) interrupts a running tape operation, e.g. recording to tape (not on the PMD 85-1).
+- [Shift]+[RCL] switches from BASIC to the monitor (PMD 85-2, 2A, 3). [Shift]+[DEL] starts a program loaded at 0000h
+  (PMD 85-1). (GPMD85emu uses [Shift]+[PageUp] and [Shift]+[Delete] for these, here they are [Shift]+Numpad [+] and [Shift]+[Delete].)
+- [K0]-[K11] are function keys without a fixed meaning, the program decides (e.g. [F1] is a menu key in MANIC, [RCL] and [F12] are
+  buttons of SASKO, DOMCEKY and ROBOTIK).
+- [INS], [DEL], [CLR], [HOME], [END] edit the line and the screen as the names say; [LLEFT] and [RRIGHT] move the cursor
+  by more than one step (games use them as fast arrows).
+- Under CP/M the keys produce control codes: [WRK] = Ctrl-K, [RCL] = Ctrl-W, [END] = Ctrl-C, [Shift]+[CLR] = Ctrl-A,
+  [K0]-[K11] = Ctrl-A to Ctrl-L (full table: `Ctrl-CPM-PMD85.txt` of GPMD85emu).
+- The meaning of [WRK] and [CD] was not found in the sources available to the author; please add it if you know it.
+
+[Esc] is not a PMD 85 key: the menus use it, in a game held for `PMD_ESC_MS` (800 ms) it returns to the menu.
+A key stays pressed for at least 60 ms (`PMD_KBD_HOLD_MS`), otherwise a slow machine could miss a short tap.
+`REMAP` in `games.lst` changes the keys for one game, the gamepad and the web remote control send these same keys
+(the buttons of the web are set with `PAD`).
+
+NOTES ON GAMES
+
+The commands of KAREL and KAREL3D (the games have no manual): [README.karel.md](README.karel.md).
+
+MESTO (Mesto robotu) asks for a password after the intro screens: `konvalinka` (case does not matter). The game body is
+encrypted with a key made of the password (the password is not stored anywhere), so a wrong one starts garbage.
 
 DEPLOY AND SERVICE
 
@@ -291,6 +377,9 @@ missing build packages, builds (`PMD_SHARE=$HOME/share/`), installs the tapes an
 `-o` overclocks, takes effect after reboot). The service starts the emulator at boot. Esc in the main menu quits
 the emulator and halts the machine, `systemctl stop/restart pmd85` does not. Settings (`PMD_WEB`, `PMD_WEB_TOKEN`,
 `PMD_RES`, ...) go to `~/pmd85.env`, one `VAR=value` per line, `chmod 600`. Log: `journalctl -b -u pmd85` (persistent journal, `journald-pmd85.conf`).
+
+The service wakes the TV over HDMI-CEC before the emulator starts (`pmd85-hdmi wake`: the Pi announces itself as a playback
+device, sends Image View On and Active Source; needs `cec-ctl` from v4l-utils and a TV with CEC enabled, otherwise it does nothing).
 
 `raspberry/bench.sh GAME [secs] [warmup]` (on the Pi) stops the service, runs one game and prints CPU use per thread, memory
 and the throttling state, then starts the service again.
@@ -315,7 +404,8 @@ GAMEPAD
 A gamepad (USB, or Bluetooth if paired in the OS) works in the menu and in the games, its buttons are
 translated to keyboard keys. Defaults follow the instructions of the games: D-pad and left stick up/down = [E] and [Y] (the PMD 85 keys for
 up and down, host key Z), left/right = cursor keys, [A] = Space, [B] and [Start] = Enter, [X] = H, [Y] = I,
-[LB] = Shift (jump in MANIC+), [RB] = keypad plus (RCL), [Back] = Escape (game back to menu, in the menu quit).
+[LB] = Shift, [RB] = keypad plus (RCL), [Back] = Escape (game back to menu, in the menu quit).
+A game can change this in `games.lst` (`REMAP`): in MANIC [A] jumps (Space is remapped to Shift, so the D-pad and the jump are on different hands).
 Override with `PMD_PAD`, inputs `up down left right a b x y lb rb back start`, keys are SDL key names:
 
 <pre>

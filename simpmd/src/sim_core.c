@@ -85,6 +85,8 @@ struct tGame
   std::string sRemap;
   /// Buttons of the web remote control, "Label:key,..." (SDL key names), empty for the default set.
   std::string sPad;
+  /// Controls shown under the list for the selected game, free text.
+  std::string sHelp;
 };
 /// Buttons of the web remote control for the running game and in the menus.
 static const char *pPadGame = "E up:e,Y down:z,Left:Left,Right:Right,Space:Space,Enter:Return,H:h,I:i,Shift:Left Shift,RCL:Keypad +,Esc:Escape";
@@ -346,6 +348,12 @@ static void GamesLoad ()
       {
         sGame.sPad = sGame.sRemap.substr (iFourth + 1);
         sGame.sRemap.erase (iFourth);
+        size_t iFifth = sGame.sPad.find (';');
+        if (iFifth != std::string::npos)
+        {
+          sGame.sHelp = sGame.sPad.substr (iFifth + 1);
+          sGame.sPad.erase (iFifth);
+        }
       }
     }
     oGames.push_back (sGame);
@@ -367,7 +375,7 @@ static void MenuRender ()
     oNames.push_back (oGames [i].sTape);
     oNotes.push_back ((oGames [i].iModel == 2 ? "PMD 85-2  " : "PMD 85-1  ") + oGames [i].sNote);
   }
-  DSPRenderGameList (fullscreen.w, fullscreen.h, listIndex, oNames, oNotes);
+  DSPRenderGameList (fullscreen.w, fullscreen.h, listIndex, oNames, oNotes, oGames.empty () ? std::string () : oGames [listIndex].sHelp);
 }
 
 
@@ -672,26 +680,52 @@ int main (int iArgC, const char *apArgV [])
           if (iKeyPos < (int) sKeys.size () && bKeysReady && SDL_GetTicks () >= iKeyTime) {
             SDL_KeyboardEvent sKey = {};
             char cKey = sKeys [iKeyPos];
+            Uint32 iNow = SDL_GetTicks ();
+            // The typing follows the simulated keyboard instead of guessing delays: a key is pressed only while the
+            // program scans the keyboard (a monitor waiting for a command, not a tape load or a game loop that does not
+            // look) and released after the program has read it. The limits only keep it from waiting forever.
+            static Uint32 iScanPrev = 0, iSeenAtPress = 0, iPressTime = 0, iWaitSince = 0;
+            Uint32 iScan = KBDScanCount ();
+            bool bScanning = iScan != iScanPrev;
+            iScanPrev = iScan;
+            if (iWaitSince == 0)
+              iWaitSince = iNow;
             if (cKey == '_') {
               iKeyPos ++;
-              iKeyTime = SDL_GetTicks () + 2000;
+              iKeyTime = iNow + 2000;
+              iWaitSince = 0;
             } else if (cKey == '~') {
-              // Wait until the tape stops loading, nothing was read for 2 s.
+              // Wait until the tape stops loading (nothing was read for PMD_TAPE_IDLE_MS) and the program scans the keyboard again.
+              static int iIdleMs = getenv ("PMD_TAPE_IDLE_MS") ? atoi (getenv ("PMD_TAPE_IDLE_MS")) : 2000;
               Uint32 iLastRead = TAPLastRead ();
-              if (iLastRead != 0 && SDL_GetTicks () - iLastRead > 2000) {
+              if (iLastRead != 0 && iNow - iLastRead > (Uint32) iIdleMs && bScanning) {
                 iKeyPos ++;
-                iKeyTime = SDL_GetTicks () + 500;
+                iKeyTime = iNow + 500;
+                iWaitSince = 0;
               } else {
-                iKeyTime = SDL_GetTicks () + 200;
+                iKeyTime = iNow + 40;
               }
+            } else if (!bKeyDown && !bScanning && iNow - iWaitSince < 5000) {
+              // Not scanning yet, try again at the next paint.
+              iKeyTime = iNow + 40;
+            } else if (bKeyDown && KBDSeenCount () == iSeenAtPress && iNow - iPressTime < 3000) {
+              // The program has not read the key yet, keep it pressed.
+              iKeyTime = iNow + 20;
             } else {
             sKey.keysym.sym = (cKey == '|') ? SDLK_RETURN : (cKey == '<') ? SDLK_LEFT : (cKey == '>') ? SDLK_RIGHT : (cKey == '^') ? SDLK_LSHIFT
                             : (cKey >= 'A' && cKey <= 'Z') ? cKey + 32 : cKey;
             sKey.state = bKeyDown ? SDL_RELEASED : SDL_PRESSED;
+            if (!bKeyDown) {
+              iSeenAtPress = KBDSeenCount ();
+              iPressTime = iNow;
+            }
             KBDEventHandler (&sKey);
-            if (bKeyDown) iKeyPos ++;
+            if (bKeyDown) {
+              iKeyPos ++;
+              iWaitSince = 0;
+            }
             bKeyDown = !bKeyDown;
-            iKeyTime = SDL_GetTicks () + iKeyMs;
+            iKeyTime = iNow + iKeyMs;
             }
           }
           if (pScreenshot && SDL_GetTicks () >= iScreenshotTime) {

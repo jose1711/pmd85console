@@ -653,11 +653,11 @@ static void DSPDrawText (TTF_Font *pFont, const std::string &sText, int iX, int 
 }
 
 
-void DSPRenderGameList (int screen_width, int screen_height, int index, const std::vector <std::string> &oNames, const std::vector <std::string> &oNotes)
+void DSPRenderGameList (int screen_width, int screen_height, int index, const std::vector <std::string> &oNames, const std::vector <std::string> &oNotes, const std::string &sHelp)
 {
   const int iRowHeight = FONT_HEIGHT + 8;
   const int iTop = 140;
-  const int iBottom = screen_height - 110;
+  const int iBottom = screen_height - 150;
   int iRows = (iBottom - iTop) / iRowHeight;
   if (iRows < 5)
     iRows = 5;
@@ -690,6 +690,7 @@ void DSPRenderGameList (int screen_width, int screen_height, int index, const st
     DSPDrawText (pFont, oNames [i], iX, iY);
     DSPDrawText (pFont, oNotes [i], iX + FONT_WIDTH * 14, iY);
   }
+  DSPDrawText (pFont, sHelp.empty () ? "Ovladani: neznamo (zkus sipky, mezernik, Enter)" : "Ovladani: " + sHelp, iX, screen_height - 110);
   DSPDrawText (pFont, "Sipky nebo [ E ] [ Y ]: vyber  <- -> strana  [ Enter ]: spust  [ Esc ]: zpet", iX, screen_height - 70);
   TTF_CloseFont (pFont);
   SDL_RenderPresent (mRenderer);

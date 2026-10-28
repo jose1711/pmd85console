@@ -164,9 +164,11 @@ void DSPRenderLogo (int screen_width, int screen_height);
 void DSPRenderText (int screen_width, int screen_height);
 void DSPRenderImage (int screen_width, int screen_height);
 void DSPRenderMenu (int screen_width, int screen_height, int index);
-void DSPRenderGameList (int screen_width, int screen_height, int index, const std::vector <std::string> &oNames, const std::vector <std::string> &oNotes);
+void DSPRenderGameList (int screen_width, int screen_height, int index, const std::vector <std::string> &oNames, const std::vector <std::string> &oNotes, const std::string &sHelp);
 
 byte KBDReadRow ();
+uint32 KBDScanCount ();
+uint32 KBDSeenCount ();
 byte KBDReadColumn ();
 void KBDWriteColumn (byte iData);
 void KBDEventHandler (const SDL_KeyboardEvent *);
