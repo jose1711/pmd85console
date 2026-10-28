@@ -28,6 +28,7 @@ limitations under the License.
 #include "sim_common.h"
 
 #include <semaphore.h>
+#include <unistd.h>
 
 
 //--------------------------------------------------------------------------
@@ -59,6 +60,11 @@ static sem_t sSignalSuspend;
 static sem_t sSignalResume;
 
 static relaxed_bool bTerminate (false);
+
+// Pause for the saved state: the processor thread parks itself at the next timing check (about every millisecond
+// of the simulated time), so the check costs nothing per instruction.
+static relaxed_bool bPauseRequest (false);
+static relaxed_bool bPaused (false);
 
 
 //--------------------------------------------------------------------------
@@ -1505,7 +1511,21 @@ void *CPUThread (void *pArgs)
 
       // Advance real time to match simulated time.
       if (__builtin_expect ((int) (iProcessorClock - iTimingDue) >= 0, false))
+      {
         TIMAdvance ();
+        if (__builtin_expect (bPauseRequest, false))
+        {
+          std::atomic_thread_fence (std::memory_order_seq_cst);
+          bPaused = true;
+          while (bPauseRequest && !bTerminate)
+            usleep (1000);
+          bPaused = false;
+          std::atomic_thread_fence (std::memory_order_seq_cst);
+          // The clock and the state may have changed, start the real time and the sound again from here.
+          SNDSynchronize ();
+          TIMSynchronize ();
+        }
+      }
     //}
 
     // We were asked to suspend the simulation temporarily.
@@ -1543,6 +1563,67 @@ void CPUResume ()
   // Note that the semaphore also enforces memory ordering.
   CheckZero (sem_post (&sSignalResume));
   printf("CPU resume wait..\n");
+}
+
+
+/// Stops the processor thread between two instructions, false when it did not stop in 2 s (it is then released again).
+bool CPUPause ()
+{
+  bPauseRequest = true;
+  for (int i = 0 ; i < 2000 && !bPaused ; i ++)
+    usleep (1000);
+  std::atomic_thread_fence (std::memory_order_seq_cst);
+  if (!bPaused)
+    bPauseRequest = false;
+  return (bPaused);
+}
+
+
+/// Lets the processor thread go on.
+void CPUUnpause ()
+{
+  std::atomic_thread_fence (std::memory_order_seq_cst);
+  bPauseRequest = false;
+}
+
+
+/// The state of the processor, only while the thread is paused.
+void CPUGetState (tCPUState *pState)
+{
+  pState->wPC = RegPC;
+  pState->wSP = RegSP;
+  pState->bA = RegA;
+  pState->bB = RegB;
+  pState->bC = RegC;
+  pState->bD = RegD;
+  pState->bE = RegE;
+  pState->bH = RegH;
+  pState->bL = RegL;
+  pState->bFlags = FlagS | (FlagZ << 1) | (FlagH << 2) | (FlagP << 3) | (FlagC << 4);
+  pState->bPortC = iPortC;
+  pState->iClock = iProcessorClock;
+}
+
+
+/// Sets the state of the processor, only while the thread is paused.
+void CPUSetState (const tCPUState *pState)
+{
+  RegPC = pState->wPC;
+  RegSP = pState->wSP;
+  RegA = pState->bA;
+  RegB = pState->bB;
+  RegC = pState->bC;
+  RegD = pState->bD;
+  RegE = pState->bE;
+  RegH = pState->bH;
+  RegL = pState->bL;
+  FlagS = pState->bFlags & 1;
+  FlagZ = pState->bFlags & 2;
+  FlagH = pState->bFlags & 4;
+  FlagP = pState->bFlags & 8;
+  FlagC = pState->bFlags & 16;
+  iPortC = pState->bPortC;
+  iProcessorClock = pState->iClock;
 }
 
 

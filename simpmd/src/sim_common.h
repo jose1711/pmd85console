@@ -47,6 +47,7 @@ limitations under the License.
 #include <atomic>
 #include <iomanip>
 #include <iostream>
+#include <string>
 #include <vector>
 
 #include <SDL2/SDL.h>
@@ -142,6 +143,26 @@ extern relaxed_int iProcessorClock;
 
 void SIMRequestShutdown ();
 bool SIMQueryShutdown ();
+
+/// Registers and processor-side ports of the simulated machine, for the saved state.
+struct tCPUState
+{
+  word wPC, wSP;
+  byte bA, bB, bC, bD, bE, bH, bL;
+  /// Flags S, Z, H, P, C as the bits 0 to 4.
+  byte bFlags;
+  /// Output latch of port C of the system 8255 (speaker, ...).
+  byte bPortC;
+  int iClock;
+};
+
+bool CPUPause ();
+void CPUUnpause ();
+void CPUGetState (tCPUState *pState);
+void CPUSetState (const tCPUState *pState);
+
+bool STSave (const std::string &sPath, int iModel);
+const char *STLoad (const std::string &sPath, int iModel);
 
 void CPUReset ();
 void CPUStartThread ();

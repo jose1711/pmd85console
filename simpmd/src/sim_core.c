@@ -399,6 +399,49 @@ static Uint32 EscTimerCallback (Uint32 iInterval, void *pSerial)
 
 static void EmulationShutdown ();
 
+/// Tape (with the share path) and model of the running game, the name of its saved state.
+static std::string sCurTape;
+static int iCurModel = 1;
+
+/** File of the saved state of the running game: PMD_STATEDIR (default "states" in the share directory) and the game name.
+ */
+static std::string StatePath ()
+{
+  const char *pDir = getenv ("PMD_STATEDIR");
+  std::string sDir = pDir && *pDir ? pDir : PMD_SHARE "states";
+  size_t iSlash = sCurTape.rfind ('/');
+  return (sDir + "/" + (iSlash == std::string::npos ? sCurTape : sCurTape.substr (iSlash + 1)) + ".sav");
+}
+
+/// Save the state of the running game (Alt+F5), one state per game.
+static void StateSave ()
+{
+  if (inMenu)
+    return;
+  std::string sPath = StatePath ();
+  if (STSave (sPath, iCurModel))
+    printf ("State saved: %s\n", sPath.c_str ());
+  else
+    fprintf (stderr, "State not saved: %s\n", sPath.c_str ());
+}
+
+/// Load the state of the running game (Alt+F9).
+static void StateLoad ()
+{
+  if (inMenu)
+    return;
+  std::string sPath = StatePath ();
+  const char *pError = STLoad (sPath, iCurModel);
+  if (pError)
+    fprintf (stderr, "State not loaded (%s): %s\n", pError, sPath.c_str ());
+  else
+  {
+    // A game that is still typing its load commands goes on from the loaded state.
+    sKeys.clear ();
+    printf ("State loaded: %s\n", sPath.c_str ());
+  }
+}
+
 /// What Esc does: back from a game to the menu, from the games list to the main menu, quit in the main menu.
 static void EscapeAction ()
 {
@@ -419,6 +462,8 @@ static void EscapeAction ()
 /// Initialize emulation
 static void EmulationInitialize (const std::string &sTape, int iModel)
 {
+  sCurTape = sTape;
+  iCurModel = iModel == 2 ? 2 : 1;
   // Flush garbage
   FlushMemory(0x0000, 65536);
   // Reset processor clock
@@ -643,7 +688,15 @@ int main (int iArgC, const char *apArgV [])
              }
            }
         } else {
-          if (sEvent.key.keysym.sym == SDLK_ESCAPE) {
+          if ((sEvent.key.keysym.mod & KMOD_ALT) && (sEvent.key.keysym.sym == SDLK_F5 || sEvent.key.keysym.sym == SDLK_F9)) {
+            // Alt+F5 saves and Alt+F9 loads the state of the game (the keys do not reach the PMD 85).
+            if (sEvent.type == SDL_KEYDOWN && !sEvent.key.repeat) {
+              if (sEvent.key.keysym.sym == SDLK_F5)
+                StateSave ();
+              else
+                StateLoad ();
+            }
+          } else if (sEvent.key.keysym.sym == SDLK_ESCAPE) {
             EmulationShutdown ();
             DSPMenuInitialize ();
             MenuRender ();
@@ -726,6 +779,18 @@ int main (int iArgC, const char *apArgV [])
             }
             bKeyDown = !bKeyDown;
             iKeyTime = iNow + iKeyMs;
+            }
+          }
+          // Test: PMD_STATE_SCRIPT="s5000,l9000" saves (s) and loads (l) the state at the given simulated times [ms].
+          static const char *pStateScript = getenv ("PMD_STATE_SCRIPT");
+          static size_t iStatePos = 0;
+          if (pStateScript && pStateScript [iStatePos]) {
+            long iAt = atol (pStateScript + iStatePos + 1);
+            if (iProcessorClock >= (long long) iAt * (PMD_CLOCK / 1000)) {
+              if (pStateScript [iStatePos] == 's') StateSave ();
+              else StateLoad ();
+              const char *pNext = strchr (pStateScript + iStatePos, ',');
+              iStatePos = pNext ? pNext - pStateScript + 1 : strlen (pStateScript);
             }
           }
           if (pScreenshot && SDL_GetTicks () >= iScreenshotTime) {
