@@ -2,6 +2,8 @@
 # HDMI helper of pmd85.service, installed as /usr/local/sbin/pmd85-hdmi.
 #   wait     (ExecStartPre) wait up to PMD_HDMI_WAIT seconds (default 45) for a connected HDMI output and
 #            remember whether there was one; never fails, so the emulator starts anyway (web remote only).
+#   wake     (ExecStartPre) wake the TV over HDMI-CEC and make this device the active source (the TV switches to
+#            its HDMI input); needs /dev/cec0 and cec-ctl (v4l-utils), does nothing without them, never fails.
 #   hotplug  (udev, drm change) restart the service when a monitor appears that was not there at its start,
 #            the emulator cannot pick a display up later.
 connected() {
@@ -17,11 +19,20 @@ case "${1:-}" in
 		while ! connected && [ "$n" -gt 0 ]; do sleep 1; n=$((n - 1)); done
 		if connected; then echo connected > $STATE; else echo disconnected > $STATE; fi
 		;;
+	wake)
+		if [ -c "${PMD_CEC_DEV:-/dev/cec0}" ] && command -v cec-ctl >/dev/null 2>&1; then
+			CEC="cec-ctl -d ${PMD_CEC_DEV:-/dev/cec0}"
+			$CEC --playback >/dev/null 2>&1
+			PA=$($CEC 2>/dev/null | sed -n 's/^[[:space:]]*Physical Address[[:space:]]*:[[:space:]]*//p' | head -n1)
+			$CEC --to 0 --image-view-on >/dev/null 2>&1
+			[ -n "$PA" ] && $CEC --to 15 --active-source phys-addr="$PA" >/dev/null 2>&1
+		fi
+		;;
 	hotplug)
 		if connected && [ "$(cat $STATE 2>/dev/null)" = disconnected ]; then
 			systemctl --no-block restart pmd85.service
 		fi
 		;;
-	*) echo "usage: $0 wait|hotplug" >&2; exit 2 ;;
+	*) echo "usage: $0 wait|wake|hotplug" >&2; exit 2 ;;
 esac
 exit 0

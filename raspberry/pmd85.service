@@ -7,12 +7,19 @@ After=systemd-remount-fs.service
 User=@USER@
 SupplementaryGroups=video audio input render
 WorkingDirectory=@HOME@/share
+# Take the KMS/DRM display or fail (SDL would otherwise fall back to an invisible output when the display is not ready
+# at boot); the restart then tries again. Esc (exit code 0) does not restart.
+Environment=SDL_VIDEODRIVER=kmsdrm
+Restart=on-failure
+RestartSec=5
 # Optional settings, one VAR=value per line, e.g. PMD_WEB=8085 and PMD_WEB_TOKEN=<secret> (remote control from a browser)
 EnvironmentFile=-@HOME@/pmd85.env
 # Esc in the emulator exits it; the machine is halted only with PMD_HALT=1 in pmd85.env (off while debugging,
 # the unit then just stays stopped: `systemctl start pmd85`). A stop/restart of the unit (SIGTERM) never halts.
 # Output of the emulator goes to the journal (kept over reboots, see journald-pmd85.conf).
 ExecStartPre=-/bin/rm -f /tmp/pmd85.halt
+# Wake the TV over HDMI-CEC (if the Pi has /dev/cec0), a sleeping TV reports no monitor.
+ExecStartPre=+/usr/local/sbin/pmd85-hdmi wake
 # Wait for the monitor (up to PMD_HDMI_WAIT s, default 45); started without one, the emulator restarts when it appears.
 ExecStartPre=+/usr/local/sbin/pmd85-hdmi wait
 TimeoutStartSec=90
