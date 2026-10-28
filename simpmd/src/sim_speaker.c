@@ -99,6 +99,12 @@ static long iStatOverwrittenSamples;
 static int iStatLevel;
 static Uint32 iLogLast;
 static int iLogSuppressed;
+/// PMD_SNDLEVEL=1 logs the peak output level, the underruns and the buffered samples every 10 s (journal), to tell
+/// a silent emulator from a silent sink when the sound drops out.
+static int iLevelLog;
+static int iLevelPeak;
+static Uint32 iLevelLast;
+static int iLevelUnderruns;
 
 /// Speaker frequency mask.
 #define PMD_SPEAKER_FREQUENCY   (3 << 0)
@@ -369,6 +375,23 @@ void SNDFillBufferCallback (void *pParameters, byte *pBuffer, int iLength)
     if (fDcOutput > -PMD_DC_FLOOR && fDcOutput < PMD_DC_FLOOR) fDcOutput = 0.0f;
     fDcInput = fInput;
     pBuffer [i] = (byte) (128.0f + PMD_VOLUME * fDcOutput);
+    if (iLevelLog)
+    {
+      int iLevel = abs ((int) pBuffer [i] - 128);
+      if (iLevel > iLevelPeak) iLevelPeak = iLevel;
+    }
+  }
+  if (iLevelLog)
+  {
+    Uint32 iNow = SDL_GetTicks ();
+    if (iNow - iLevelLast >= 10000)
+    {
+      fprintf (stderr, "SND level: peak %d of 127, %d underruns in the last %u ms, priming %d\n",
+               iLevelPeak, iStatUnderruns - iLevelUnderruns, iNow - iLevelLast, (int) bPriming);
+      iLevelPeak = 0;
+      iLevelLast = iNow;
+      iLevelUnderruns = iStatUnderruns;
+    }
   }
 }
 
@@ -381,6 +404,9 @@ void SNDInitialize ()
 {
   const char *pStats = getenv ("PMD_SNDSTATS");
   iStatLevel = pStats ? atoi (pStats) : 0;
+  const char *pLevel = getenv ("PMD_SNDLEVEL");
+  iLevelLog = pLevel && atoi (pLevel) > 0;
+  iLevelLast = SDL_GetTicks ();
   // Tuning, PMD_SNDRATE in Hz and PMD_SNDBUF (hardware buffer) in milliseconds.
   const char *pRate = getenv ("PMD_SNDRATE");
   if (pRate && atoi (pRate) > 0)
