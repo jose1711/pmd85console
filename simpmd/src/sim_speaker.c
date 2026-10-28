@@ -41,6 +41,9 @@ static int iArgSoftwareBuffer = 200;
 /// Hardware buffer size. What buffer size to use for hardware playing the samples, expressed in milliseconds.
 static int iArgHardwareBuffer = 50;
 
+/// Lead of the generated samples before the playback, expressed in milliseconds.
+static int iArgLead = 50;
+
 
 //--------------------------------------------------------------------------
 // Data
@@ -70,6 +73,11 @@ static uint32_t iSampleLevel = 0;
 static byte bLastSample;
 /// Maximum number of buffered samples, excess is dropped to bound latency.
 static int iMaxBuffered;
+/// Samples kept buffered ahead of the playback, the emulation produces them in real time and without a lead
+/// every delay of its thread (display, scheduler) is an underrun.
+static int iLeadSamples;
+/// Waiting for the lead to build up, the callback plays the last sample until then.
+static bool bPriming = true;
 
 /// DC blocker state, the speaker is a 0/255 square wave and the constant level makes the output whistle.
 static float fDcInput;
@@ -234,6 +242,7 @@ void SNDSynchronize ()
   iLastClock = iProcessorClock;
   // Synchronize the buffer.
   SNDFlushBuffer ();
+  bPriming = iLeadSamples > 0;
   CheckZero (pthread_mutex_unlock (&sAudioBufferLock));
 }
 
@@ -334,8 +343,21 @@ void SNDFillBufferCallback (void *pParameters, byte *pBuffer, int iLength)
   SNDGenerate (iLastSpeaker);
   // Keep latency bounded when emulation runs ahead of audio clock.
   SNDTrimBuffer ();
-  // Fill the buffer with the generated sound.
-  SNDReadBuffer (pBuffer, iLength);
+  // Fill the buffer with the generated sound, after a start or an underrun first wait for the lead.
+  int iBuffered = pAudioBufferTail - pAudioBufferHead;
+  if (iBuffered < 0) iBuffered += iAudioBufferSize;
+  if (bPriming && iBuffered >= iLeadSamples) bPriming = false;
+  if (bPriming)
+  {
+    memset (pBuffer, bLastSample, iLength);
+    iStatCallbacks ++;
+  }
+  else
+  {
+    int iUnderruns = iStatUnderruns;
+    SNDReadBuffer (pBuffer, iLength);
+    if (iStatUnderruns != iUnderruns) bPriming = true;
+  }
   CheckZero (pthread_mutex_unlock (&sAudioBufferLock));
   // Remove the constant level and center the signal to the middle of the unsigned range.
   for (int i = 0 ; i < iLength ; i ++)
@@ -363,6 +385,9 @@ void SNDInitialize ()
   const char *pRate = getenv ("PMD_SNDRATE");
   if (pRate && atoi (pRate) > 0)
     iArgSamplingRate = atoi (pRate);
+  const char *pLead = getenv ("PMD_SNDLEAD");
+  if (pLead && atoi (pLead) >= 0)
+    iArgLead = atoi (pLead);
   const char *pBuffer = getenv ("PMD_SNDBUF");
   if (pBuffer && atoi (pBuffer) > 0)
     iArgHardwareBuffer = atoi (pBuffer);
@@ -395,7 +420,9 @@ void SNDInitialize ()
   assert (sAudioSpec.format == AUDIO_U8);
 
   // Allow two hardware buffers of samples to be queued ...
-  iMaxBuffered = 2 * sAudioSpec.samples;
+  iLeadSamples = (iArgLead * iArgSamplingRate) / 1000;
+  bPriming = iLeadSamples > 0;
+  iMaxBuffered = iLeadSamples + 2 * sAudioSpec.samples;
 
   // Start the callback ...
   SDL_PauseAudio (0);
