@@ -14,6 +14,8 @@ Raspberry Pi 1A+ Tesla PMD-85 retro console powered by modified Petr Tůma
 - Boots straight into a menu of 49 games, the load commands are typed automatically.
 - Plays with the keyboard, a gamepad, a TV remote control (HDMI-CEC) or a browser (phone).
 - Icons in the games list show which game suits which device.
+- Saved state of a game ([Alt]+[F5] save, [Alt]+[F9] load), **experimental and not verified in real play**, see
+  [doc/usage.md](doc/usage.md#saved-state-experimental).
 - Runs as a service on a Raspberry Pi A+ (KMS/DRM, ALSA, no desktop needed).
 
 ## Quick start
@@ -43,6 +45,8 @@ Details and the optional steps: [doc/install.md](doc/install.md).
 - Menu scroll game preview.
 - Sound: long dropouts in the middle of a game are not explained (the buffer lead of 50 ms made the short
   underruns about 20 times rarer); diagnose with `PMD_SNDLEVEL=1`, see [doc/service.md](doc/service.md#sound).
+- Saved state: verify it in real play (the sound after loading was not checked by ear), buttons for the gamepad, the TV
+  remote and the web page.
 - Fix window/renderer duplication (menu, logo and game each have their own window and renderer).
 - TV remote: answer the power status requests of the TV (`cec-follower`) and send Active Source again, so the remote
   keeps working after the TV switches to another input.

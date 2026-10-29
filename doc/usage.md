@@ -41,6 +41,9 @@ Notes on `PMD_KEYS`:
 
 ## Saved state (experimental)
 
+**Experimental, not verified in real play.** The sound after loading a state was not checked by ear, and a load during
+tape reading is not meant to work (the tape position is not saved).
+
 The state of the running game can be saved and loaded again:
 
 | Key | Action |
