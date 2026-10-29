@@ -38,6 +38,7 @@ Details and the optional steps: [doc/install.md](doc/install.md).
 | Games list, `games.lst` format, notes on games | [doc/games.md](doc/games.md) |
 | PC keyboard mapping and the PMD 85 keys | [doc/keyboard.md](doc/keyboard.md) |
 | Gamepad, TV remote control, web remote control | [doc/remote.md](doc/remote.md) |
+| Manual check of the games (a procedure) | [doc/games-check.md](doc/games-check.md) |
 | Splash screen (Plymouth) | [doc/splash.md](doc/splash.md) |
 | KAREL and KAREL3D commands | [README.karel.md](README.karel.md) |
 
