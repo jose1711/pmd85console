@@ -58,6 +58,9 @@ It applies to the keyboard, the gamepad and the browser alike.
 
 - AUTO and ZED steer with [Shift] (left) and [V] (right) on the PMD 85, here with the cursor keys.
 - MANIC: [Space] is mapped to [Shift] (jump), so the D-pad and the jump are on different hands.
+- MANIC with a remote control: `Up=@Left Shift`. The `@` before the target key means: also press the cursor key
+  ([Left] or [Right]) last used, if it is held or was released less than 400 ms ago. A remote control can not press
+  two keys at once, so [Up] jumps in the direction of the walk (a straight jump when you stand still).
 - INVADERS: [End] / [PageDown] are the fast arrows, the digits `0`-`3` are on the gamepad.
 
 ### `PAD`

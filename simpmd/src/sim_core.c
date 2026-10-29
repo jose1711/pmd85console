@@ -33,6 +33,7 @@ limitations under the License.
 #include "sim_common.h"
 #include <fstream>
 #include <map>
+#include <set>
 
 //--------------------------------------------------------------------------
 // System Status Variables
@@ -96,6 +97,11 @@ static const char *pPadMenu = "E up:e,Y down:z,Left:Left,Right:Right,Enter:Retur
 static std::string sPad = pPadMenu;
 /// Keys remapped for the running game, host key to PMD 85 key.
 static std::map <SDL_Keycode, SDL_Keycode> oRemap;
+/// Host keys whose target is pressed together with the cursor key last used (REMAP "Up=@Left Shift", a jump in the direction of
+/// the walk for a remote control, which can not press two keys at once).
+static std::set <SDL_Keycode> oRemapDirection;
+/// How long after the release of a cursor key it still counts as the direction of the walk [ms].
+#define PMD_DIRECTION_MS        400
 /// Keys typed on the simulated keyboard after the start of a game (the load command, PMD_KEYS in test mode).
 static std::string sKeys;
 /// Position in the keys, key press or release.
@@ -263,6 +269,7 @@ static std::string WebState ()
 static void KeysRemap (const std::string &sTape)
 {
   oRemap.clear ();
+  oRemapDirection.clear ();
   sPad = pPadGame;
   std::string sName = sTape;
   size_t iShare = strlen (PMD_SHARE);
@@ -287,9 +294,16 @@ static void KeysRemap (const std::string &sTape)
       if (iEqual == std::string::npos)
         continue;
       SDL_Keycode iFrom = SDL_GetKeyFromName (sPair.substr (0, iEqual).c_str ());
-      SDL_Keycode iTo = SDL_GetKeyFromName (sPair.substr (iEqual + 1).c_str ());
+      std::string sTo = sPair.substr (iEqual + 1);
+      // "@Key" (more than one character, the key "@" itself stays "@") adds the cursor key last used
+      bool bDirection = sTo.size () > 1 && sTo [0] == '@';
+      SDL_Keycode iTo = SDL_GetKeyFromName (sTo.c_str () + (bDirection ? 1 : 0));
       if (iFrom != SDLK_UNKNOWN && iTo != SDLK_UNKNOWN)
+      {
         oRemap [iFrom] = iTo;
+        if (bDirection)
+          oRemapDirection.insert (iFrom);
+      }
     }
   }
 }
@@ -702,9 +716,38 @@ int main (int iArgC, const char *apArgV [])
             MenuRender ();
             inMenu = true;
           } else {
-            std::map <SDL_Keycode, SDL_Keycode>::const_iterator xRemap = oRemap.find (sEvent.key.keysym.sym);
+            SDL_Keycode iHost = sEvent.key.keysym.sym;
+            Uint32 iNow = SDL_GetTicks ();
+            // The cursor key last used, a key of REMAP "@" presses it too (a jump in the direction of the walk).
+            static SDL_Keycode iLastDirection = SDLK_UNKNOWN, iHeldDirection = SDLK_UNKNOWN;
+            static bool bDirectionDown = false;
+            static Uint32 iDirectionTime = 0;
+            if ((iHost == SDLK_LEFT || iHost == SDLK_RIGHT) && !sEvent.key.repeat)
+            {
+              iLastDirection = iHost;
+              bDirectionDown = sEvent.type == SDL_KEYDOWN;
+              iDirectionTime = iNow;
+            }
+            std::map <SDL_Keycode, SDL_Keycode>::const_iterator xRemap = oRemap.find (iHost);
             if (xRemap != oRemap.end ())
               sEvent.key.keysym.sym = xRemap->second;
+            if (oRemapDirection.count (iHost) && !sEvent.key.repeat)
+            {
+              SDL_KeyboardEvent sDirection = sEvent.key;
+              if (sEvent.type == SDL_KEYDOWN && iLastDirection != SDLK_UNKNOWN && !bDirectionDown
+                  && (Sint32) (iNow - iDirectionTime) <= PMD_DIRECTION_MS)
+              {
+                iHeldDirection = iLastDirection;
+                sDirection.keysym.sym = iHeldDirection;
+                KBDEventHandler (&sDirection);
+              }
+              else if (sEvent.type == SDL_KEYUP && iHeldDirection != SDLK_UNKNOWN)
+              {
+                sDirection.keysym.sym = iHeldDirection;
+                KBDEventHandler (&sDirection);
+                iHeldDirection = SDLK_UNKNOWN;
+              }
+            }
             KBDEventHandler ((SDL_KeyboardEvent *) &sEvent);
           }
         }
