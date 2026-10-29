@@ -58,13 +58,21 @@ It applies to the keyboard, the gamepad and the browser alike.
 
 - AUTO and ZED steer with [Shift] (left) and [V] (right) on the PMD 85, here with the cursor keys.
 - MANIC: [Space] is mapped to [Shift] (jump), so the D-pad and the jump are on different hands.
-- MANIC with a remote control: `Up=@Left Shift`. The `@` before the target key means: also press the cursor key
-  ([Left] or [Right]) last used, if it is held or was released less than 400 ms ago. A remote control can not press
-  two keys at once, so [Up] jumps in the direction of the walk (a straight jump when you stand still).
-- MANIC asks for the initials after a game. `Return=Return|A`: a short press of OK sends [Enter], a long one
-  (450 ms) sends [A] instead, so the name is typed by holding OK and finished with a short press. The short key is
-  sent when OK is released (a long press must not send Enter first) and is held for 150 ms. `Short|Long` works
-  for any key of `REMAP`.
+- MANIC with a remote control: `Return=Return|A|@Left Shift`, see "Short, long and held keys" below. OK jumps in
+  the direction of the walk: press [Left] or [Right] first, then OK (within 400 ms of releasing the arrow); standing
+  still, OK jumps straight up. A remote control can not press two keys at once.
+- MANIC asks for the initials after a game: a short press of OK sends [Enter], a long one (450 ms) sends [A]
+  instead, so the name is typed by holding OK and finished with a short press.
+
+### Short, long and held keys in `REMAP`
+
+`HostKey=Short|Long[|Held]` (any key of `REMAP`):
+
+| Part | When it is sent |
+|---|---|
+| `Short` | a press shorter than 450 ms: sent when the key is released, held for 150 ms (a game that scans the keyboard slowly still sees it) |
+| `Long` | a press longer than 450 ms, instead of `Short` |
+| `Held` | optional, at once when the key goes down and until it is released (a jump must not wait for the release); `@Key` also presses the cursor key last used (held, or released less than 400 ms ago) |
 - INVADERS: [End] / [PageDown] are the fast arrows, the digits `0`-`3` are on the gamepad.
 
 ### `PAD`

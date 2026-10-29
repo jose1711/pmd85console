@@ -103,9 +103,17 @@ static std::set <SDL_Keycode> oRemapDirection;
 /// How long after the release of a cursor key it still counts as the direction of the walk [ms].
 #define PMD_DIRECTION_MS        400
 
-/// Keys with a short and a long press, REMAP "Return=Return|A": host key to the PMD 85 key of the short press and of the long one.
-/// The short press is sent when the key is released (a long press must not send the short key first).
-static std::map <SDL_Keycode, std::pair <SDL_Keycode, SDL_Keycode> > oRemapLong;
+/// Keys with a short and a long press, REMAP "Return=Return|A|@Left Shift": the PMD 85 key of the short press, of the long
+/// press and (optional) a key held as long as the host key is down, "@" adds the cursor key last used (a jump in the direction
+/// of the walk). The short key is sent when the host key is released (a long press must not send it first).
+struct tLongKey
+{
+  SDL_Keycode iShort, iLong, iHeld;
+  bool bHeldDirection;
+};
+static std::map <SDL_Keycode, tLongKey> oRemapLong;
+/// The cursor key pressed together with the held key, until the host key is released.
+static SDL_Keycode iLongDirection = SDLK_UNKNOWN;
 /// Hold time of a long press [ms].
 #define PMD_LONG_MS             450
 /// Own event type of the timer of a long press (SDL_USEREVENT is the paint timer, +1 the hold of Esc).
@@ -344,14 +352,24 @@ static void KeysRemap (const std::string &sTape)
         continue;
       SDL_Keycode iFrom = SDL_GetKeyFromName (sPair.substr (0, iEqual).c_str ());
       std::string sTo = sPair.substr (iEqual + 1);
-      // "Short|Long": a short press sends the first key, a long press the second one
+      // "Short|Long[|Held]": a short press sends the first key, a long press the second one, the third is held while pressed
       size_t iBar = sTo.find ('|');
       if (iBar != std::string::npos)
       {
-        SDL_Keycode iShort = SDL_GetKeyFromName (sTo.substr (0, iBar).c_str ());
-        SDL_Keycode iLong = SDL_GetKeyFromName (sTo.substr (iBar + 1).c_str ());
-        if (iFrom != SDLK_UNKNOWN && iShort != SDLK_UNKNOWN && iLong != SDLK_UNKNOWN)
-          oRemapLong [iFrom] = std::make_pair (iShort, iLong);
+        tLongKey sLong;
+        sLong.iShort = SDL_GetKeyFromName (sTo.substr (0, iBar).c_str ());
+        size_t iBar2 = sTo.find ('|', iBar + 1);
+        sLong.iLong = SDL_GetKeyFromName (sTo.substr (iBar + 1, iBar2 == std::string::npos ? iBar2 : iBar2 - iBar - 1).c_str ());
+        sLong.iHeld = SDLK_UNKNOWN;
+        sLong.bHeldDirection = false;
+        if (iBar2 != std::string::npos)
+        {
+          std::string sHeld = sTo.substr (iBar2 + 1);
+          sLong.bHeldDirection = sHeld.size () > 1 && sHeld [0] == '@';
+          sLong.iHeld = SDL_GetKeyFromName (sHeld.c_str () + (sLong.bHeldDirection ? 1 : 0));
+        }
+        if (iFrom != SDLK_UNKNOWN && sLong.iShort != SDLK_UNKNOWN && sLong.iLong != SDLK_UNKNOWN)
+          oRemapLong [iFrom] = sLong;
         continue;
       }
       // "@Key" (more than one character, the key "@" itself stays "@") adds the cursor key last used
@@ -689,7 +707,7 @@ int main (int iArgC, const char *apArgV [])
       if (!inMenu && bLongDown && !bLongFired && sEvent.user.code == iLongSerial)
       {
         bLongFired = true;
-        KeySend (oRemapLong [iLongKey].second, SDL_PRESSED);
+        KeySend (oRemapLong [iLongKey].iLong, SDL_PRESSED);
       }
       continue;
     }
@@ -792,7 +810,18 @@ int main (int iArgC, const char *apArgV [])
           } else {
             SDL_Keycode iHost = sEvent.key.keysym.sym;
             Uint32 iNow = SDL_GetTicks ();
-            std::map <SDL_Keycode, std::pair <SDL_Keycode, SDL_Keycode> >::const_iterator xLong = oRemapLong.find (iHost);
+
+            // The cursor key last used, a key of REMAP "@" presses it too (a jump in the direction of the walk).
+            static SDL_Keycode iLastDirection = SDLK_UNKNOWN, iHeldDirection = SDLK_UNKNOWN;
+            static bool bDirectionDown = false;
+            static Uint32 iDirectionTime = 0;
+            if ((iHost == SDLK_LEFT || iHost == SDLK_RIGHT) && !sEvent.key.repeat)
+            {
+              iLastDirection = iHost;
+              bDirectionDown = sEvent.type == SDL_KEYDOWN;
+              iDirectionTime = iNow;
+            }
+            std::map <SDL_Keycode, tLongKey>::const_iterator xLong = oRemapLong.find (iHost);
             if (xLong != oRemapLong.end ())
             {
               if (sEvent.type == SDL_KEYDOWN)
@@ -803,31 +832,41 @@ int main (int iArgC, const char *apArgV [])
                   bLongFired = false;
                   iLongKey = iHost;
                   SDL_AddTimer (PMD_LONG_MS, LongTimerCallback, (void *) (intptr_t) ++iLongSerial);
+                  // The held key goes down at once (a jump must not wait for the release), with the cursor key
+                  // last used when it is not pressed any more but was released a moment ago.
+                  if (xLong->second.iHeld != SDLK_UNKNOWN)
+                  {
+                    iLongDirection = SDLK_UNKNOWN;
+                    if (xLong->second.bHeldDirection && iLastDirection != SDLK_UNKNOWN && !bDirectionDown
+                        && (Sint32) (iNow - iDirectionTime) <= PMD_DIRECTION_MS)
+                    {
+                      iLongDirection = iLastDirection;
+                      KeySend (iLongDirection, SDL_PRESSED);
+                    }
+                    KeySend (xLong->second.iHeld, SDL_PRESSED);
+                  }
                 }
               }
               else if (bLongDown && iLongKey == iHost)
               {
                 bLongDown = false;
                 iLongSerial ++;
+                if (xLong->second.iHeld != SDLK_UNKNOWN)
+                {
+                  KeySend (xLong->second.iHeld, SDL_RELEASED);
+                  if (iLongDirection != SDLK_UNKNOWN)
+                    KeySend (iLongDirection, SDL_RELEASED);
+                  iLongDirection = SDLK_UNKNOWN;
+                }
                 if (bLongFired)
-                  KeySend (xLong->second.second, SDL_RELEASED);
+                  KeySend (xLong->second.iLong, SDL_RELEASED);
                 else
                 {
-                  KeySend (xLong->second.first, SDL_PRESSED);
-                  SDL_AddTimer (PMD_TAP_MS, TapTimerCallback, (void *) (intptr_t) xLong->second.first);
+                  KeySend (xLong->second.iShort, SDL_PRESSED);
+                  SDL_AddTimer (PMD_TAP_MS, TapTimerCallback, (void *) (intptr_t) xLong->second.iShort);
                 }
               }
               break;
-            }
-            // The cursor key last used, a key of REMAP "@" presses it too (a jump in the direction of the walk).
-            static SDL_Keycode iLastDirection = SDLK_UNKNOWN, iHeldDirection = SDLK_UNKNOWN;
-            static bool bDirectionDown = false;
-            static Uint32 iDirectionTime = 0;
-            if ((iHost == SDLK_LEFT || iHost == SDLK_RIGHT) && !sEvent.key.repeat)
-            {
-              iLastDirection = iHost;
-              bDirectionDown = sEvent.type == SDL_KEYDOWN;
-              iDirectionTime = iNow;
             }
             std::map <SDL_Keycode, SDL_Keycode>::const_iterator xRemap = oRemap.find (iHost);
             if (xRemap != oRemap.end ())
