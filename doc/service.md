@@ -53,6 +53,16 @@ so use the converting `plughw:` device. In `~/pmd85.env`:
 
 `aplay -l` lists the cards. Without these settings SDL picks the default device.
 
+PipeWire is not needed (the emulator talks to ALSA directly) and takes CPU from the only core: WirePlumber alone used about
+14 %. Switch it off for good on the Pi:
+
+```sh
+sudo systemctl --global mask pipewire.socket pipewire-pulse.socket pipewire.service pipewire-pulse.service wireplumber.service
+systemctl --user stop pipewire.socket pipewire-pulse.socket pipewire.service pipewire-pulse.service wireplumber.service
+```
+
+`sudo systemctl --global unmask ...` undoes it.
+
 If the sound drops out, set `PMD_SNDLEVEL=1` and look at the log:
 
 ```sh
