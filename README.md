@@ -40,10 +40,14 @@ Details and the optional steps: [doc/install.md](doc/install.md).
 
 ## TODO
 
-- Remove hardcoded paths.
 - Menu scroll game preview.
-- Fix sound (dropouts are much rarer with the buffer lead, see [doc/service.md](doc/service.md#sound)).
-- Fix window/renderer duplication.
+- Sound: long dropouts in the middle of a game are not explained (the buffer lead of 50 ms made the short
+  underruns about 20 times rarer); diagnose with `PMD_SNDLEVEL=1`, see [doc/service.md](doc/service.md#sound).
+- Fix window/renderer duplication (menu, logo and game each have their own window and renderer).
+- TV remote: answer the power status requests of the TV (`cec-follower`) and send Active Source again, so the remote
+  keeps working after the TV switches to another input.
+- Icons of the controls in the games list for the rest of the games, arrows instead of F1-F4 (K0-K3) for games
+  that use them, with an option to keep the original keys.
 
 ## Known bugs
 
