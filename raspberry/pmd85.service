@@ -20,6 +20,8 @@ EnvironmentFile=-@HOME@/pmd85.env
 ExecStartPre=-/bin/rm -f /tmp/pmd85.halt
 # Wake the TV over HDMI-CEC (if the Pi has /dev/cec0), a sleeping TV reports no monitor.
 ExecStartPre=+/usr/local/sbin/pmd85-hdmi wake
+# OK of the TV remote control = Enter (KEY_OK is unknown to SDL).
+ExecStartPre=+/usr/local/sbin/pmd85-hdmi keymap
 # Wait for the monitor (up to PMD_HDMI_WAIT s, default 45); started without one, the emulator restarts when it appears.
 ExecStartPre=+/usr/local/sbin/pmd85-hdmi wait
 TimeoutStartSec=90

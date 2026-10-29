@@ -4,6 +4,10 @@
 #            remember whether there was one; never fails, so the emulator starts anyway (web remote only).
 #   wake     (ExecStartPre) wake the TV over HDMI-CEC and make this device the active source (the TV switches to
 #            its HDMI input); needs /dev/cec0 and cec-ctl (v4l-utils), does nothing without them, never fails.
+#   keymap   (ExecStartPre) the OK key of a TV remote control arrives as KEY_OK (0x160), which SDL does not know;
+#            the kernel keymap of the CEC input device is changed so that OK gives KEY_ENTER and Back (CEC "exit",
+#            scancode 0x0d) gives KEY_ESC (needs python3, does nothing without it, never fails; the change lasts
+#            until the next boot of the device).
 #   hotplug  (udev, drm change) restart the service when a monitor appears that was not there at its start,
 #            the emulator cannot pick a display up later.
 connected() {
@@ -28,11 +32,28 @@ case "${1:-}" in
 			[ -n "$PA" ] && $CEC --to 15 --active-source phys-addr="$PA" >/dev/null 2>&1
 		fi
 		;;
+	keymap)
+		# EVIOCSKEYCODE (scancode 0x00 = CEC "select" -> KEY_ENTER 28, 0x0d = "exit" -> KEY_ESC 1) on the input device
+		# of the CEC adapter.
+		if command -v python3 >/dev/null 2>&1; then
+			python3 - <<'PY' >/dev/null 2>&1
+import fcntl, glob, struct
+for name in glob.glob("/sys/class/rc/rc*/input*/name") + glob.glob("/sys/class/input/input*/name"):
+    if open(name).read().strip() != "vc4-hdmi":
+        continue
+    base = name.rsplit("/", 1)[0]
+    for ev in glob.glob(base + "/event*"):
+        with open("/dev/input/" + ev.rsplit("/", 1)[1], "wb", buffering=0) as f:
+            for scan, key in ((0x00, 28), (0x0d, 1)):
+                fcntl.ioctl(f, 0x40084504, struct.pack("II", scan, key))
+PY
+		fi
+		;;
 	hotplug)
 		if connected && [ "$(cat $STATE 2>/dev/null)" = disconnected ]; then
 			systemctl --no-block restart pmd85.service
 		fi
 		;;
-	*) echo "usage: $0 wait|wake|hotplug" >&2; exit 2 ;;
+	*) echo "usage: $0 wait|wake|keymap|hotplug" >&2; exit 2 ;;
 esac
 exit 0
