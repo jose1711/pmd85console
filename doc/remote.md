@@ -72,7 +72,7 @@ a keyboard (`vc4-hdmi` input device).
 | cursor keys | cursor keys |
 | OK | Enter |
 | Back | Esc (hold, see below) |
-| digits | digits |
+| digits 0-9 | digits (e.g. the difficulty of INVADERS) |
 
 Requirements:
 
@@ -85,12 +85,14 @@ How it works:
 
 - The kernel presents OK as `KEY_OK`, which SDL does not know, so it did nothing. `pmd85-hdmi keymap`
   (a start step of the service) rewrites the keymap of the input device: OK (CEC scancode `0x00`) gives `KEY_ENTER`
-  and Back (`0x0d`, CEC *exit*) gives `KEY_ESC`.
+  Back (`0x0d`, CEC *exit*) gives `KEY_ESC` and the digits (`0x20`-`0x29`, `KEY_NUMERIC_0`...) give `KEY_0`...`KEY_9`.
 - [Esc] has to be held for `PMD_ESC_MS` (800 ms). The remote repeats a held key only for a short time (the hold
   was measured at about 0.8 s), so `PMD_ESC_MS=500` in `~/pmd85.env` is safer on a TV remote.
 - Other buttons (coloured, play, context menu = `KEY_EPG`) are not known to the emulator.
 
-Games with a TV remote icon need only the keys above (at most 5 buttons).
+Games with a TV remote icon need only the keys above (at most 5 buttons). A game where you type letters can not be
+played with the remote: a name or initials for a high score table (MTRON-1/2/3, SP-DEMIS, ZABY, PISQORKY), passwords
+(MESTO), commands (KAREL, KAREL3D), chess (SACH).
 
 ## Web remote control
 

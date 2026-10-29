@@ -80,7 +80,8 @@ Free text shown under the list for the selected game. "neznamo" is shown for gam
 - `P`: the gamepad is enough (its buttons: D-pad/E/Y, Space, Enter, H, I, Shift, RCL).
 - `R`: the TV remote is enough. The rule used to fill it: the game needs at most 5 buttons (the keys of `PAD`
   without [Esc] and without the keys that `REMAP` maps onto) and all of them are on the remote (cursor keys,
-  OK = Enter, digits).
+  OK = Enter, digits). A game that asks for letters (name or initials for the high scores, passwords, commands)
+  never gets `R`, whatever the number of buttons; see [remote.md](remote.md#tv-remote-control-hdmi-cec).
 
 ## Notes on games
 
@@ -89,6 +90,7 @@ Free text shown under the list for the selected game. "neznamo" is shown for gam
 - The ship moves by 3 steps with the fast arrows [End] and [PageDown] (the keys LLEFT and RRIGHT of the PMD 85);
   the gamepad [LB] and [RB] send them.
 - The difficulty is `0`-`3` (4 is not playable). On the gamepad: D-pad up = 0, D-pad down = 1, [X] = 2, [Y] = 3.
+  On the TV remote: the digits `0`-`3`, OK (Enter is remapped to [Space]) fires.
 
 ### MANIC
 
