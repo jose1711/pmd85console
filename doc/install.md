@@ -32,7 +32,8 @@ raspberry/deploy.sh pmd85@pmd85.local
 ```
 
 The script builds on the Pi (about 10 minutes), installs ROMs, tapes and `games.lst` to `~/share`, and installs and
-starts `pmd85.service`, the HDMI wait/hotplug script and the persistent journal.
+starts `pmd85.service`, the HDMI wait/hotplug script and the persistent journal. It also switches PipeWire off
+(the emulator uses ALSA directly and PipeWire takes CPU from the only core).
 Details and options: [service.md](service.md).
 
 ## 3. Faster boot (optional)

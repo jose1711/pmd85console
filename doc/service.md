@@ -16,7 +16,7 @@ installs and starts `pmd85.service`.
 |---|---|
 | `-p port` | SSH port |
 | `-i identity` | SSH key |
-| `-n` | do not install the service |
+| `-n` | do not install the service (nor mask PipeWire) |
 | `-o` | overclock, takes effect after a reboot |
 
 ## `pmd85.service`
@@ -54,7 +54,7 @@ so use the converting `plughw:` device. In `~/pmd85.env`:
 `aplay -l` lists the cards. Without these settings SDL picks the default device.
 
 PipeWire is not needed (the emulator talks to ALSA directly) and takes CPU from the only core: WirePlumber alone used about
-14 %. Switch it off for good on the Pi:
+14 %. `deploy.sh` masks it when it installs the service; by hand:
 
 ```sh
 sudo systemctl --global mask pipewire.socket pipewire-pulse.socket pipewire.service pipewire-pulse.service wireplumber.service

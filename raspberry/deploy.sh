@@ -7,6 +7,7 @@
 #   -o    overclock: set arm_freq=1000, gpu_mem=128 and vc4-kms-v3d in config.txt (real Pi only,
 #         takes effect after reboot; prints vcgencmd get_throttled)
 #
+# The service install also masks PipeWire (not needed, it takes CPU from the only core).
 # Needs: rsync and ssh locally; passwordless sudo for the remote user (only for missing packages, the
 # service and -o; use -n and install the service by hand otherwise).
 set -euo pipefail
@@ -70,6 +71,10 @@ sudo install -m 644 ~/pmd85console/raspberry/journald-pmd85.conf /etc/systemd/jo
 sudo systemctl restart systemd-journald
 sudo systemctl daemon-reload
 sudo systemctl enable pmd85.service
+# PipeWire is not needed (the emulator talks to ALSA directly) and takes CPU from the only core of the Pi
+for u in pipewire.socket pipewire-pulse.socket pipewire.service pipewire-pulse.service wireplumber.service; do
+	if [ -e /usr/lib/systemd/user/$u ]; then sudo systemctl --global mask $u 2>/dev/null; fi
+done
 systemctl cat pmd85.service | sed -n '1,12p'
 REMOTE
 fi

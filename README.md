@@ -16,7 +16,8 @@ Raspberry Pi 1A+ Tesla PMD-85 retro console powered by modified Petr Tůma
 - Icons in the games list show which game suits which device.
 - Saved state of a game ([Alt]+[F5] save, [Alt]+[F9] load), **experimental and not verified in real play**, see
   [doc/usage.md](doc/usage.md#saved-state-experimental).
-- Runs as a service on a Raspberry Pi A+ (KMS/DRM, ALSA, no desktop needed).
+- Runs as a service on a Raspberry Pi A+ (KMS/DRM, ALSA directly, no desktop; PipeWire is switched off by `deploy.sh`
+  to leave the only core to the emulator).
 
 ## Quick start
 
