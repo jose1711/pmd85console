@@ -33,7 +33,7 @@ KURA;1;MGLD 00, JUMP 0000
 MANIC+;1;MGLD 02;Space=Left Shift,Return=Return|A|@Left Shift;Left:Left,Right:Right,Jump:Left Shift,Jump left:Left Shift&Left,Jump right:Left Shift&Right,Enter:Return,S:s,F1:F1,Esc:Escape;sipky, skok: Shift, Space nebo OK na dalkovem (skace ve smeru chuze: nejdriv sipka, pak OK), S, F1; dlouhy OK = A (jmeno do tabulky);PR
 MANIC-1;1;MGLD 00;Space=Left Shift,Return=Return|A|@Left Shift;Left:Left,Right:Right,Jump:Left Shift,Jump left:Left Shift&Left,Jump right:Left Shift&Right,Enter:Return,S:s,F1:F1,Esc:Escape;sipky, skok: Shift, Space nebo OK na dalkovem (skace ve smeru chuze: nejdriv sipka, pak OK), S, F1; dlouhy OK = A (jmeno do tabulky);PR
 MANIC-2;2;MGLD 03
-MESTO;1;MGLD 00;;;heslo: konvalinka;
+MESTO;1;MGLD 00;;;HESLO: konvalinka (textova hra, jen klavesnice);
 MTRON-1;1;MGLD 00;;;zadani inicialu (jen klavesnice);
 MTRON-2;1;MGLD 00;;;zadani inicialu (jen klavesnice);
 MTRON-3;1;MGLD 00;;;zadani inicialu (jen klavesnice);
