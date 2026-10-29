@@ -72,7 +72,7 @@ a keyboard (`vc4-hdmi` input device).
 | cursor keys | cursor keys |
 | OK | Enter |
 | Back | Esc (hold, see below) |
-| digits 0-9 | digits (e.g. the difficulty of INVADERS) |
+| digits 0-9 | digits, only if the TV sends them over CEC (the TV tested here does not) |
 
 Requirements:
 
