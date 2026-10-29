@@ -39,6 +39,21 @@ Notes on `PMD_KEYS`:
 - BOULDER: the second `H` may be lost, `PMD_KEY_MS=400` makes it pass.
 - `PMD_GAME` types the load command from `games.lst` by itself, `PMD_KEYS` replaces it.
 
+## Saved state (experimental)
+
+The state of the running game can be saved and loaded again:
+
+| Key | Action |
+|---|---|
+| [Alt]+[F5] | save the state of the game |
+| [Alt]+[F9] | load the saved state |
+
+- The file is `<game>.sav` in `PMD_STATEDIR` (default: `states` in the share directory).
+- Saved: the processor registers, the output latches, the clock and the 64 KB of memory. Not saved: the tape position
+  and the keys held on the host.
+- There is no gamepad, TV remote or web button for it yet, only the keyboard.
+- Test mode: `PMD_STATE_SCRIPT="s5000,l9000"` saves (`s`) and loads (`l`) at the given simulated times in ms.
+
 ## Headless (no monitor)
 
 Video goes to the software renderer and sound to the file `sdlaudio.raw`:
