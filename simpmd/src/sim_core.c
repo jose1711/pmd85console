@@ -102,6 +102,52 @@ static std::map <SDL_Keycode, SDL_Keycode> oRemap;
 static std::set <SDL_Keycode> oRemapDirection;
 /// How long after the release of a cursor key it still counts as the direction of the walk [ms].
 #define PMD_DIRECTION_MS        400
+
+/// Keys with a short and a long press, REMAP "Return=Return|A": host key to the PMD 85 key of the short press and of the long one.
+/// The short press is sent when the key is released (a long press must not send the short key first).
+static std::map <SDL_Keycode, std::pair <SDL_Keycode, SDL_Keycode> > oRemapLong;
+/// Hold time of a long press [ms].
+#define PMD_LONG_MS             450
+/// Own event type of the timer of a long press (SDL_USEREVENT is the paint timer, +1 the hold of Esc).
+static const Uint32 iLongEvent = SDL_USEREVENT + 2;
+static int iLongSerial = 0;
+static SDL_Keycode iLongKey = SDLK_UNKNOWN;
+static bool bLongDown = false, bLongFired = false;
+
+static Uint32 LongTimerCallback (Uint32 iInterval, void *pSerial)
+{
+  SDL_Event sEvent;
+  SDL_zero (sEvent);
+  sEvent.type = iLongEvent;
+  sEvent.user.code = (Sint32) (intptr_t) pSerial;
+  SDL_PushEvent (&sEvent);
+  return (0);
+}
+
+/// Own event type of the release of the key of a short press, the key is held for PMD_TAP_MS (a slow keyboard scan of a game).
+static const Uint32 iTapEvent = SDL_USEREVENT + 3;
+#define PMD_TAP_MS              150
+
+static Uint32 TapTimerCallback (Uint32 iInterval, void *pKey)
+{
+  SDL_Event sEvent;
+  SDL_zero (sEvent);
+  sEvent.type = iTapEvent;
+  sEvent.user.code = (Sint32) (intptr_t) pKey;
+  SDL_PushEvent (&sEvent);
+  return (0);
+}
+
+/// Send a key to the simulated keyboard.
+static void KeySend (SDL_Keycode iSym, Uint8 iState)
+{
+  SDL_KeyboardEvent sKey;
+  SDL_zero (sKey);
+  sKey.type = iState == SDL_PRESSED ? SDL_KEYDOWN : SDL_KEYUP;
+  sKey.state = iState;
+  sKey.keysym.sym = iSym;
+  KBDEventHandler (&sKey);
+}
 /// Keys typed on the simulated keyboard after the start of a game (the load command, PMD_KEYS in test mode).
 static std::string sKeys;
 /// Position in the keys, key press or release.
@@ -270,6 +316,9 @@ static void KeysRemap (const std::string &sTape)
 {
   oRemap.clear ();
   oRemapDirection.clear ();
+  oRemapLong.clear ();
+  bLongDown = false;
+  iLongSerial ++;
   sPad = pPadGame;
   std::string sName = sTape;
   size_t iShare = strlen (PMD_SHARE);
@@ -295,6 +344,16 @@ static void KeysRemap (const std::string &sTape)
         continue;
       SDL_Keycode iFrom = SDL_GetKeyFromName (sPair.substr (0, iEqual).c_str ());
       std::string sTo = sPair.substr (iEqual + 1);
+      // "Short|Long": a short press sends the first key, a long press the second one
+      size_t iBar = sTo.find ('|');
+      if (iBar != std::string::npos)
+      {
+        SDL_Keycode iShort = SDL_GetKeyFromName (sTo.substr (0, iBar).c_str ());
+        SDL_Keycode iLong = SDL_GetKeyFromName (sTo.substr (iBar + 1).c_str ());
+        if (iFrom != SDLK_UNKNOWN && iShort != SDLK_UNKNOWN && iLong != SDLK_UNKNOWN)
+          oRemapLong [iFrom] = std::make_pair (iShort, iLong);
+        continue;
+      }
       // "@Key" (more than one character, the key "@" itself stays "@") adds the cursor key last used
       bool bDirection = sTo.size () > 1 && sTo [0] == '@';
       SDL_Keycode iTo = SDL_GetKeyFromName (sTo.c_str () + (bDirection ? 1 : 0));
@@ -619,6 +678,21 @@ int main (int iArgC, const char *apArgV [])
     // The window was exposed, resized or restored, paint the screen again even if it did not change.
     if (sEvent.type == SDL_WINDOWEVENT)
       DSPInvalidate ();
+    if (sEvent.type == iTapEvent)
+    {
+      KeySend ((SDL_Keycode) sEvent.user.code, SDL_RELEASED);
+      continue;
+    }
+    if (sEvent.type == iLongEvent)
+    {
+      // The hold time of a long press has passed: the long key goes down (the short key is not sent).
+      if (!inMenu && bLongDown && !bLongFired && sEvent.user.code == iLongSerial)
+      {
+        bLongFired = true;
+        KeySend (oRemapLong [iLongKey].second, SDL_PRESSED);
+      }
+      continue;
+    }
     if (sEvent.type == iEscEvent)
     {
       // The hold time of Esc has passed, unless the key was released meanwhile.
@@ -718,6 +792,33 @@ int main (int iArgC, const char *apArgV [])
           } else {
             SDL_Keycode iHost = sEvent.key.keysym.sym;
             Uint32 iNow = SDL_GetTicks ();
+            std::map <SDL_Keycode, std::pair <SDL_Keycode, SDL_Keycode> >::const_iterator xLong = oRemapLong.find (iHost);
+            if (xLong != oRemapLong.end ())
+            {
+              if (sEvent.type == SDL_KEYDOWN)
+              {
+                if (!sEvent.key.repeat && !bLongDown)
+                {
+                  bLongDown = true;
+                  bLongFired = false;
+                  iLongKey = iHost;
+                  SDL_AddTimer (PMD_LONG_MS, LongTimerCallback, (void *) (intptr_t) ++iLongSerial);
+                }
+              }
+              else if (bLongDown && iLongKey == iHost)
+              {
+                bLongDown = false;
+                iLongSerial ++;
+                if (bLongFired)
+                  KeySend (xLong->second.second, SDL_RELEASED);
+                else
+                {
+                  KeySend (xLong->second.first, SDL_PRESSED);
+                  SDL_AddTimer (PMD_TAP_MS, TapTimerCallback, (void *) (intptr_t) xLong->second.first);
+                }
+              }
+              break;
+            }
             // The cursor key last used, a key of REMAP "@" presses it too (a jump in the direction of the walk).
             static SDL_Keycode iLastDirection = SDLK_UNKNOWN, iHeldDirection = SDLK_UNKNOWN;
             static bool bDirectionDown = false;

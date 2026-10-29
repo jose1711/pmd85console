@@ -61,6 +61,10 @@ It applies to the keyboard, the gamepad and the browser alike.
 - MANIC with a remote control: `Up=@Left Shift`. The `@` before the target key means: also press the cursor key
   ([Left] or [Right]) last used, if it is held or was released less than 400 ms ago. A remote control can not press
   two keys at once, so [Up] jumps in the direction of the walk (a straight jump when you stand still).
+- MANIC asks for the initials after a game. `Return=Return|A`: a short press of OK sends [Enter], a long one
+  (450 ms) sends [A] instead, so the name is typed by holding OK and finished with a short press. The short key is
+  sent when OK is released (a long press must not send Enter first) and is held for 150 ms. `Short|Long` works
+  for any key of `REMAP`.
 - INVADERS: [End] / [PageDown] are the fast arrows, the digits `0`-`3` are on the gamepad.
 
 ### `PAD`
