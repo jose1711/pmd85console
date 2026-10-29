@@ -58,11 +58,11 @@ It applies to the keyboard, the gamepad and the browser alike.
 
 - AUTO and ZED steer with [Shift] (left) and [V] (right) on the PMD 85, here with the cursor keys.
 - MANIC: [Space] is mapped to [Shift] (jump), so the D-pad and the jump are on different hands.
-- MANIC with a remote control: `Return=Return|A|@Left Shift`, see "Short, long and held keys" below. OK jumps in
-  the direction of the walk: press [Left] or [Right] first, then OK (within 400 ms of releasing the arrow); standing
-  still, OK jumps straight up. A remote control can not press two keys at once.
-- MANIC asks for the initials after a game: a short press of OK sends [Enter], a long one (450 ms) sends [A]
-  instead, so the name is typed by holding OK and finished with a short press.
+- MANIC with a remote control: `Up=@Left Shift,Down=A`. [Up] jumps in the direction of the walk: press [Left] or
+  [Right] first, then [Up] (within 400 ms of releasing the arrow); standing still, [Up] jumps straight up. The `@`
+  before the target key means: also press the cursor key last used. A remote control can not press two keys at once.
+  OK stays [Enter] (start of the game, end of the initials) and [Down] types `A`, so the initials after a game
+  ("AAAAA") can be typed with the remote.
 
 ### Short, long and held keys in `REMAP`
 
