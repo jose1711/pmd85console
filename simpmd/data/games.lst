@@ -1,35 +1,39 @@
-# Games offered by the list menu (Up or [E] in the menu), one per line: NAME;MODEL;NOTE[;REMAP[;PAD[;KEYS]]]
+# Games offered by the list menu (Up or [E] in the menu), one per line: NAME;MODEL;NOTE[;REMAP[;PAD[;KEYS[;INPUT]]]]
 # KEYS is a free text with the controls, shown under the list for the selected game (no diacritics).
+# INPUT lists the devices besides the keyboard the game can be played with, shown as icons left of the name: P gamepad
+# (the buttons of the pad are enough), R TV remote control over HDMI-CEC (only cursor keys, OK, digits). Empty = keyboard only or unknown.
+# Rule for R: the game needs at most 5 buttons (the keys of PAD without Escape and without the keys that REMAP maps onto)
+# and all of them are on the remote (cursor keys, OK = Enter, digits). Do not use ';' in the text of a column.
 # NAME is the tape file in the share directory, MODEL is the PMD 85 model (1 or 2), NOTE is shown
 # in the list (the commands to type), REMAP maps host keys to the PMD 85 keys a game reads (SDL key names,
 # e.g. Left=Left Shift,Right=V: AUTO and ZED steer with [Shift] and [V]). PAD lists the buttons of the web remote
 # control for the game, Label:key,... (SDL key names, key&key presses two at once), the default set is used without it. Generated from simpmd/data/tapes and the table in simpmd/README.
-AUTO;1;MGLD 00, JUMP 2000;Left=Left Shift,Right=V;Left:Left,Right:Right,Shift:Left Shift,Esc:Escape;Shift = vlevo, V = vpravo
-BLUDISTE;2;MGLD 00;Up=Left Shift,E=Left Shift;Forward:Left Shift,Left:Left,Right:Right,Space:Space,M:m,Esc:Escape;krok: Shift (pad: nahoru), obrat: sipky, M mapa, Space start
+AUTO;1;MGLD 00, JUMP 2000;Left=Left Shift,Right=V;Left:Left,Right:Right,Shift:Left Shift,Esc:Escape;Shift = vlevo, V = vpravo;PR
+BLUDISTE;2;MGLD 00;Up=Left Shift,E=Left Shift;Forward:Left Shift,Left:Left,Right:Right,Space:Space,M:m,Esc:Escape;krok: Shift (pad: nahoru), obrat: sipky, M mapa, Space start;P
 BOULD+3;2;MGLD 03
 BOULDER;1;MGLD 03
-CERES-1;2;MGLD 00;;E up:e,Y down:z,Left:Left,Right:Right,Space:Space,Enter:Return,1:1,2:2,3:3,4:4,Esc:Escape;E/Y nahoru/dolu, sipky, Space, Enter, 1-4
-CERES-1.A;2;
-CERES-2.A;2;
+CERES-1;2;MGLD 00;;E up:e,Y down:z,Left:Left,Right:Right,Space:Space,Enter:Return,1:1,2:2,3:3,4:4,Esc:Escape;E/Y nahoru/dolu, sipky, Space, Enter, 1-4;P
+CERES-1.A;2
+CERES-2.A;2
 CROSSI;1;MGLD 00, JUMP 0000
-DOMCEKY;1;MGLD 00, JUMP 0000;;Left:Left,Right:Right,Fast left:End,Fast right:PageDown,Space:Space,Enter:Return,RCL:Keypad +,F12:F12,Esc:Escape;sipky, End/PgDn rychle, Space, Enter, Num+ (RCL), F12
+DOMCEKY;1;MGLD 00, JUMP 0000;;Left:Left,Right:Right,Fast left:End,Fast right:PageDown,Space:Space,Enter:Return,RCL:Keypad +,F12:F12,Esc:Escape;sipky, End/PgDn rychle, Space, Enter, Num+ (RCL), F12;
 FERLAJT;1;MGLD 13
 FLAPPY;1;MGLD 03
 FRED;2;MGLD 03
 GALAXIA;1;MGLD 00
-GALAXIA.A;1;
+GALAXIA.A;1
 GLUTTON;1;MGLD 00
 HLIPA;1;MGLD 00
-INVADERS;1;MGLD 00, JUMP 0100;Left Shift=End,Keypad +=PageDown,E=0,Z=1,H=2,I=3;Left:Left,Right:Right,Fast left:End,Fast right:PageDown,Fire:Space,0:0,1:1,2:2,3:3,Esc:Escape;sipky, End/PgDn rychle, Space strelba, 0-3 obtiznost
+INVADERS;1;MGLD 00, JUMP 0100;Left Shift=End,Keypad +=PageDown,E=0,Z=1,H=2,I=3;Left:Left,Right:Right,Fast left:End,Fast right:PageDown,Fire:Space,0:0,1:1,2:2,3:3,Esc:Escape;sipky, End/PgDn rychle, Space strelba, 0-3 obtiznost;P
 JASON;2;MGLD 00
 KANKAN;1;MGLD 00, JUMP 0000
 KAREL;1;MGLD 00, JUMP 0000
 KAREL3D;1;MGLD 00, JUMP 0000
 KURA;1;MGLD 00, JUMP 0000
-MANIC+;1;MGLD 02;Space=Left Shift;Left:Left,Right:Right,Jump:Left Shift,Jump left:Left Shift&Left,Jump right:Left Shift&Right,Enter:Return,S:s,F1:F1,Esc:Escape;sipky, skok: Shift alebo Space (pad: A), S, F1
-MANIC-1;1;MGLD 00;Space=Left Shift;Left:Left,Right:Right,Jump:Left Shift,Jump left:Left Shift&Left,Jump right:Left Shift&Right,Enter:Return,S:s,F1:F1,Esc:Escape;sipky, skok: Shift alebo Space (pad: A), S, F1
+MANIC+;1;MGLD 02;Space=Left Shift;Left:Left,Right:Right,Jump:Left Shift,Jump left:Left Shift&Left,Jump right:Left Shift&Right,Enter:Return,S:s,F1:F1,Esc:Escape;sipky, skok: Shift alebo Space (pad: A), S, F1;P
+MANIC-1;1;MGLD 00;Space=Left Shift;Left:Left,Right:Right,Jump:Left Shift,Jump left:Left Shift&Left,Jump right:Left Shift&Right,Enter:Return,S:s,F1:F1,Esc:Escape;sipky, skok: Shift alebo Space (pad: A), S, F1;P
 MANIC-2;2;MGLD 03
-MESTO;1;MGLD 00;;;heslo: konvalinka
+MESTO;1;MGLD 00;;;heslo: konvalinka;
 MTRON-1;1;MGLD 00
 MTRON-2;1;MGLD 00
 MTRON-3;1;MGLD 00
@@ -38,18 +42,18 @@ PAMPUCH;1;MGLD 01
 PENETR;2;MGLD 03
 PEXESO;2;MGLD 00
 PISQORKY;2;MGLD 00
-POSTARIK;2;MGLD 00;;Left:Left,Right:Right,Fast left:End,Fast right:PageDown,Space:Space,Enter:Return,Esc:Escape;sipky, End/PgDn rychle, Space, Enter
+POSTARIK;2;MGLD 00;;Left:Left,Right:Right,Fast left:End,Fast right:PageDown,Space:Space,Enter:Return,Esc:Escape;sipky, End/PgDn rychle, Space, Enter;P
 PUZZLE;1;MGLD 00, JUMP 0000
-ROBOTIK;1;MGLD 00, JUMP 0000;;Left:Left,Right:Right,Fast left:End,Fast right:PageDown,Space:Space,Enter:Return,RCL:Keypad +,F12:F12,Esc:Escape;sipky, End/PgDn rychle, Space, Enter, Num+ (RCL), F12
+ROBOTIK;1;MGLD 00, JUMP 0000;;Left:Left,Right:Right,Fast left:End,Fast right:PageDown,Space:Space,Enter:Return,RCL:Keypad +,F12:F12,Esc:Escape;sipky, End/PgDn rychle, Space, Enter, Num+ (RCL), F12;
 SABOTER;2;MGLD 03
 SACH;1;MGLD 00, JUMP 0000
-SASKO;2;MGLD 00;;Left:Left,Right:Right,Fast left:End,Fast right:PageDown,Space:Space,Enter:Return,RCL:Keypad +,F12:F12,Esc:Escape;sipky, End/PgDn rychle, Space, Enter, Num+ (RCL), F12
+SASKO;2;MGLD 00;;Left:Left,Right:Right,Fast left:End,Fast right:PageDown,Space:Space,Enter:Return,RCL:Keypad +,F12:F12,Esc:Escape;sipky, End/PgDn rychle, Space, Enter, Num+ (RCL), F12;
 SP-DEMIS;1;MGLD 00
 SPACE-RA;1;MGLD 00
 TANK;1;MGLD 00, JUMP 2000
-TENISS;2;MGLD 00, JUMP 7000;;1:1,2:2,3:3,P1 Q:q,P1 A:a,P1 Z:z,P1 X:x,P2 /:/,P2 .:.,P2 End:End,P2 5:Keypad 5,Esc:Escape;nejdriv 1/2/3; hrac1 Q A Z X, hrac2 / . End Num5
+TENISS;2;MGLD 00, JUMP 7000;;1:1,2:2,3:3,P1 Q:q,P1 A:a,P1 Z:z,P1 X:x,P2 /:/,P2 .:.,P2 End:End,P2 5:Keypad 5,Esc:Escape;nejdriv 1/2/3, hrac1 Q A Z X, hrac2 / . End Num5
 TETRIS;2;MGLD 03
 WILLY;1;MGLD 00
 ZABY;1;MGLD 00, JUMP 1500
-ZED;1;MGLD 00, JUMP 1000;Left=Left Shift,Right=V;Left:Left,Right:Right,Shift:Left Shift,Esc:Escape;Shift = vlevo, V = vpravo
+ZED;1;MGLD 00, JUMP 1000;Left=Left Shift,Right=V;Left:Left,Right:Right,Shift:Left Shift,Esc:Escape;Shift = vlevo, V = vpravo;PR
 ZMRZLINY;2;MGLD 00

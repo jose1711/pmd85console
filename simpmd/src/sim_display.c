@@ -653,7 +653,42 @@ static void DSPDrawText (TTF_Font *pFont, const std::string &sText, int iX, int 
 }
 
 
-void DSPRenderGameList (int screen_width, int screen_height, int index, const std::vector <std::string> &oNames, const std::vector <std::string> &oNotes, const std::string &sHelp)
+/// Width of the slot of one device icon in the games list.
+#define ICON_SLOT       36
+
+/// Gamepad icon: body with the cross of the D-pad on the left and two buttons on the right, iSize pixels high.
+static void DSPDrawIconGamepad (int iX, int iY, int iSize)
+{
+  int iW = ICON_SLOT - 6, iH = iSize * 2 / 3, iTop = iY + (iSize - iH) / 2;
+  SDL_Rect sBody = {iX, iTop, iW, iH};
+  SDL_RenderDrawRect (mRenderer, &sBody);
+  int iCx = iX + iW / 4, iCy = iTop + iH / 2;
+  SDL_RenderDrawLine (mRenderer, iCx - 4, iCy, iCx + 4, iCy);
+  SDL_RenderDrawLine (mRenderer, iCx, iCy - 4, iCx, iCy + 4);
+  SDL_Rect sA = {iX + iW * 2 / 3, iCy - 5, 4, 4};
+  SDL_Rect sB = {iX + iW * 2 / 3 + 7, iCy + 1, 4, 4};
+  SDL_RenderFillRect (mRenderer, &sA);
+  SDL_RenderFillRect (mRenderer, &sB);
+}
+
+/// TV remote control icon: tall narrow body with a round button on top and three rows of small buttons.
+static void DSPDrawIconRemote (int iX, int iY, int iSize)
+{
+  int iW = iSize / 2 + 2, iLeft = iX + (ICON_SLOT - 6 - iW) / 2;
+  SDL_Rect sBody = {iLeft, iY, iW, iSize};
+  SDL_RenderDrawRect (mRenderer, &sBody);
+  SDL_Rect sTop = {iLeft + iW / 2 - 2, iY + 3, 4, 4};
+  SDL_RenderFillRect (mRenderer, &sTop);
+  for (int iRow = 0 ; iRow < 3 ; iRow ++)
+    for (int iCol = 0 ; iCol < 2 ; iCol ++)
+    {
+      SDL_Rect sKey = {iLeft + 3 + iCol * (iW / 2 - 1), iY + 10 + iRow * 4, 3, 2};
+      SDL_RenderFillRect (mRenderer, &sKey);
+    }
+}
+
+
+void DSPRenderGameList (int screen_width, int screen_height, int index, const std::vector <std::string> &oNames, const std::vector <std::string> &oNotes, const std::vector <std::string> &oInputs, const std::string &sHelp)
 {
   const int iRowHeight = FONT_HEIGHT + 8;
   const int iTop = 140;
@@ -687,9 +722,18 @@ void DSPRenderGameList (int screen_width, int screen_height, int index, const st
       SDL_Rect sInner = {sFrame.x + 1, sFrame.y + 1, sFrame.w - 2, sFrame.h - 2};
       SDL_RenderDrawRect (mRenderer, &sInner);
     }
-    DSPDrawText (pFont, oNames [i], iX, iY);
-    DSPDrawText (pFont, oNotes [i], iX + FONT_WIDTH * 14, iY);
+    // The icons of the devices the game can be played with (gamepad, TV remote control) left of the name.
+    if (oInputs [i].find ('P') != std::string::npos)
+      DSPDrawIconGamepad (iX, iY, FONT_HEIGHT);
+    if (oInputs [i].find ('R') != std::string::npos)
+      DSPDrawIconRemote (iX + ICON_SLOT, iY, FONT_HEIGHT);
+    DSPDrawText (pFont, oNames [i], iX + 2 * ICON_SLOT, iY);
+    DSPDrawText (pFont, oNotes [i], iX + 2 * ICON_SLOT + FONT_WIDTH * 14, iY);
   }
+  DSPDrawIconGamepad (iX, screen_height - 30, FONT_HEIGHT);
+  DSPDrawText (pFont, "= gamepad", iX + ICON_SLOT, screen_height - 30);
+  DSPDrawIconRemote (iX + FONT_WIDTH * 14, screen_height - 30, FONT_HEIGHT);
+  DSPDrawText (pFont, "= ovladac TV (CEC)", iX + FONT_WIDTH * 14 + ICON_SLOT, screen_height - 30);
   DSPDrawText (pFont, sHelp.empty () ? "Ovladani: neznamo (zkus sipky, mezernik, Enter)" : "Ovladani: " + sHelp, iX, screen_height - 110);
   DSPDrawText (pFont, "Sipky nebo [ E ] [ Y ]: vyber  <- -> strana  [ Enter ]: spust  [ Esc ]: zpet", iX, screen_height - 70);
   TTF_CloseFont (pFont);

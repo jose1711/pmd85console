@@ -87,6 +87,8 @@ struct tGame
   std::string sPad;
   /// Controls shown under the list for the selected game, free text.
   std::string sHelp;
+  /// Devices the game can be played with, besides the keyboard: P gamepad, R TV remote control (HDMI-CEC).
+  std::string sInput;
 };
 /// Buttons of the web remote control for the running game and in the menus.
 static const char *pPadGame = "E up:e,Y down:z,Left:Left,Right:Right,Space:Space,Enter:Return,H:h,I:i,Shift:Left Shift,RCL:Keypad +,Esc:Escape";
@@ -334,28 +336,25 @@ static void GamesLoad ()
     size_t iSecond = iFirst == std::string::npos ? iFirst : sLine.find (';', iFirst + 1);
     if (iSecond == std::string::npos)
       continue;
-    tGame sGame;
-    sGame.sTape = sLine.substr (0, iFirst);
-    sGame.iModel = atoi (sLine.substr (iFirst + 1, iSecond - iFirst - 1).c_str ()) == 2 ? 2 : 1;
-    sGame.sNote = sLine.substr (iSecond + 1);
-    size_t iThird = sGame.sNote.find (';');
-    if (iThird != std::string::npos)
+    // NAME;MODEL;NOTE[;REMAP[;PAD[;KEYS[;INPUT]]]], the text of the last used column may not contain ';'
+    std::vector <std::string> oColumns;
+    for (size_t iPos = 0 ; ; )
     {
-      sGame.sRemap = sGame.sNote.substr (iThird + 1);
-      sGame.sNote.erase (iThird);
-      size_t iFourth = sGame.sRemap.find (';');
-      if (iFourth != std::string::npos)
-      {
-        sGame.sPad = sGame.sRemap.substr (iFourth + 1);
-        sGame.sRemap.erase (iFourth);
-        size_t iFifth = sGame.sPad.find (';');
-        if (iFifth != std::string::npos)
-        {
-          sGame.sHelp = sGame.sPad.substr (iFifth + 1);
-          sGame.sPad.erase (iFifth);
-        }
-      }
+      size_t iEnd = sLine.find (';', iPos);
+      oColumns.push_back (sLine.substr (iPos, iEnd == std::string::npos ? iEnd : iEnd - iPos));
+      if (iEnd == std::string::npos)
+        break;
+      iPos = iEnd + 1;
     }
+    oColumns.resize (7);
+    tGame sGame;
+    sGame.sTape = oColumns [0];
+    sGame.iModel = atoi (oColumns [1].c_str ()) == 2 ? 2 : 1;
+    sGame.sNote = oColumns [2];
+    sGame.sRemap = oColumns [3];
+    sGame.sPad = oColumns [4];
+    sGame.sHelp = oColumns [5];
+    sGame.sInput = oColumns [6];
     oGames.push_back (sGame);
   }
 }
@@ -369,13 +368,14 @@ static void MenuRender ()
     DSPRenderMenu (fullscreen.w, fullscreen.h, gameIndex);
     return;
   }
-  std::vector <std::string> oNames, oNotes;
+  std::vector <std::string> oNames, oNotes, oInputs;
   for (size_t i = 0 ; i < oGames.size () ; i ++)
   {
+    oInputs.push_back (oGames [i].sInput);
     oNames.push_back (oGames [i].sTape);
     oNotes.push_back ((oGames [i].iModel == 2 ? "PMD 85-2  " : "PMD 85-1  ") + oGames [i].sNote);
   }
-  DSPRenderGameList (fullscreen.w, fullscreen.h, listIndex, oNames, oNotes, oGames.empty () ? std::string () : oGames [listIndex].sHelp);
+  DSPRenderGameList (fullscreen.w, fullscreen.h, listIndex, oNames, oNotes, oInputs, oGames.empty () ? std::string () : oGames [listIndex].sHelp);
 }
 
 
