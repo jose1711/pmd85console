@@ -59,7 +59,10 @@ If the sound drops out, set `PMD_SNDLEVEL=1` and look at the log:
 journalctl -u pmd85 | grep 'SND level'
 ```
 
-`peak 0` means the emulator is silent, a higher `peak` means the TV or HDMI does not play it.
+- `peak 0` and `speaker changes 0`: the game itself is silent (e.g. MANIC plays only some of the time).
+- `peak 0` with many `speaker changes`: the sound chain of the emulator loses the sound.
+- `generator calls` near 0: the emulation does not run (starved by something else on the single core, e.g. a build).
+- `peak` above 0 but nothing is heard: the TV or HDMI does not play it.
 Underruns are counted there too; `PMD_SNDLEAD` (default 50 ms) keeps a reserve in the buffer.
 
 ## Measuring

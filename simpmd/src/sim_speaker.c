@@ -105,6 +105,8 @@ static int iLevelLog;
 static int iLevelPeak;
 static Uint32 iLevelLast;
 static int iLevelUnderruns;
+/// Changes of the speaker register and calls of the generator since the last log line (a silent game or a stopped emulation).
+static unsigned iLevelEdges, iLevelCalls;
 
 /// Speaker frequency mask.
 #define PMD_SPEAKER_FREQUENCY   (3 << 0)
@@ -269,6 +271,14 @@ void SNDGenerate (byte iSpeaker)
   // No division in the loop (the Raspberry Pi 1 has no divide instruction, a 64 bit division is a library call).
   int iDeltaInClocks = iProcessorClock - iLastClock;
   if (iDeltaInClocks <= 0) return;
+  if (iLevelLog)
+  {
+    static byte iPrevSpeaker;
+    iLevelCalls ++;
+    if (iSpeaker != iPrevSpeaker)
+      iLevelEdges ++;
+    iPrevSpeaker = iSpeaker;
+  }
   uint64_t iUnits = (uint64_t) iDeltaInClocks * iArgSamplingRate;
 
   // Writing more than the buffer holds is pointless.
@@ -386,8 +396,10 @@ void SNDFillBufferCallback (void *pParameters, byte *pBuffer, int iLength)
     Uint32 iNow = SDL_GetTicks ();
     if (iNow - iLevelLast >= 10000)
     {
-      fprintf (stderr, "SND level: peak %d of 127, %d underruns in the last %u ms, priming %d\n",
-               iLevelPeak, iStatUnderruns - iLevelUnderruns, iNow - iLevelLast, (int) bPriming);
+      fprintf (stderr, "SND level: peak %d of 127, %d underruns in the last %u ms, priming %d, speaker changes %u, generator calls %u\n",
+               iLevelPeak, iStatUnderruns - iLevelUnderruns, iNow - iLevelLast, (int) bPriming, iLevelEdges, iLevelCalls);
+      iLevelEdges = 0;
+      iLevelCalls = 0;
       iLevelPeak = 0;
       iLevelLast = iNow;
       iLevelUnderruns = iStatUnderruns;

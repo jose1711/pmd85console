@@ -117,7 +117,7 @@ The characters of `PMD_KEYS`:
 |---|---|
 | `PMD_BEEPSLOW=1` | The monitor beep delay of the games (note length, e.g. INVADERS hits) as in the PMD 85-2/2A ROM. |
 | `PMD_SNDSTATS=1` | Print sound underrun statistics on exit; `2` also logs each underrun/drop with its time to stderr. |
-| `PMD_SNDLEVEL=1` | Log the peak output level and the underruns every 10 s (tells a silent emulator from a silent TV). |
+| `PMD_SNDLEVEL=1` | Log every 10 s: the peak output level, the underruns, the changes of the speaker register and the calls of the sound generator. Tells a silent game (`peak 0`, no changes) from a stopped emulation (no calls) and from a silent TV (`peak` > 0). |
 | `PMD_SNDLEAD=<ms>` | Sound lead kept in the buffer, default 50; the buffer is refilled after an underrun. |
 | `PMD_SNDRATE=<Hz>` | Sound sampling rate, default 48000. |
 | `PMD_SNDBUF=<ms>` | Sound hardware buffer, default 50 (rounded up to a power of two of samples). |
