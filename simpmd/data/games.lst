@@ -19,7 +19,7 @@ FLAPPY;1;MGLD 03;Up=E,Down=Z;E up:e,Y down:z,Left:Left,Right:Right,Space:Space,E
 FRED;2;MGLD 03;;E up:e,Y down:z,Left:Left,Right:Right,Space:Space,H:h,RCL:Keypad +,Esc:Escape;H start hry, RCL rychlost ptaku, sipky vlevo/vpravo, E/Y, Space start (pad: X = H, RB = RCL, A = Space);P
 GALAXIA;1;MGLD 00;;Space:Space,M:m,T:t,Z:y,S:s,Enter:Return,Backspace:Backspace,Esc:Escape;jen klavesnice: Space start, M/T/Z/S vyber, Enter potvrzeni, Backspace maze;
 GALAXIA.A;1
-GLUTTON;1;MGLD 00
+GLUTTON;1;MGLD 00;Up=E,Down=Z,Space=Return;E up:e,Y down:z,Left:Left,Right:Right,Enter:Return,Esc:Escape;Enter start, sipky vlevo/vpravo, E/Y (pad a TV: smerovy kriz, OK = Enter);PR
 HLIPA;1;MGLD 00
 INVADERS;1;MGLD 00, JUMP 0100;Left Shift=End,Keypad +=PageDown,E=0,Z=1,H=2,I=3,Return=Space;Left:Left,Right:Right,Fast left:End,Fast right:PageDown,Fire:Space,0:0,1:1,2:2,3:3,Esc:Escape;sipky, End/PgDn rychle, Space (na dalkovem OK) strelba, 0-3 obtiznost;P
 JASON;2;MGLD 00;Return=Space;;sipky vlavo/vpravo vyber, mezera/OK potvrdi (text sa nepise);PR
