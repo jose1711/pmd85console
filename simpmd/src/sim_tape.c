@@ -171,7 +171,10 @@ bool TAPStatusRxRDY ()
  */
 bool TAPStatusTxRDY ()
 {
-  if (bArgTimeTapeOutput)
+  // Without an output tape a written byte is dropped, but the character time still has to pass: games
+  // (HLIPA) take the TxRDY bit as their timer.
+  bool bNoOutput = !oTapeOutput.is_open () && oArgTapeOutputs.empty ();
+  if (bArgTimeTapeOutput || bNoOutput)
   {
     // If the tape output timing is to be simulated,
     // data writes have certain speed.
@@ -183,6 +186,7 @@ bool TAPStatusTxRDY ()
   }
 
   // If timing is fine return output stream status.
+  if (bNoOutput) return (true);
   return (TAPOutputFileStatus ());
 }
 
@@ -213,7 +217,8 @@ void TAPWriteData (byte bData)
   if (TAPStatusTxRDY ())
   {
     iLastOutputClock = iProcessorClock;
-    oTapeOutput.put (bData);
+    if (oTapeOutput.is_open () || !oArgTapeOutputs.empty ())
+      oTapeOutput.put (bData);
   }
 }
 
