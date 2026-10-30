@@ -49,6 +49,8 @@ limitations under the License.
 #define FRAME_WIDTH     200
 #define FRAME_SPACE       5
 #define MENU_WIDTH      815 //4x200 + 3x 5px spacing
+/// Width of the slot of one device icon in the games list.
+#define ICON_SLOT       36
 
 //-------------------------------------------------------------------------------------------------------
 //
@@ -602,7 +604,10 @@ void DSPRenderLogo (int screen_width, int screen_height)
 }
 
 
-void DSPRenderMenu (int screen_width, int screen_height, int index)
+/// Icon of a saved state, see below.
+static void DSPDrawIconState (int iX, int iY, int iSize);
+
+void DSPRenderMenu (int screen_width, int screen_height, int index, const bool *abState)
 {
   SDL_Rect frameRectangle;
   SDL_Rect frameRectangleInner;
@@ -627,6 +632,12 @@ void DSPRenderMenu (int screen_width, int screen_height, int index)
 
     SDL_RenderDrawRect (mRenderer, &frameRectangle);
     SDL_RenderDrawRect (mRenderer, &frameRectangleInner);
+    // A saved state of the game: the disk icon in the corner of the frame.
+    if (abState && abState [i])
+    {
+      SDL_SetRenderDrawColor (mRenderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+      DSPDrawIconState (frameRectangle.x + FRAME_WIDTH - ICON_SLOT - 4, frameRectangle.y + frameRectangle.h + 8, FONT_HEIGHT);
+    }
   }
   DSPRenderText (screen_width, screen_height);
   DSPRenderImage (screen_width, screen_height);
@@ -653,8 +664,6 @@ static void DSPDrawText (TTF_Font *pFont, const std::string &sText, int iX, int 
 }
 
 
-/// Width of the slot of one device icon in the games list.
-#define ICON_SLOT       36
 
 /// Gamepad icon: body with the cross of the D-pad on the left and two buttons on the right, iSize pixels high.
 static void DSPDrawIconGamepad (int iX, int iY, int iSize)
@@ -688,11 +697,53 @@ static void DSPDrawIconRemote (int iX, int iY, int iSize)
 }
 
 
+/// Saved state icon: a floppy disk with the shutter on top and the label below, iSize pixels high.
+static void DSPDrawIconState (int iX, int iY, int iSize)
+{
+  int iW = iSize * 2 / 3 + 2, iH = iSize * 2 / 3 + 2, iTop = iY + (iSize - iH) / 2, iLeft = iX + (ICON_SLOT - 6 - iW) / 2;
+  SDL_Rect sBody = {iLeft, iTop, iW, iH};
+  SDL_RenderDrawRect (mRenderer, &sBody);
+  SDL_Rect sShutter = {iLeft + iW / 4, iTop, iW / 2, iH / 3};
+  SDL_RenderFillRect (mRenderer, &sShutter);
+  SDL_Rect sLabel = {iLeft + 3, iTop + iH / 2 + 1, iW - 6, iH / 2 - 4};
+  SDL_RenderDrawRect (mRenderer, &sLabel);
+}
+
+/** Draw a text broken at spaces (preferably double ones) into at most iMaxLines lines of iMaxChars characters (the rest is cut with "..."),
+ *  the first line at iY, the next ones iLineHeight lower.
+ */
+static void DSPDrawWrapped (TTF_Font *pFont, const std::string &sText, int iX, int iY, int iMaxChars, int iMaxLines, int iLineHeight)
+{
+  std::string sRest = sText;
+  for (int iLine = 0 ; iLine < iMaxLines && !sRest.empty () ; iLine ++)
+  {
+    std::string sPart = sRest;
+    if ((int) sRest.size () > iMaxChars)
+    {
+      // A break at a double space (between the groups of a text) is better than inside a group.
+      size_t iBreak = sRest.rfind ("  ", iMaxChars);
+      if (iBreak == std::string::npos || iBreak == 0)
+        iBreak = sRest.rfind (' ', iMaxChars);
+      if (iBreak == std::string::npos || iBreak == 0)
+        iBreak = iMaxChars;
+      sPart = sRest.substr (0, iBreak);
+      sRest.erase (0, iBreak);
+      while (!sRest.empty () && sRest [0] == ' ')
+        sRest.erase (0, 1);
+      if (iLine == iMaxLines - 1 && !sRest.empty () && (int) sPart.size () > 3)
+        sPart = sPart.substr (0, sPart.size () - 3) + "...";
+    }
+    else
+      sRest.clear ();
+    DSPDrawText (pFont, sPart, iX, iY + iLine * iLineHeight);
+  }
+}
+
 void DSPRenderGameList (int screen_width, int screen_height, int index, const std::string &sTitle, const std::vector <std::string> &oNames, const std::vector <std::string> &oNotes, const std::vector <std::string> &oInputs, const std::string &sHelp)
 {
   const int iRowHeight = FONT_HEIGHT + 8;
   const int iTop = 140;
-  const int iBottom = screen_height - 150;
+  const int iBottom = screen_height - 205;
   int iRows = (iBottom - iTop) / iRowHeight;
   if (iRows < 5)
     iRows = 5;
@@ -727,15 +778,22 @@ void DSPRenderGameList (int screen_width, int screen_height, int index, const st
       DSPDrawIconGamepad (iX, iY, FONT_HEIGHT);
     if (oInputs [i].find ('R') != std::string::npos)
       DSPDrawIconRemote (iX + ICON_SLOT, iY, FONT_HEIGHT);
-    DSPDrawText (pFont, oNames [i], iX + 2 * ICON_SLOT, iY);
-    DSPDrawText (pFont, oNotes [i], iX + 2 * ICON_SLOT + FONT_WIDTH * 14, iY);
+    // The icon of a saved state of the game.
+    if (oInputs [i].find ('S') != std::string::npos)
+      DSPDrawIconState (iX + 2 * ICON_SLOT, iY, FONT_HEIGHT);
+    DSPDrawText (pFont, oNames [i], iX + 3 * ICON_SLOT, iY);
+    DSPDrawText (pFont, oNotes [i], iX + 3 * ICON_SLOT + FONT_WIDTH * 14, iY);
   }
   DSPDrawIconGamepad (iX, screen_height - 30, FONT_HEIGHT);
   DSPDrawText (pFont, "= gamepad", iX + ICON_SLOT, screen_height - 30);
   DSPDrawIconRemote (iX + FONT_WIDTH * 14, screen_height - 30, FONT_HEIGHT);
   DSPDrawText (pFont, "= ovladac TV (CEC)", iX + FONT_WIDTH * 14 + ICON_SLOT, screen_height - 30);
-  DSPDrawText (pFont, sHelp.empty () ? "Ovladani: neznamo (zkus sipky, mezernik, Enter)" : "Ovladani: " + sHelp, iX, screen_height - 110);
-  DSPDrawText (pFont, "Sipky nebo [ E ] [ Y ]: vyber  <- -> strana  [ Enter ]: spust  [ Esc ]: zpet", iX, screen_height - 70);
+  DSPDrawIconState (iX + FONT_WIDTH * 35, screen_height - 30, FONT_HEIGHT);
+  DSPDrawText (pFont, "= ulozeny stav", iX + FONT_WIDTH * 35 + ICON_SLOT, screen_height - 30);
+  // The texts under the list are broken into lines that fit the screen.
+  int iChars = std::max (20, (screen_width - iX - 24) / FONT_WIDTH);
+  DSPDrawWrapped (pFont, sHelp.empty () ? "Ovladani: neznamo (zkus sipky, mezernik, Enter)" : "Ovladani: " + sHelp, iX, screen_height - 170, iChars, 2, 28);
+  DSPDrawWrapped (pFont, "Sipky nebo [ E ] [ Y ]: vyber  <- -> strana  [ Enter ]: spust  [ Esc ]: zpet", iX, screen_height - 100, iChars, 2, 28);
   TTF_CloseFont (pFont);
   SDL_RenderPresent (mRenderer);
 }

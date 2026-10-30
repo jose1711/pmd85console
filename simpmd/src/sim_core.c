@@ -32,6 +32,7 @@ limitations under the License.
 
 #include "sim_common.h"
 #include <algorithm>
+#include <unistd.h>
 #include <fstream>
 #include <map>
 #include <set>
@@ -289,6 +290,23 @@ static void InitializePMD2 ()
 }
 
 
+/** File of the saved state of a game: PMD_STATEDIR (default "states" in the share directory) and the game name
+ *  (the tape name, with or without the share path).
+ */
+static std::string StatePathOf (const std::string &sTape)
+{
+  const char *pDir = getenv ("PMD_STATEDIR");
+  std::string sDir = pDir && *pDir ? pDir : PMD_SHARE "states";
+  size_t iSlash = sTape.rfind ('/');
+  return (sDir + "/" + (iSlash == std::string::npos ? sTape : sTape.substr (iSlash + 1)) + ".sav");
+}
+
+/// Whether a state of the game was saved (the menus show it).
+static bool HasState (const std::string &sTape)
+{
+  return (access (StatePathOf (sTape).c_str (), F_OK) == 0);
+}
+
 /// The row "(o uroven vys)" of an open category.
 static const int LIST_LEVEL_UP = -1000000;
 
@@ -501,7 +519,10 @@ static void MenuRender ()
 {
   if (!inList)
   {
-    DSPRenderMenu (fullscreen.w, fullscreen.h, gameIndex);
+    bool abState [4];
+    for (int i = 0 ; i < 4 ; i ++)
+      abState [i] = HasState (gameSelect [i]);
+    DSPRenderMenu (fullscreen.w, fullscreen.h, gameIndex, abState);
     return;
   }
   std::vector <std::string> oNames, oNotes, oInputs;
@@ -524,12 +545,17 @@ static void MenuRender ()
       int iGames = 0;
       for (size_t j = 0 ; j < oGames.size () ; j ++)
         iGames += oGames [j].sCategory == sCategory;
-      oInputs.push_back ("");
+      // The state icon of a category: one of its games has a saved state.
+      std::string sSaved;
+      for (size_t j = 0 ; j < oGames.size () && sSaved.empty () ; j ++)
+        if (oGames [j].sCategory == sCategory && HasState (oGames [j].sTape))
+          sSaved = "S";
+      oInputs.push_back (sSaved);
       oNames.push_back ("[ " + sCategory + " ] (" + std::to_string (iGames) + ")");
       oNotes.push_back ("");
       continue;
     }
-    oInputs.push_back (oGames [oView [i]].sInput);
+    oInputs.push_back (oGames [oView [i]].sInput + (HasState (oGames [oView [i]].sTape) ? "S" : ""));
     oNames.push_back (oGames [oView [i]].sTape);
     oNotes.push_back ((oGames [oView [i]].iModel == 2 ? "PMD 85-2  " : "PMD 85-1  ") + oGames [oView [i]].sNote);
   }
@@ -568,10 +594,7 @@ static int iCurModel = 1;
  */
 static std::string StatePath ()
 {
-  const char *pDir = getenv ("PMD_STATEDIR");
-  std::string sDir = pDir && *pDir ? pDir : PMD_SHARE "states";
-  size_t iSlash = sCurTape.rfind ('/');
-  return (sDir + "/" + (iSlash == std::string::npos ? sCurTape : sCurTape.substr (iSlash + 1)) + ".sav");
+  return (StatePathOf (sCurTape));
 }
 
 /// Save the state of the running game (Alt+F5), one state per game.

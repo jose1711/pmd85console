@@ -36,7 +36,7 @@ limitations under the License.
  void DSPRenderLogo (int screen_width, int screen_height);
  void DSPRenderText (int screen_width, int screen_height);
  void DSPRenderImage (int screen_width, int screen_height);
- void DSPRenderMenu (int screen_width, int screen_height, int index);
+ void DSPRenderMenu (int screen_width, int screen_height, int index, const bool *abState);
 
 */
 
@@ -184,7 +184,7 @@ void DSPLogoShutdown ();
 void DSPRenderLogo (int screen_width, int screen_height);
 void DSPRenderText (int screen_width, int screen_height);
 void DSPRenderImage (int screen_width, int screen_height);
-void DSPRenderMenu (int screen_width, int screen_height, int index);
+void DSPRenderMenu (int screen_width, int screen_height, int index, const bool *abState);
 void DSPRenderGameList (int screen_width, int screen_height, int index, const std::string &sTitle, const std::vector <std::string> &oNames, const std::vector <std::string> &oNotes, const std::vector <std::string> &oInputs, const std::string &sHelp);
 
 byte KBDReadRow ();
