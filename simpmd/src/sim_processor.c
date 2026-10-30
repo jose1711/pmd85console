@@ -29,6 +29,7 @@ limitations under the License.
 
 #include <semaphore.h>
 #include <unistd.h>
+#include <string.h>
 
 
 //--------------------------------------------------------------------------
@@ -1199,12 +1200,67 @@ static byte iPortC = 0;
 #define PMD_BEEP_EXTRA          72
 static word iBeepLoop = getenv ("PMD_BEEPSLOW") && atoi (getenv ("PMD_BEEPSLOW")) ? PMD_BEEP_LOOP : 0;
 
+/** ROM module (BASIC-G, Pascal, ...): a 32 KB ROM read through an 8255 at the ports 0x88-0x8B (the address
+ *  decoding is partial, 0x8C mask): the address is written to port B (low) and C (high), a read of port A returns
+ *  the byte (0xFF when the address has the bit 15 set). Without a module the ports read 0xFF.
+ */
+#define ROM_MODULE_SIZE 0x8000
+static byte abRomModule [ROM_MODULE_SIZE];
+static bool bRomModule = false;
+static byte iRomModuleB = 0, iRomModuleC = 0;
+
+void CPURomModuleSet (const byte *pData, size_t iSize)
+{
+  memset (abRomModule, 0xFF, sizeof (abRomModule));
+  iRomModuleB = iRomModuleC = 0;
+  bRomModule = pData != NULL && iSize > 0;
+  if (bRomModule)
+    memcpy (abRomModule, pData, iSize > ROM_MODULE_SIZE ? ROM_MODULE_SIZE : iSize);
+}
+
+static byte RomModuleRead (int iReg)
+{
+  switch (iReg)
+  {
+    case 0: {
+      word wAddr = iRomModuleB | (iRomModuleC << 8);
+      return (wAddr & 0x8000) ? 0xFF : abRomModule [wAddr];
+    }
+    case 1: return (iRomModuleB);
+    case 2: return (iRomModuleC);
+    default: return (0xFF);
+  }
+}
+
+static void RomModuleWrite (int iReg, byte iValue)
+{
+  switch (iReg)
+  {
+    case 1: iRomModuleB = iValue; break;
+    case 2: iRomModuleC = iValue; break;
+    case 3:
+      if (iValue & 0x80)
+        iRomModuleB = iRomModuleC = 0;          // mode set clears the latches
+      else if (iValue & 1)
+        iRomModuleC |= 1 << ((iValue >> 1) & 7);
+      else
+        iRomModuleC &= ~(1 << ((iValue >> 1) & 7));
+      break;
+  }
+}
+
 void InstIN ()
 {
   CPU_LOG_INST_B (IN);
   int iPort = MemFetchByte ();
   // The system 8255 is decoded only partially, 0x84-0x87 (and the others matching the mask) alias 0xF4-0xF7.
   if ((iPort & 0x8C) == 0x84) iPort |= 0xF0;
+  if ((iPort & 0x8C) == 0x88)
+  {
+    RegA = bRomModule ? RomModuleRead (iPort & 3) : 0xFF;
+    iProcessorClock += 10;
+    return;
+  }
   switch (iPort)
   {
     case 0x1E:  RegA = TAPReadData ();
@@ -1231,6 +1287,13 @@ void InstOUT ()
   int iPort = MemFetchByte ();
   // The system 8255 is decoded only partially, 0x84-0x87 (and the others matching the mask) alias 0xF4-0xF7.
   if ((iPort & 0x8C) == 0x84) iPort |= 0xF0;
+  if ((iPort & 0x8C) == 0x88)
+  {
+    if (bRomModule)
+      RomModuleWrite (iPort & 3, RegA);
+    iProcessorClock += 10;
+    return;
+  }
   switch (iPort)
   {
     case 0x1E:  TAPWriteData (RegA);

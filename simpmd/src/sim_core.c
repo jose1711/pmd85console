@@ -34,6 +34,7 @@ limitations under the License.
 #include <algorithm>
 #include <unistd.h>
 #include <fstream>
+#include <iterator>
 #include <map>
 #include <set>
 
@@ -307,6 +308,31 @@ static bool HasState (const std::string &sTape)
   return (access (StatePathOf (sTape).c_str (), F_OK) == 0);
 }
 
+/** The note of a game as the list shows it: the commands to type and the ROM files of a BASIC game (ROM, TYPE) are
+ *  replaced by "BASIC-G", the other commands (MGLD, JUMP, POKE) stay.
+ */
+static std::string ListNote (const std::string &sNote)
+{
+  std::string sResult;
+  bool bBasic = false;
+  size_t iPos = 0;
+  while (iPos < sNote.size ())
+  {
+    size_t iEnd = sNote.find (',', iPos);
+    if (iEnd == std::string::npos)
+      iEnd = sNote.size ();
+    std::string sPart = sNote.substr (iPos, iEnd - iPos);
+    iPos = iEnd + 1;
+    while (!sPart.empty () && sPart [0] == ' ')
+      sPart.erase (0, 1);
+    if (sPart.compare (0, 4, "ROM ") == 0 || sPart.compare (0, 5, "TYPE ") == 0)
+      bBasic = bBasic || sPart.find ("basic") != std::string::npos;
+    else if (!sPart.empty ())
+      sResult += (sResult.empty () ? "" : ", ") + sPart;
+  }
+  return (bBasic ? std::string ("BASIC-G") + (sResult.empty () ? "" : ", ") + sResult : sResult);
+}
+
 /// The row "(o uroven vys)" of an open category.
 static const int LIST_LEVEL_UP = -1000000;
 
@@ -332,6 +358,86 @@ static std::vector <int> ListView ()
 }
 
 
+/** Host key for a character typed by PMD_KEYS, bShift is set when [Shift] has to be held with it (the symbols of the
+ *  PMD 85 keyboard that are on the digits and some other keys).
+ */
+static SDL_Keycode TypedKey (char cKey, bool &bShift)
+{
+  bShift = false;
+  static const char *pShiftDigits = "!\"#$%&'()";
+  const char *pFound = strchr (pShiftDigits, cKey);
+  if (cKey && pFound)
+  {
+    bShift = true;
+    return (SDLK_1 + (pFound - pShiftDigits));
+  }
+  switch (cKey)
+  {
+    case '-': bShift = true; return (SDLK_0);
+    case '=': bShift = true; return (SDLK_MINUS);
+    case '+': bShift = true; return (SDLK_SEMICOLON);
+    case '*': bShift = true; return (SDLK_QUOTE);
+    case '?': bShift = true; return (SDLK_SLASH);
+    case ':': return (SDLK_QUOTE);
+    // The PMD 85 is QWERTZ: its Y is the host key z and its Z is the host key y.
+    case 'Y': case 'y': return (SDLK_z);
+    case 'Z': case 'z': return (SDLK_y);
+  }
+  return ((cKey == '|') ? SDLK_RETURN : (cKey == '<') ? SDLK_LEFT : (cKey == '>') ? SDLK_RIGHT : (cKey == '^') ? SDLK_LSHIFT
+          : (cKey >= 'A' && cKey <= 'Z') ? cKey + 32 : cKey);
+}
+
+
+/** ROM module of a game: "ROM basic2.rmm kli2.rmm" in the note of games.lst puts the files of the share directory into
+ *  the 32 KB ROM pack one after another, each starting on a 1 KB boundary (as the ROM packages of the PMD 85 emulator
+ *  do). A game without ROM has no module.
+ */
+static void RomModuleLoad (const std::string &sTape)
+{
+  std::string sName = sTape;
+  size_t iShare = strlen (PMD_SHARE);
+  if (sName.compare (0, iShare, PMD_SHARE) == 0)
+    sName.erase (0, iShare);
+  for (size_t i = 0 ; i < oGames.size () ; i ++)
+  {
+    if (oGames [i].sTape != sName)
+      continue;
+    const std::string &sNote = oGames [i].sNote;
+    size_t iRom = sNote.find ("ROM ");
+    if (iRom == std::string::npos)
+      break;
+    size_t iEnd = sNote.find (',', iRom);
+    std::string sFiles = sNote.substr (iRom + 4, iEnd == std::string::npos ? iEnd : iEnd - iRom - 4);
+    std::vector <byte> oPack;
+    size_t iPos = 0;
+    while (iPos < sFiles.size ())
+    {
+      size_t iSpace = sFiles.find (' ', iPos);
+      std::string sFile = sFiles.substr (iPos, iSpace == std::string::npos ? iSpace : iSpace - iPos);
+      iPos = iSpace == std::string::npos ? sFiles.size () : iSpace + 1;
+      if (sFile.empty ())
+        continue;
+      std::ifstream oFile (PMD_SHARE + sFile, std::ios::binary);
+      if (!oFile)
+      {
+        fprintf (stderr, "ROM module: no file %s\n", sFile.c_str ());
+        continue;
+      }
+      std::vector <byte> oData ((std::istreambuf_iterator <char> (oFile)), std::istreambuf_iterator <char> ());
+      oData.resize ((oData.size () + 1023) / 1024 * 1024, 0xFF);
+      oPack.insert (oPack.end (), oData.begin (), oData.end ());
+    }
+    if (!oPack.empty ())
+    {
+      CPURomModuleSet (&oPack [0], oPack.size ());
+      return;
+    }
+    break;
+  }
+  CPURomModuleSet (NULL, 0);
+}
+
+
 /** Keys that load a game: the commands of the note of games.lst, "MGLD 00, JUMP 2000" is typed as
  *  "MGLD 00|" and, after the tape stops loading ('~'), "JUMP 2000|". "POKE <hex address> <hex value>" writes a byte
  *  to the memory after the load (for a game that reads a variable that is never set; on the real PMD 85 the RAM is not
@@ -354,6 +460,9 @@ static std::string AutoloadKeys (const std::string &sNote)
       sResult += sPart + "|";
     else if (sPart.compare (0, 4, "JUMP") == 0)
       sResult += "~" + sPart + "|";
+    else if (sPart.compare (0, 5, "TYPE ") == 0)
+      // "TYPE LOAD" is typed with [Enter] after the tape has stopped loading (BASIC commands).
+      sResult += "~" + sPart.substr (5) + "|";
     else if (sPart.compare (0, 4, "POKE") == 0)
       // "POKE 39A4 01" becomes "{39A4=01}", written to the memory after the tape stops loading.
       sResult += "~{" + sPart.substr (5, sPart.find (' ', 5) == std::string::npos ? 0 : sPart.find (' ', 5) - 5) + "=" +
@@ -481,6 +590,16 @@ static void GamesLoad ()
   std::string sLine;
   while (std::getline (oFile, sLine))
   {
+    // "#CATEGORY name" fixes the order of the categories in the list (otherwise: the first game of a category).
+    if (sLine.compare (0, 10, "#CATEGORY ") == 0)
+    {
+      std::string sCategory = sLine.substr (10);
+      while (!sCategory.empty () && (sCategory [sCategory.size () - 1] == '\r' || sCategory [sCategory.size () - 1] == ' '))
+        sCategory.erase (sCategory.size () - 1);
+      if (!sCategory.empty () && std::find (oCategories.begin (), oCategories.end (), sCategory) == oCategories.end ())
+        oCategories.push_back (sCategory);
+      continue;
+    }
     if (sLine.empty () || sLine [0] == '#')
       continue;
     size_t iFirst = sLine.find (';');
@@ -557,7 +676,7 @@ static void MenuRender ()
     }
     oInputs.push_back (oGames [oView [i]].sInput + (HasState (oGames [oView [i]].sTape) ? "S" : ""));
     oNames.push_back (oGames [oView [i]].sTape);
-    oNotes.push_back ((oGames [oView [i]].iModel == 2 ? "PMD 85-2  " : "PMD 85-1  ") + oGames [oView [i]].sNote);
+    oNotes.push_back ((oGames [oView [i]].iModel == 2 ? "PMD 85-2  " : "PMD 85-1  ") + ListNote (oGames [oView [i]].sNote));
   }
   std::string sHelp;
   if (!oView.empty ())
@@ -671,6 +790,7 @@ static void EmulationInitialize (const std::string &sTape, int iModel)
   TAPNextInputFile(gameIn);
 
   KeysStart (sTape);
+  RomModuleLoad (sTape);
 
   if (iModel == 2)
     InitializePMD2();
@@ -1051,7 +1171,9 @@ int main (int iArgC, const char *apArgV [])
               // Wait until the tape stops loading (nothing was read for PMD_TAPE_IDLE_MS) and the program scans the keyboard again.
               static int iIdleMs = getenv ("PMD_TAPE_IDLE_MS") ? atoi (getenv ("PMD_TAPE_IDLE_MS")) : 2000;
               Uint32 iLastRead = TAPLastRead ();
-              if (iLastRead != 0 && iNow - iLastRead > (Uint32) iIdleMs && bScanning) {
+              // No tape was read at all (a BASIC game): the program has to scan the keyboard for 2 s.
+              bool bIdle = iLastRead != 0 ? iNow - iLastRead > (Uint32) iIdleMs : iNow - iWaitSince > 2000;
+              if (bIdle && bScanning) {
                 iKeyPos ++;
                 iKeyTime = iNow + 500;
                 iWaitSince = 0;
@@ -1074,14 +1196,30 @@ int main (int iArgC, const char *apArgV [])
               // The program has not read the key yet, keep it pressed.
               iKeyTime = iNow + 20;
             } else {
-            sKey.keysym.sym = (cKey == '|') ? SDLK_RETURN : (cKey == '<') ? SDLK_LEFT : (cKey == '>') ? SDLK_RIGHT : (cKey == '^') ? SDLK_LSHIFT
-                            : (cKey >= 'A' && cKey <= 'Z') ? cKey + 32 : cKey;
+            bool bShiftKey;
+            static bool bShiftHeld = false;
+            sKey.keysym.sym = TypedKey (cKey, bShiftKey);
             sKey.state = bKeyDown ? SDL_RELEASED : SDL_PRESSED;
             if (!bKeyDown) {
               iSeenAtPress = KBDSeenCount ();
               iPressTime = iNow;
+              if (bShiftKey) {
+                // The symbol needs [Shift]: it goes down before the key and up after it.
+                SDL_KeyboardEvent sShift = {};
+                sShift.keysym.sym = SDLK_LSHIFT;
+                sShift.state = SDL_PRESSED;
+                KBDEventHandler (&sShift);
+                bShiftHeld = true;
+              }
             }
             KBDEventHandler (&sKey);
+            if (bKeyDown && bShiftHeld) {
+              SDL_KeyboardEvent sShift = {};
+              sShift.keysym.sym = SDLK_LSHIFT;
+              sShift.state = SDL_RELEASED;
+              KBDEventHandler (&sShift);
+              bShiftHeld = false;
+            }
             if (bKeyDown) {
               iKeyPos ++;
               iWaitSince = 0;

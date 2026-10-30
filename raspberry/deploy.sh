@@ -47,7 +47,7 @@ if [ -n "$MISSING" ]; then
 	sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq $MISSING
 fi
 mkdir -p ~/share simpmd/bin
-cp -n simpmd/data/roms/M* simpmd/data/font/* simpmd/data/logo/* \
+cp -n simpmd/data/roms/M* simpmd/data/roms/*.rmm simpmd/data/font/* simpmd/data/logo/* \
 	simpmd/data/tapes/games-pmd1/* simpmd/data/tapes/games-pmd2/* ~/share/
 cp -f simpmd/data/games.lst ~/share/
 cd simpmd/src

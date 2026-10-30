@@ -25,6 +25,31 @@ routine when `39A4` is 0, so its note is `MGLD 00, JUMP 0000, POKE 39A4 01`.
 
 To add a game, copy its tape to the share directory and add a line to `games.lst`.
 
+### BASIC games and the ROM module
+
+The BASIC games (category `Basic`) run in BASIC-G V2.0, which the PMD 85 has in a ROM module. The emulator has the
+module: an 8255 at the ports `0x88`-`0x8B` (the address goes to ports B and C, the byte comes from port A), a 32 KB ROM
+pack. The note of `games.lst` describes the game:
+
+```
+ROM basic2.rmm, TYPE LOAD 53, TYPE RUN
+```
+
+- `ROM <file> [<file>...]`: the files of the share directory go into the ROM pack one after another, each on a 1 KB
+  boundary (as the ROM packages of the PMD 85 emulator do). Only `basic2.rmm` is needed here (BASIC-G V2.0, 9 KB).
+  With the module the monitor of the PMD 85-2 starts BASIC-G by itself, so there is no `BASIC` command to type.
+- `TYPE <text>`: the text is typed with [Enter] when the program scans the keyboard (after the tape stopped loading,
+  or after 2 s when nothing was read yet). The usual letters, digits, `"` `(` `)` `=` `+` `-` `*` `:` `?` work.
+  Note: the PMD 85 is QWERTZ, the typed `Y` and `Z` are its keys of those names.
+- `LOAD <n>` takes the number of the block in the tape header, **in decimal** (the monitor `MGLD` takes it in
+  hexadecimal). Every BASIC game is its own tape file, loading takes the size of the file / 218 bytes per second.
+
+The tapes come from the packages of pmd85.borik.net (basic.zip). Their programs start with a 2 byte length that
+BASIC-G V2.0 does not expect at the beginning of the program (the listing is garbage), so the length word is cut off
+and the length and the checksums of the header and the data are written again. The tapes of PMD 85-3 only
+(NALET, SLALOM, TEST3A, KLAV-PMD) and the test programs are not included. `PEXESO-B` is the BASIC game, `PEXESO` the
+machine code one.
+
 ### Icons
 
 Icons left of the name show what the game can be played with besides the keyboard
@@ -64,7 +89,8 @@ The games list shows the categories first, as rows `[ Name ] (number of games)`,
 [Enter] opens a category, its first row `(o uroven vys)` (or a held [Esc]) goes back to the main list. A category exists
 as soon as a game names it (the order is the order of the first game in `games.lst`); the name is shown as it is
 written, without diacritics. The columns before it must be there, empty if needed (`ZMRZLINY;2;MGLD 00;;;;;Pro nejmensi`).
-The web remote control gets the same rows. Now: `Pro nejmensi` (DOMCEKY, POSTARIK, ROBOTIK, ZMRZLINY, SASKO), `Dema`
+The order of the categories is the order of the first game of each, or fixed by lines `#CATEGORY Name` in the head of
+`games.lst`. The web remote control gets the same rows. Now: `Pro nejmensi` (DOMCEKY, POSTARIK, ROBOTIK, ZMRZLINY, SASKO), `Dema`
 (FERLAJT, KANKAN), `Programovani` (KAREL, KAREL3D).
 
 ### `REMAP`

@@ -160,6 +160,7 @@ bool CPUPause ();
 void CPUUnpause ();
 void CPUGetState (tCPUState *pState);
 void CPUSetState (const tCPUState *pState);
+void CPURomModuleSet (const byte *pData, size_t iSize);
 
 bool STSave (const std::string &sPath, int iModel);
 const char *STLoad (const std::string &sPath, int iModel);
