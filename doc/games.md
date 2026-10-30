@@ -41,6 +41,12 @@ ROM basic2.rmm, TYPE LOAD 53, TYPE RUN
 - `TYPE <text>`: the text is typed with [Enter] when the program scans the keyboard (after the tape stopped loading,
   or after 2 s when nothing was read yet). The usual letters, digits, `"` `(` `)` `=` `+` `-` `*` `:` `?` work.
   Note: the PMD 85 is QWERTZ, the typed `Y` and `Z` are its keys of those names.
+- `FONT`: the Czech and Slovak letters of the PMD 85-3 for a program of that machine (REVERZ, VOTRELCI, ...). Its texts
+  use the character set of the PMD 85-3 (codes `0xC0`-`0xDF` the small letters, the capitals 0x20 higher), the font of
+  the monitor ends at `0x7F` and draws dots. The emulator makes the glyphs of the letters á č ď í ľ ň ô š ť ú é ý ž
+  and the capitals from the letter of the monitor font and a mark, puts them to `0x9000`-`0x91FF` and sets the table of
+  the glyph blocks (`0xC0B0`, copied from `0x8270`). The codes of ä ĺ ó ŕ ř ě ů are not known (no program of the package
+  uses them in a word), they stay dots. All BASIC games and BASIC-G have `FONT`.
 - `LOAD <n>` takes the number of the block in the tape header, **in decimal** (the monitor `MGLD` takes it in
   hexadecimal). Every BASIC game is its own tape file, loading takes the size of the file / 218 bytes per second.
 

@@ -325,6 +325,8 @@ static std::string ListNote (const std::string &sNote)
     iPos = iEnd + 1;
     while (!sPart.empty () && sPart [0] == ' ')
       sPart.erase (0, 1);
+    if (sPart == "FONT")
+      continue;
     if (sPart.compare (0, 4, "ROM ") == 0 || sPart.compare (0, 5, "TYPE ") == 0)
       bBasic = bBasic || sPart.find ("basic") != std::string::npos;
     else if (!sPart.empty ())
@@ -385,6 +387,106 @@ static SDL_Keycode TypedKey (char cKey, bool &bShift)
   }
   return ((cKey == '|') ? SDLK_RETURN : (cKey == '<') ? SDLK_LEFT : (cKey == '>') ? SDLK_RIGHT : (cKey == '^') ? SDLK_LSHIFT
           : (cKey >= 'A' && cKey <= 'Z') ? cKey + 32 : cKey);
+}
+
+
+/** Note of a game of games.lst: true when it has the command (a part of the comma separated note) that starts with
+ *  sCommand.
+ */
+static bool GameHasCommand (const std::string &sTape, const char *sCommand)
+{
+  std::string sName = sTape;
+  size_t iShare = strlen (PMD_SHARE);
+  if (sName.compare (0, iShare, PMD_SHARE) == 0)
+    sName.erase (0, iShare);
+  for (size_t i = 0 ; i < oGames.size () ; i ++)
+  {
+    if (oGames [i].sTape != sName)
+      continue;
+    const std::string &sNote = oGames [i].sNote;
+    size_t iPos = 0;
+    while (iPos < sNote.size ())
+    {
+      size_t iEnd = sNote.find (',', iPos);
+      if (iEnd == std::string::npos)
+        iEnd = sNote.size ();
+      std::string sPart = sNote.substr (iPos, iEnd - iPos);
+      iPos = iEnd + 1;
+      while (!sPart.empty () && sPart [0] == ' ')
+        sPart.erase (0, 1);
+      if (sPart.compare (0, strlen (sCommand), sCommand) == 0)
+        return (true);
+    }
+  }
+  return (false);
+}
+
+
+/** Czech and Slovak letters for the programs of the PMD 85-3 ("FONT" in the note of games.lst). The PMD 85-3 has them
+ *  in its character set (codes 0xC0-0xDF small letters, 0xE0-0xFF the capitals 0x20 higher), the font of the PMD 85-2
+ *  monitor ends at 0x7F and the other codes are drawn as dots. The monitor takes the glyphs of 32 codes from a block
+ *  whose address is in a table (0xC0B0 in RAM, copied from 0x8270 of the monitor): the blocks of 0xC0 and 0xE0 get the
+ *  glyphs made here from the letter of the monitor font and a mark, at 0x9000 and 0x9100 (free RAM of the emulator).
+ *  The codes are the ones that the programs use in words (a sample: REVERZ and the others of the basic package).
+ */
+static void FontPatch ()
+{
+  struct tLetter { byte iCode; char cBase; char cMark; };
+  static const tLetter asLetters [] = {
+    { 0xC1, 'a', 'a' }, { 0xC3, 'c', 'c' }, { 0xC4, 'd', 't' }, { 0xC9, 'i', 'a' }, { 0xCC, 'l', 't' },
+    { 0xCE, 'n', 'c' }, { 0xD0, 'o', 'o' }, { 0xD3, 's', 'c' }, { 0xD4, 't', 't' }, { 0xD5, 'u', 'a' },
+    { 0xD7, 'e', 'a' }, { 0xD9, 'y', 'a' }, { 0xDA, 'z', 'c' }
+  };
+  const int FONT_BLOCK_SMALL = 0x9000, FONT_BLOCK_CAPITAL = 0x9100;
+  for (size_t i = 0 ; i < sizeof (asLetters) / sizeof (asLetters [0]) ; i ++)
+  {
+    for (int iCapital = 0 ; iCapital < 2 ; iCapital ++)
+    {
+      char cBase = iCapital ? asLetters [i].cBase - 32 : asLetters [i].cBase;
+      // The glyph of the base letter: 8 bytes, the top row first (0x20-0x5F at 0x8600, 0x60-0x7F at 0x88C0).
+      int iFrom = cBase < 0x60 ? 0x8600 + (cBase - 0x20) * 8 : 0x88C0 + (cBase - 0x60) * 8;
+      byte abGlyph [8];
+      memcpy (abGlyph, abMemoryData + iFrom, 8);
+      byte iMark = asLetters [i].cMark;
+      if (iCapital)
+      {
+        // No free row above a capital: the letter goes one row down, the mark takes the top row.
+        for (int iRow = 7 ; iRow > 0 ; iRow --)
+          abGlyph [iRow] = abGlyph [iRow - 1];
+        abGlyph [0] = iMark == 'a' ? 0x10 : iMark == 'c' ? 0x14 : iMark == 'o' ? 0x08 : 0x20;
+      }
+      else if (iMark == 'a')
+      {
+        // The acute accent; the dot of the i goes.
+        abGlyph [0] = 0x10;
+        abGlyph [1] = 0x08;
+      }
+      else if (iMark == 'c')
+      {
+        abGlyph [0] = 0x14;
+        abGlyph [1] = 0x08;
+      }
+      else if (iMark == 'o')
+      {
+        abGlyph [0] = 0x08;
+        abGlyph [1] = 0x14;
+      }
+      else
+      {
+        // The apostrophe of d, l and t, right of the stem (d: next to it).
+        byte iTick = asLetters [i].cBase == 't' ? 0x10 : 0x20;
+        abGlyph [0] |= iTick;
+        abGlyph [1] |= iTick;
+      }
+      int iCode = asLetters [i].iCode + (iCapital ? 0x20 : 0);
+      memcpy (abMemoryData + (iCapital ? FONT_BLOCK_CAPITAL : FONT_BLOCK_SMALL) + (iCode & 0x1F) * 8, abGlyph, 8);
+    }
+  }
+  // The table of the blocks: the glyph of the code c is read from the address in the table + (c & 0x1F) * 8, backwards.
+  abMemoryData [0x8270 + 12] = (FONT_BLOCK_SMALL + 8) & 0xFF;
+  abMemoryData [0x8270 + 13] = (FONT_BLOCK_SMALL + 8) >> 8;
+  abMemoryData [0x8270 + 14] = (FONT_BLOCK_CAPITAL + 8) & 0xFF;
+  abMemoryData [0x8270 + 15] = (FONT_BLOCK_CAPITAL + 8) >> 8;
 }
 
 
@@ -793,7 +895,11 @@ static void EmulationInitialize (const std::string &sTape, int iModel)
   RomModuleLoad (sTape);
 
   if (iModel == 2)
+  {
     InitializePMD2();
+    if (GameHasCommand (sTape, "FONT"))
+      FontPatch ();
+  }
   else
     InitializePMD1();
   printf("Model initializing..\n");
