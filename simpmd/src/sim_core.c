@@ -585,6 +585,13 @@ static std::string AutoloadKeys (const std::string &sNote)
     else if (sPart.compare (0, 5, "TYPE ") == 0)
       // "TYPE LOAD" is typed with [Enter] after the tape has stopped loading (BASIC commands).
       sResult += "~" + sPart.substr (5) + "|";
+    else if (sPart == "SHIFT")
+      // Shift pressed repeatedly while the loader runs (a game that picks the monochrome mode that way).
+    {
+      sResult += "___";
+      for (int i = 0 ; i < 10 ; i ++)
+        sResult += "^__________";
+    }
     else if (sPart.compare (0, 4, "POKE") == 0)
       // "POKE 39A4 01" becomes "{39A4=01}", written to the memory after the tape stops loading.
       sResult += "~{" + sPart.substr (5, sPart.find (' ', 5) == std::string::npos ? 0 : sPart.find (' ', 5) - 5) + "=" +
