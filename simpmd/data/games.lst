@@ -21,7 +21,7 @@ GALAXIA;1;MGLD 00;;Space:Space,M:m,T:t,Z:y,S:s,Enter:Return,Backspace:Backspace,
 GALAXIA.A;1
 GLUTTON;1;MGLD 00;Up=E,Down=Z,Space=Return;E up:e,Y down:z,Left:Left,Right:Right,Enter:Return,Esc:Escape;Enter start, sipky vlevo/vpravo, E/Y (pad a TV: smerovy kriz, OK = Enter);PR
 HLIPA;1;MGLD 00;;H:h,Stop:Left Ctrl,Esc:Escape;jen klavesnice: H start, Stop (Ctrl) = konec, ovladani nastavitelne (4 diagonaly a zvuk);
-HORAC;1;MGLD 00;Left=I,Right=P,Up=E,Down=Z,Return=N;E up:e,Y down:z,I left:i,P right:p,N jump:n,Space:Space,Esc:Escape;E/Y nahoru/dolu, I/P doleva/doprava, N skok, Space start (pad: A start, B skok);P
+HORAC;2;MGLD 00;Left=I,Right=P,Up=E,Down=Z,Return=N;E up:e,Y down:z,I left:i,P right:p,N jump:n,Space:Space,Esc:Escape;E/Y nahoru/dolu, I/P doleva/doprava, N skok, Space start (pad: A start, B skok);P
 INVADERS;1;MGLD 00, JUMP 0100;Left Shift=End,Keypad +=PageDown,E=0,Z=1,H=2,I=3,Return=Space,Up=0,Down=1;Left:Left,Right:Right,Fast left:End,Fast right:PageDown,Fire:Space,0:0,1:1,2:2,3:3,Esc:Escape;sipky, End/PgDn rychle, Space (na dalkovem OK) strelba, 0-3 obtiznost, TV: jen obtiznost 0 (nahoru) a 1 (dolu);PR
 JASON;2;MGLD 00;Return=Space;Left:Left,Right:Right,Space:Space,Esc:Escape;mezera = menu/potvrdit, sipky vlevo/vpravo pohyb (pad: A, B nebo Start, TV: OK = mezera, text se nepise);PR
 KANKAN;1;MGLD 00, JUMP 0000;;;;;Dema
