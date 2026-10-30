@@ -63,6 +63,8 @@ static int iArgTapeRate = 2400;
 #define PMD_TAP_TXRDY_MASK        (1 << 0)
 /// Mask for status RxRDY bit.
 #define PMD_TAP_RXRDY_MASK        (1 << 1)
+/// Mask for status TxEMPTY bit.
+#define PMD_TAP_TXEMPTY_MASK      (1 << 2)
 
 /// Tape input file stream.
 static std::ifstream oTapeInput;
@@ -227,8 +229,11 @@ void TAPWriteData (byte bData)
  */
 byte TAPReadStatus ()
 {
-  return (TAPStatusTxRDY () * PMD_TAP_TXRDY_MASK |
-          TAPStatusRxRDY () * PMD_TAP_RXRDY_MASK);
+  // TxEMPTY follows TxRDY, a character is sent at once (FLAPPY2K waits for it before it goes on).
+  bool bTxRdy = TAPStatusTxRDY ();
+  return (bTxRdy * PMD_TAP_TXRDY_MASK |
+          TAPStatusRxRDY () * PMD_TAP_RXRDY_MASK |
+          bTxRdy * PMD_TAP_TXEMPTY_MASK);
 }
 
 
