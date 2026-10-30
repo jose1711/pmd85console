@@ -15,6 +15,7 @@
 ADC;2;ROM basic2.rmm, TYPE LOAD 1, TYPE RUN;;;Basic: klavesy F1-F12 (K0-K11), viz napovedu ve hre;;Basic
 AUTO;1;MGLD 00, JUMP 2000;Left=Left Shift,Right=V;Left:Left,Right:Right,Shift:Left Shift,Esc:Escape;Shift = vlevo, V = vpravo;PR
 BARBAR;2;ROM basic2.rmm, TYPE LOAD 1, TYPE RUN;;;Basic: klavesy F1-F12 (K0-K11), viz napovedu ve hre;;Basic
+BASIC-G;2;ROM basic2.rmm;;;BASIC-G V2.0: vlastni programy z klavesnice (LIST, RUN, ...), SAVE se nikam neuklada;;Programovani
 BLACK;2;ROM basic2.rmm, TYPE LOAD 1, TYPE RUN;;;Basic: klavesy F1-F12 (K0-K11), viz napovedu ve hre;;Basic
 BLUDISTE;2;MGLD 00;Up=Left Shift,E=Left Shift,H=M,I=Left Ctrl;Forward:Left Shift,Left:Left,Right:Right,Space:Space,M:m,Stop:Left Ctrl,Esc:Escape;krok: Shift (pad: nahoru), obrat: sipky, M mapa (pad: X), Ctrl = STOP, konec hry (pad: Y), Space start;P
 BOMBARDE;2;ROM basic2.rmm, TYPE LOAD 2, TYPE RUN;;;Basic: klavesy F1-F12 (K0-K11), viz napovedu ve hre;;Basic
@@ -42,6 +43,7 @@ JASON;2;MGLD 00;Return=Space;Left:Left,Right:Right,Space:Space,Esc:Escape;mezera
 JOE1;2;ROM basic2.rmm, TYPE LOAD 1, TYPE RUN;;;Basic: klavesy F1-F12 (K0-K11), viz napovedu ve hre;;Basic
 KANKAN;1;MGLD 00, JUMP 0000;;;;;Dema
 KAREL;1;MGLD 00, JUMP 0000;;;;;Programovani
+KAREL2D;2;ROM basic2.rmm, TYPE LOAD 22, TYPE RUN;;;2D Karel v Basicu: prikazy z klavesnice, vzdy jedno slovo a Enter;;Programovani
 KAREL3D;1;MGLD 00, JUMP 0000;;;;;Programovani
 KON;2;ROM basic2.rmm, TYPE LOAD 4, TYPE RUN;;;Basic: klavesy F1-F12 (K0-K11), viz napovedu ve hre;;Basic
 KRES;2;ROM basic2.rmm, TYPE LOAD 1, TYPE RUN;;;Basic: klavesy F1-F12 (K0-K11), viz napovedu ve hre;;Basic
@@ -54,6 +56,7 @@ MANIC-2;2;MGLD 03
 MATODEMO;2;ROM basic2.rmm, TYPE LOAD 55, TYPE RUN;;;Basic: klavesy F1-F12 (K0-K11), viz napovedu ve hre;;Basic
 MESIAC;2;ROM basic2.rmm, TYPE LOAD 23, TYPE RUN;;;Basic: klavesy F1-F12 (K0-K11), viz napovedu ve hre;;Basic
 MESTO;1;MGLD 00;;;HESLO: konvalinka (textova hra);
+MRAVEC;2;ROM basic2.rmm, TYPE LOAD 34, TYPE RUN;;;jednoduchy logicky jazyk Mravec: prikazy z klavesnice;;Programovani
 MTRON-1;1;MGLD 00;;;zadani inicialu;
 MTRON-2;1;MGLD 00;;;zadani inicialu;
 MTRON-3;1;MGLD 00;;;zadani inicialu;
@@ -82,6 +85,7 @@ SACH;1;MGLD 00, JUMP 0000
 SASKO;2;MGLD 00;;Left:Left,Right:Right,Fast left:End,Fast right:PageDown,Space:Space,Enter:Return,RCL:Keypad +,F12:F12,Esc:Escape;sipky, End/PgDn rychle, Space, Enter, Num+ (RCL), F12;;Pro nejmensi
 SP-DEMIS;1;MGLD 00;;;zadani jmena;
 SPACE-RA;1;MGLD 00
+T.MRAVEC;2;ROM basic2.rmm, TYPE LOAD 52, TYPE RUN;;;Toci-Mravec: velikost desky 4 az 8 (cislo), potom prikazy z klavesnice;;Programovani
 TANK;1;MGLD 00, JUMP 2000
 TANKY;2;ROM basic2.rmm, TYPE LOAD 53, TYPE RUN;E=F2,Z=F1,Up=F2,Down=F1,Return=F4,Space=F4;Down:F1,Up:F2,Fire:F4,Esc:Escape;F1 dolu, F2 nahoru, F4 palba (K0, K1, K3), pak libovolna klavesa;PR;Basic
 TAVA;2;ROM basic2.rmm, TYPE LOAD 5, TYPE RUN;;;Basic: klavesy F1-F12 (K0-K11), viz napovedu ve hre;;Basic
@@ -94,3 +98,6 @@ WURMI;2;ROM basic2.rmm, TYPE LOAD 7, TYPE RUN;Left=F1,Right=F4,Up=F3,Down=F2,E=F
 ZABY;1;MGLD 00, JUMP 1500;;;zapis jmena do tabulky;
 ZED;1;MGLD 00, JUMP 1000;Left=Left Shift,Right=V;Left:Left,Right:Right,Shift:Left Shift,Esc:Escape;Shift = vlevo, V = vpravo;PR
 ZMRZLINY;2;MGLD 00;;;;;Pro nejmensi
+ZOFKA2;2;ROM basic2.rmm, TYPE LOAD 10, TYPE RUN;;;korytnacka Zofka (Logo): prikazy z klavesnice, potvrzeni Enter;;Programovani
+ZOFKA2-STARA;2;ROM basic2.rmm, TYPE LOAD 12, TYPE RUN;;;starsi verze Zofky: prikazy z klavesnice, potvrzeni Enter;;Programovani
+ZOFKA2T;2;ROM basic2.rmm, TYPE LOAD 11, TYPE RUN;;;Zofka s prikazem pro tisk: prikazy z klavesnice, potvrzeni Enter;;Programovani
