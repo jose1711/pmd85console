@@ -47,8 +47,11 @@ JASON;2;MGLD 00;Return=Space;Left:Left,Right:Right,Space:Space,Esc:Escape;mezera
 JOE1;2;ROM basic2.rmm, FONT, TYPE LOAD 1, TYPE RUN;;;BASIC: klavesy F1-F12 (K0-K11), viz napovedu ve hre;;BASIC
 KANKAN;1;MGLD 00, JUMP 0000;;;;;Dema
 KAREL;1;MGLD 00, JUMP 0000;;;;;Programovani
+KAREL-2R;1;MGLD 00, JUMP 0000;;;2D Karel (T. Bartovsky): prikazy z klavesnice, vzdy jedno slovo a Enter;;Programovani
 KAREL2D;2;ROM basic2.rmm, FONT, TYPE LOAD 22, TYPE RUN;;;2D Karel v Basicu: prikazy z klavesnice, vzdy jedno slovo a Enter;;Programovani
 KAREL3D;1;MGLD 00, JUMP 0000;;;;;Programovani
+KAREL3D0;1;MGLD 00, JUMP 0000;;;3D Karel v0.0 (M. Vittek): prikazy z klavesnice;;Programovani
+KAREL3D2;1;MGLD 00, JUMP 0000;;;3D Karel v2.0 (M. Vittek): prikazy z klavesnice;;Programovani
 KON;2;ROM basic2.rmm, FONT, TYPE LOAD 4, TYPE RUN;;;BASIC: klavesy F1-F12 (K0-K11), viz napovedu ve hre;;BASIC
 KRES;2;ROM basic2.rmm, FONT, TYPE LOAD 1, TYPE RUN;;;BASIC: klavesy F1-F12 (K0-K11), viz napovedu ve hre;;BASIC
 KURA;1;MGLD 00, JUMP 0000
@@ -73,9 +76,11 @@ MYTH1;2;ROM basic2.rmm, FONT, TYPE LOAD 1, TYPE RUN;;;BASIC: klavesy F1-F12 (K0-
 MYTH2;2;ROM basic2.rmm, FONT, TYPE LOAD 1, TYPE RUN;;;BASIC: klavesy F1-F12 (K0-K11), viz napovedu ve hre;;BASIC
 MYTH3;2;ROM basic2.rmm, FONT, TYPE LOAD 1, TYPE RUN;;;BASIC: klavesy F1-F12 (K0-K11), viz napovedu ve hre;;BASIC
 NINJA;2;ROM basic2.rmm, FONT, TYPE LOAD 1, TYPE RUN;;;BASIC: klavesy F1-F12 (K0-K11), viz napovedu ve hre;;BASIC
+ON-DUCH4;1;MGLD 00;;;Pampuch a duch, anglicka verze s hudbou;;
 OSTROV;2;ROM basic2.rmm, FONT, TYPE LOAD 1, TYPE RUN;;;BASIC: klavesy F1-F12 (K0-K11), viz napovedu ve hre;;BASIC
 PAMPUCH;1;MGLD 01
 PAMPUCHX;1;MGLD 00;;;Pampuch a duch (255 zivotu): H hrat, K kopirovat;
+PANGO;1;MGLD 00;;;Hungry Pango (D. Blasko): G hra, S ulozit;;
 PAVUCI;2;ROM basic2.rmm, FONT, TYPE LOAD 40, TYPE RUN;Left=I,Right=P,Up=E,Down=Z,Return=N;E up:e,Y down:z,I left:i,P right:p,N jump:n,Esc:Escape;sipky = pohyb (E/Y/I/P), N = skok (podrzet), libovolna klavesa start (pad: B skok - podrzet);P;BASIC
 PENETR;2;MGLD 03
 PEXESO;2;MGLD 00
@@ -112,3 +117,4 @@ ZMRZLINY;2;MGLD 00;;;;;Pro nejmensi
 ZOFKA2;2;ROM basic2.rmm, FONT, TYPE LOAD 10, TYPE RUN;;;korytnacka Zofka (Logo): prikazy z klavesnice, potvrzeni Enter;;Programovani
 ZOFKA2-STARA;2;ROM basic2.rmm, FONT, TYPE LOAD 12, TYPE RUN;;;starsi verze Zofky: prikazy z klavesnice, potvrzeni Enter;;Programovani
 ZOFKA2T;2;ROM basic2.rmm, FONT, TYPE LOAD 11, TYPE RUN;;;Zofka s prikazem pro tisk: prikazy z klavesnice, potvrzeni Enter;;Programovani
+ZOFKA3;2;MGLD 00, JUMP 0003;;;korytnacka Zofka v strojovem kodu (verze 2.2): prikazy z klavesnice, potvrzeni Enter;;Programovani

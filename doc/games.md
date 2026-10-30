@@ -56,6 +56,16 @@ and the length and the checksums of the header and the data are written again. T
 (NALET, SLALOM, TEST3A, KLAV-PMD) and the test programs are not included. `PEXESO-B` is the BASIC game, `PEXESO` the
 machine code one.
 
+### Tapes of the RM-TEAM packages
+
+The `.ptp` files of the packages of pmd85.borik.net (basic, logo, karel, games_other) have a 2 byte length (`length + 2`)
+before every block of data and in front of the body of an autorun program: `lead, header (15), [length][data][checksum]`.
+The monitor of the emulator takes that length for data and shifts the program by 2 bytes. The tapes here have it cut off
+(the header and the checksum of the block stay, it is valid for the layout `[length][data][checksum]`). The programs
+that are loaded by a block number `MGLD nn` work with `00` or with a number below `0x10`; with a bigger number the
+monitor stops after the name (`16/? NAME`), so these tapes have the number 0 in the header and are loaded with
+`MGLD 00`. GRDEMO of `games_other` does not load (stops after the name) and is not included.
+
 ### Icons
 
 Icons left of the name show what the game can be played with besides the keyboard
