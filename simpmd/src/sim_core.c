@@ -281,7 +281,9 @@ static void InitializePMD2 ()
 
 
 /** Keys that load a game: the commands of the note of games.lst, "MGLD 00, JUMP 2000" is typed as
- *  "MGLD 00|" and, after the tape stops loading ('~'), "JUMP 2000|".
+ *  "MGLD 00|" and, after the tape stops loading ('~'), "JUMP 2000|". "POKE <hex address> <hex value>" writes a byte
+ *  to the memory after the load (for a game that reads a variable that is never set; on the real PMD 85 the RAM is not
+ *  cleared, here it is zero).
  */
 static std::string AutoloadKeys (const std::string &sNote)
 {
@@ -300,6 +302,10 @@ static std::string AutoloadKeys (const std::string &sNote)
       sResult += sPart + "|";
     else if (sPart.compare (0, 4, "JUMP") == 0)
       sResult += "~" + sPart + "|";
+    else if (sPart.compare (0, 4, "POKE") == 0)
+      // "POKE 39A4 01" becomes "{39A4=01}", written to the memory after the tape stops loading.
+      sResult += "~{" + sPart.substr (5, sPart.find (' ', 5) == std::string::npos ? 0 : sPart.find (' ', 5) - 5) + "=" +
+                 (sPart.find (' ', 5) == std::string::npos ? "" : sPart.substr (sPart.find (' ', 5) + 1)) + "}";
   }
   return (sResult);
 }
@@ -941,6 +947,15 @@ int main (int iArgC, const char *apArgV [])
               } else {
                 iKeyTime = iNow + 40;
               }
+            } else if (cKey == '{') {
+              // POKE of the games list: "{39A4=01}", a hex address and a hex value.
+              unsigned iAddr = 0, iValue = 0;
+              size_t iClose = sKeys.find ('}', iKeyPos);
+              if (sscanf (sKeys.c_str () + iKeyPos + 1, "%x=%x", &iAddr, &iValue) == 2 && iAddr < 65536)
+                abMemoryData [iAddr] = (byte) iValue;
+              iKeyPos = iClose == std::string::npos ? sKeys.size () : iClose + 1;
+              iKeyTime = iNow + 40;
+              iWaitSince = 0;
             } else if (!bKeyDown && !bScanning && iNow - iWaitSince < 5000) {
               // Not scanning yet, try again at the next paint.
               iKeyTime = iNow + 40;

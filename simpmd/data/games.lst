@@ -15,7 +15,7 @@ BOULDER;1;MGLD 03
 CERES-1;2;MGLD 00;;E up:e,Y down:z,Left:Left,Right:Right,Space:Space,Enter:Return,1:1,2:2,3:3,4:4,Esc:Escape;E/Y nahoru/dolu, sipky, Space, Enter, 1-4;P
 CERES-1.A;2
 CERES-2.A;2
-CROSSI;1;MGLD 00, JUMP 0000
+CROSSI;1;MGLD 00, JUMP 0000, POKE 39A4 01
 DOMCEKY;1;MGLD 00, JUMP 0000;;Left:Left,Right:Right,Fast left:End,Fast right:PageDown,Space:Space,Enter:Return,RCL:Keypad +,F12:F12,Esc:Escape;sipky, End/PgDn rychle, Space, Enter, Num+ (RCL), F12;
 FERLAJT;1;MGLD 13
 FLAPPY;1;MGLD 03

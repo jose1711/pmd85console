@@ -18,6 +18,11 @@ table in `simpmd/README`.
 After the start the emulator types the commands itself: `MGLD 00` and, for `MGLD 00, JUMP 2000`, the `JUMP` once
 the tape stops loading, so selecting a game is enough. `PMD_AUTOLOAD=0` turns it off (type the commands by hand).
 
+`POKE <hex address> <hex value>` in the note writes a byte to the memory once the tape has stopped loading; put it
+after `JUMP`, because a game clears its variables when it starts. It is for a game that reads a variable it never sets
+(the RAM of the real PMD 85 is not cleared at power on, here it is zero): CROSSI (Kamikadze) hangs in its explosion
+routine when `39A4` is 0, so its note is `MGLD 00, JUMP 0000, POKE 39A4 01`.
+
 To add a game, copy its tape to the share directory and add a line to `games.lst`.
 
 ### Icons
