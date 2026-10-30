@@ -14,7 +14,7 @@ BOULD+3;2;MGLD 03;Return=H,Space=H,Up=E,Down=Z;E up:e,Y down:z,Left:Left,Right:R
 BOULDER;1;MGLD 03;Return=H,Space=H,Up=E,Down=Z;E up:e,Y down:z,Left:Left,Right:Right,H:h,Esc:Escape;H hra, I informace, sipky vlevo/vpravo, E/Y nahoru/dolu (pad a TV: OK = H);PR
 CROSSI;1;MGLD 00, JUMP 0000, POKE 39A4 01;;;menu: M ovladani (8 klaves, nastavitelne), S rychlost, G hra, jen klavesnice
 DOMCEKY;1;MGLD 00, JUMP 0000;;Left:Left,Right:Right,Fast left:End,Fast right:PageDown,Space:Space,Enter:Return,RCL:Keypad +,F12:F12,Esc:Escape;sipky, End/PgDn rychle, Space, Enter, Num+ (RCL), F12;
-FERLAJT;1;MGLD 13
+FERLAJT;1;MGLD 13;Space=Return;Enter:Return,Esc:Escape;hudebni demo, staci Enter (TV: OK, pad: A, B nebo Start);PR
 FLAPPY;1;MGLD 03
 FRED;2;MGLD 03
 GALAXIA;1;MGLD 00
