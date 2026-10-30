@@ -161,6 +161,26 @@ static void KeySend (SDL_Keycode iSym, Uint8 iState)
   sKey.keysym.sym = iSym;
   KBDEventHandler (&sKey);
 }
+
+/** [Ctrl] is the STOP key of the PMD 85 (a game or the monitor stops at it), but it is also the modifier of the
+ *  keys of the saved state (Ctrl+F5, Ctrl+F9). The [Ctrl] of the host goes to the simulated keyboard only when
+ *  PMD_CTRL_MS pass without F5 or F9 (or the key is released sooner); with F5 or F9 it does not go at all.
+ */
+#define PMD_CTRL_MS             120
+static const Uint32 iCtrlEvent = SDL_USEREVENT + 4;
+static int iCtrlSerial = 0;
+static bool bCtrlPending = false, bCtrlSent = false, bCtrlSwallow = false;
+static SDL_Keycode iCtrlSym = SDLK_LCTRL;
+
+static Uint32 CtrlTimerCallback (Uint32 iInterval, void *pSerial)
+{
+  SDL_Event sEvent;
+  SDL_zero (sEvent);
+  sEvent.type = iCtrlEvent;
+  sEvent.user.code = (Sint32) (intptr_t) pSerial;
+  SDL_PushEvent (&sEvent);
+  return (0);
+}
 /// Keys typed on the simulated keyboard after the start of a game (the load command, PMD_KEYS in test mode).
 static std::string sKeys;
 /// Position in the keys, key press or release.
@@ -893,6 +913,9 @@ static void EmulationInitialize (const std::string &sTape, int iModel)
 
   KeysStart (sTape);
   RomModuleLoad (sTape);
+  // The [Ctrl] of the previous game is gone with its keyboard.
+  bCtrlPending = bCtrlSent = bCtrlSwallow = false;
+  iCtrlSerial ++;
 
   if (iModel == 2)
   {
@@ -1028,6 +1051,17 @@ int main (int iArgC, const char *apArgV [])
     // The window was exposed, resized or restored, paint the screen again even if it did not change.
     if (sEvent.type == SDL_WINDOWEVENT)
       DSPInvalidate ();
+    if (sEvent.type == iCtrlEvent)
+    {
+      // [Ctrl] was held PMD_CTRL_MS and no F5 or F9 came: it is the STOP key.
+      if (bCtrlPending && sEvent.user.code == iCtrlSerial)
+      {
+        bCtrlPending = false;
+        bCtrlSent = true;
+        KeySend (iCtrlSym, SDL_PRESSED);
+      }
+      continue;
+    }
     if (sEvent.type == iTapEvent)
     {
       KeySend ((SDL_Keycode) sEvent.user.code, SDL_RELEASED);
@@ -1137,9 +1171,41 @@ int main (int iArgC, const char *apArgV [])
              }
            }
         } else {
-          if ((sEvent.key.keysym.mod & (KMOD_ALT | KMOD_CTRL)) && (sEvent.key.keysym.sym == SDLK_F5 || sEvent.key.keysym.sym == SDLK_F9)) {
+          if (sEvent.key.keysym.sym == SDLK_LCTRL || sEvent.key.keysym.sym == SDLK_RCTRL) {
+            // [Ctrl] (STOP of the PMD 85) is held back, see PMD_CTRL_MS.
+            if (sEvent.type == SDL_KEYDOWN) {
+              if (!sEvent.key.repeat && !bCtrlPending && !bCtrlSent) {
+                bCtrlPending = true;
+                iCtrlSym = sEvent.key.keysym.sym;
+                SDL_AddTimer (PMD_CTRL_MS, CtrlTimerCallback, (void *) (intptr_t) ++iCtrlSerial);
+              }
+            } else if (bCtrlSwallow) {
+              bCtrlSwallow = false;
+            } else if (bCtrlPending) {
+              // A short press: the key goes down now and up after PMD_TAP_MS.
+              bCtrlPending = false;
+              iCtrlSerial ++;
+              KeySend (iCtrlSym, SDL_PRESSED);
+              SDL_AddTimer (PMD_TAP_MS, TapTimerCallback, (void *) (intptr_t) iCtrlSym);
+            } else if (bCtrlSent) {
+              bCtrlSent = false;
+              KeySend (iCtrlSym, SDL_RELEASED);
+            }
+          } else if ((sEvent.key.keysym.mod & (KMOD_ALT | KMOD_CTRL)) && (sEvent.key.keysym.sym == SDLK_F5 || sEvent.key.keysym.sym == SDLK_F9)) {
             // Alt+F5 or Ctrl+F5 saves, Alt+F9 or Ctrl+F9 loads the state of the game (the keys do not reach the PMD 85).
             if (sEvent.type == SDL_KEYDOWN && !sEvent.key.repeat) {
+              if (sEvent.key.keysym.mod & KMOD_CTRL) {
+                // The [Ctrl] of the state key is not STOP: not sent yet, or released when it went already.
+                if (bCtrlPending) {
+                  bCtrlPending = false;
+                  iCtrlSerial ++;
+                  bCtrlSwallow = true;
+                } else if (bCtrlSent) {
+                  bCtrlSent = false;
+                  KeySend (iCtrlSym, SDL_RELEASED);
+                  bCtrlSwallow = true;
+                }
+              }
               if (sEvent.key.keysym.sym == SDLK_F5)
                 StateSave ();
               else

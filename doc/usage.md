@@ -51,6 +51,10 @@ The state of the running game can be saved and loaded again:
 | [Alt]+[F5] or [Ctrl]+[F5] | save the state of the game |
 | [Alt]+[F9] or [Ctrl]+[F9] | load the saved state |
 
+[Ctrl] is the STOP key of the PMD 85 (a game or the monitor stops at it, BLUDISTE and FLAPPY use it). The [Ctrl] of the host
+goes to the PMD 85 only after 120 ms without F5 or F9, so [Ctrl]+[F5] and [Ctrl]+[F9] do not stop the game (STOP reaches
+the game 120 ms later than a plain [Ctrl] press). [Alt] has no such delay, but a window manager may take [Alt]+[F5].
+
 - The file is `<game>.sav` in `PMD_STATEDIR` (default: `states` in the share directory).
 - Saved: the processor registers, the output latches, the clock and the 64 KB of memory. Not saved: the tape position
   and the keys held on the host.
