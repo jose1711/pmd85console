@@ -794,8 +794,8 @@ int main (int iArgC, const char *apArgV [])
              }
            }
         } else {
-          if ((sEvent.key.keysym.mod & KMOD_ALT) && (sEvent.key.keysym.sym == SDLK_F5 || sEvent.key.keysym.sym == SDLK_F9)) {
-            // Alt+F5 saves and Alt+F9 loads the state of the game (the keys do not reach the PMD 85).
+          if ((sEvent.key.keysym.mod & (KMOD_ALT | KMOD_CTRL)) && (sEvent.key.keysym.sym == SDLK_F5 || sEvent.key.keysym.sym == SDLK_F9)) {
+            // Alt+F5 or Ctrl+F5 saves, Alt+F9 or Ctrl+F9 loads the state of the game (the keys do not reach the PMD 85).
             if (sEvent.type == SDL_KEYDOWN && !sEvent.key.repeat) {
               if (sEvent.key.keysym.sym == SDLK_F5)
                 StateSave ();

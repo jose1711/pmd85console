@@ -48,8 +48,8 @@ The state of the running game can be saved and loaded again:
 
 | Key | Action |
 |---|---|
-| [Alt]+[F5] | save the state of the game |
-| [Alt]+[F9] | load the saved state |
+| [Alt]+[F5] or [Ctrl]+[F5] | save the state of the game |
+| [Alt]+[F9] or [Ctrl]+[F9] | load the saved state |
 
 - The file is `<game>.sav` in `PMD_STATEDIR` (default: `states` in the share directory).
 - Saved: the processor registers, the output latches, the clock and the 64 KB of memory. Not saved: the tape position
