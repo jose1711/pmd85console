@@ -110,8 +110,9 @@ Free text shown under the list for the selected game. "neznamo" is shown for gam
 - The ship moves by 3 steps with the fast arrows [End] and [PageDown] (the keys LLEFT and RRIGHT of the PMD 85);
   the gamepad [LB] and [RB] send them.
 - The difficulty is `0`-`3` (4 is not playable). On the gamepad: D-pad up = 0, D-pad down = 1, [X] = 2, [Y] = 3.
-  The TV remote is not enough: the difficulty needs the digits, which a TV may not send over CEC (the tested one
-  does not). OK (Enter) is remapped to [Space], so it fires.
+  The TV remote plays in a limited mode: OK (Enter) is remapped to [Space], so it fires, and the cursor up and down
+  select the difficulty `0` and `1` (the tested TV does not send the digits over CEC, so `2` and `3` are only on the
+  gamepad). The fast arrows are not on the TV remote either.
 
 ### MANIC
 
