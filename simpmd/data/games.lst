@@ -1,6 +1,8 @@
 #CATEGORY Pro nejmensi
 #CATEGORY Dema
+#CATEGORY Libor Lasota
 #CATEGORY Programovani
+#CATEGORY Programy
 #CATEGORY BASIC
 # Games offered by the list menu (Up or [E] in the menu), one per line: NAME;MODEL;NOTE[;REMAP[;PAD[;KEYS[;INPUT]]]]
 # KEYS is a free text with the controls, shown under the list for the selected game (no diacritics).
@@ -119,3 +121,16 @@ ZOFKA2-STARA;2;ROM basic2.rmm, FONT, TYPE LOAD 12, TYPE RUN;;;starsi verze Zofky
 ZOFKA2T;2;ROM basic2.rmm, FONT, TYPE LOAD 11, TYPE RUN;;;Zofka s prikazem pro tisk: prikazy z klavesnice, potvrzeni Enter;;Programovani
 ZOFKA3;2;MGLD 00, JUMP 0003;;;korytnacka Zofka v strojovem kodu (verze 2.2): prikazy z klavesnice, potvrzeni Enter;;Programovani
 DIZZY;2;MGLD 00, SHIFT;Space=Left Shift;Left:Left,Right:Right,Space jump:Space,Enter action:Return,Esc:Escape;Magicland Dizzy (PMD 85-2A/3, cb verze bez hudby): sipky = pohyb, Shift = skok/start, Enter = akce/zvednout (pad: A skok, B akce);P;
+JETPAC;1;MGLD 01;;;Jetpac: v menu 3 = klavesnice, 5 = start, 7 = nastaveni klaves;;Libor Lasota
+PSSST;1;MGLD 02;;;Pssst: v menu 3 = klavesnice, 5 = start, 7 = nastaveni klaves;;Libor Lasota
+ARKANOID;1;MGLD 04;;;Space = start, ovladani viz informace ve hre (jen klavesnice);;Libor Lasota
+TREAISLA;1;MGLD 05;Left=O,Right=P,Up=Q,Down=A,Space=M,Return=S;Q up:q,A down:a,O left:o,P right:p,M hod mece/skok:m,S start:s,H pauza:h,T pokracovat:t,Esc:Escape;S = start, pak M (PRESS FIRE), Q/A/O/P = pohyb, M = hod mece/skok, H pauza, T pokracovat, F1 = zvuk (pad: D-pad, A = M, B = S);P;Libor Lasota
+TRAILBLA;1;MGLD 06;;;Enter = hra, I informace, B barvy, H hudba, J joystick (jen klavesnice);;Libor Lasota
+JSWILLY;1;MGLD 08;;;Jet Set Willy: v menu 3 = start, 1 = ovladani (jen klavesnice);;Libor Lasota
+FFRUITS;1;MGLD 09;;;Enter = nova hra, Keypad + (RCL) = redefinice klaves, Ctrl (STOP) = menu, 1-4 nastaveni (jen klavesnice);;Libor Lasota
+MAGICIAN;1;MGLD 0A;Left=O,Right=P,Up=Q,Down=A,Space=M;Q up:q,A down:a,O left:o,P right:p,M akce:m,1:1,2:2,3:3,4:4,Esc:Escape;v menu 1 = start, 2 obtiznost, 3 ovladani, 4 zvuk, hra: Q/A/O/P a M (pad: D-pad, A = M);P;Libor Lasota
+FLAPPY2K;1;MGLD 0B;;;Flappy 2K: klavesy se nastavuji v menu hry (jen klavesnice);;Libor Lasota
+KASWORD3;1;MGLD 00, JUMP 0000;;;textovy editor KASWORD 3 (nic se neuklada, jen klavesnice);;Programy
+EVIDENCE;1;MGLD 00;;;databazovy system EVIDENCE (nic se neuklada, jen klavesnice);;Programy
+K-STUDIO;2;MGLD 01;;;graficky editor K-STUDIO (nic se neuklada, bez mysi);;Programy
+GR;2;MGLD 00;;;graficky editor GR (nic se neuklada, bez mysi);;Programy
