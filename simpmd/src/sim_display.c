@@ -688,7 +688,7 @@ static void DSPDrawIconRemote (int iX, int iY, int iSize)
 }
 
 
-void DSPRenderGameList (int screen_width, int screen_height, int index, const std::vector <std::string> &oNames, const std::vector <std::string> &oNotes, const std::vector <std::string> &oInputs, const std::string &sHelp)
+void DSPRenderGameList (int screen_width, int screen_height, int index, const std::string &sTitle, const std::vector <std::string> &oNames, const std::vector <std::string> &oNotes, const std::vector <std::string> &oInputs, const std::string &sHelp)
 {
   const int iRowHeight = FONT_HEIGHT + 8;
   const int iTop = 140;
@@ -711,7 +711,7 @@ void DSPRenderGameList (int screen_width, int screen_height, int index, const st
   SDL_SetRenderDrawColor (mRenderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
 
   int iX = (screen_width - MENU_WIDTH) / 2;
-  DSPDrawText (pFont, "Vsechny hry " + std::to_string (index + 1) + "/" + std::to_string (iCount), iX, 60);
+  DSPDrawText (pFont, sTitle + " " + std::to_string (index + 1) + "/" + std::to_string (iCount), iX, 60);
   for (int i = iFirst ; i < iCount && i < iFirst + iRows ; i ++)
   {
     int iY = iTop + (i - iFirst) * iRowHeight;

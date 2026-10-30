@@ -31,6 +31,7 @@ limitations under the License.
 */
 
 #include "sim_common.h"
+#include <algorithm>
 #include <fstream>
 #include <map>
 #include <set>
@@ -90,6 +91,8 @@ struct tGame
   std::string sHelp;
   /// Devices the game can be played with, besides the keyboard: P gamepad, R TV remote control (HDMI-CEC).
   std::string sInput;
+  /// Category (a sub list of the games list), empty for the games of the main list.
+  std::string sCategory;
 };
 /// Buttons of the web remote control for the running game and in the menus.
 static const char *pPadGame = "E up:e,Y down:z,Left:Left,Right:Right,Space:Space,Enter:Return,H:h,I:i,Shift:Left Shift,RCL:Keypad +,Esc:Escape";
@@ -169,8 +172,14 @@ static int iKeyMs = 150;
 static std::vector <tGame> oGames;
 /// The list menu is shown instead of the four games.
 static bool inList = false;
-/// Selected game of the list.
+/// Selected row of the list (see ListView).
 static int listIndex = 0;
+/// Categories of the games, in the order of their first appearance in games.lst.
+static std::vector <std::string> oCategories;
+/// The category that is open in the list, -1 for the main list.
+static int iCategory = -1;
+/// The row of the main list to come back to when a category is closed.
+static int iMainIndex = 0;
 
 
 //--------------------------------------------------------------------------
@@ -280,6 +289,31 @@ static void InitializePMD2 ()
 }
 
 
+/// The row "(o uroven vys)" of an open category.
+static const int LIST_LEVEL_UP = -1000000;
+
+/** The rows of the games list: the main list shows the categories first (a value below zero, -(n + 1) is the
+ *  category n) and then the games without a category, an open category shows the row LIST_LEVEL_UP (back to the main
+ *  list) and its games (the index of oGames).
+ */
+static std::vector <int> ListView ()
+{
+  std::vector <int> oView;
+  if (iCategory >= 0)
+    oView.push_back (LIST_LEVEL_UP);
+  else
+    for (size_t k = 0 ; k < oCategories.size () ; k ++)
+      oView.push_back (-(int) k - 1);
+  for (size_t i = 0 ; i < oGames.size () ; i ++)
+  {
+    const std::string &sCategory = oGames [i].sCategory;
+    if (iCategory < 0 ? sCategory.empty () : sCategory == oCategories [iCategory])
+      oView.push_back ((int) i);
+  }
+  return oView;
+}
+
+
 /** Keys that load a game: the commands of the note of games.lst, "MGLD 00, JUMP 2000" is typed as
  *  "MGLD 00|" and, after the tape stops loading ('~'), "JUMP 2000|". "POKE <hex address> <hex value>" writes a byte
  *  to the memory after the load (for a game that reads a variable that is never set; on the real PMD 85 the RAM is not
@@ -318,8 +352,10 @@ static std::string WebState ()
   std::string sState = std::string ("{\"mode\":\"") + (!inMenu ? "game" : inList ? "list" : "menu") + "\",\"index\":" +
                        std::to_string (inList ? listIndex : gameIndex) + ",\"pad\":\"" + (inMenu ? pPadMenu : sPad.c_str ()) +
                        "\",\"featured\":[\"FLAPPY\",\"BOULDER\",\"MANIC\",\"FRED\"],\"games\":[";
-  for (size_t i = 0 ; i < oGames.size () ; i ++)
-    sState += std::string (i ? "," : "") + "\"" + oGames [i].sTape + "\"";
+  std::vector <int> oView = ListView ();
+  for (size_t i = 0 ; i < oView.size () ; i ++)
+    sState += std::string (i ? "," : "") + "\"" + (oView [i] == LIST_LEVEL_UP ? std::string ("(o uroven vys)") :
+              oView [i] < 0 ? "[ " + oCategories [-oView [i] - 1] + " ]" : oGames [oView [i]].sTape) + "\"";
   return (sState + "]}");
 }
 
@@ -433,7 +469,7 @@ static void GamesLoad ()
     size_t iSecond = iFirst == std::string::npos ? iFirst : sLine.find (';', iFirst + 1);
     if (iSecond == std::string::npos)
       continue;
-    // NAME;MODEL;NOTE[;REMAP[;PAD[;KEYS[;INPUT]]]], the text of the last used column may not contain ';'
+    // NAME;MODEL;NOTE[;REMAP[;PAD[;KEYS[;INPUT[;CATEGORY]]]]], the text of a column may not contain ';'
     std::vector <std::string> oColumns;
     for (size_t iPos = 0 ; ; )
     {
@@ -443,7 +479,7 @@ static void GamesLoad ()
         break;
       iPos = iEnd + 1;
     }
-    oColumns.resize (7);
+    oColumns.resize (8);
     tGame sGame;
     sGame.sTape = oColumns [0];
     sGame.iModel = atoi (oColumns [1].c_str ()) == 2 ? 2 : 1;
@@ -452,6 +488,9 @@ static void GamesLoad ()
     sGame.sPad = oColumns [4];
     sGame.sHelp = oColumns [5];
     sGame.sInput = oColumns [6];
+    sGame.sCategory = oColumns [7];
+    if (!sGame.sCategory.empty () && std::find (oCategories.begin (), oCategories.end (), sGame.sCategory) == oCategories.end ())
+      oCategories.push_back (sGame.sCategory);
     oGames.push_back (sGame);
   }
 }
@@ -466,13 +505,38 @@ static void MenuRender ()
     return;
   }
   std::vector <std::string> oNames, oNotes, oInputs;
-  for (size_t i = 0 ; i < oGames.size () ; i ++)
+  std::vector <int> oView = ListView ();
+  if (listIndex >= (int) oView.size ())
+    listIndex = oView.empty () ? 0 : (int) oView.size () - 1;
+  for (size_t i = 0 ; i < oView.size () ; i ++)
   {
-    oInputs.push_back (oGames [i].sInput);
-    oNames.push_back (oGames [i].sTape);
-    oNotes.push_back ((oGames [i].iModel == 2 ? "PMD 85-2  " : "PMD 85-1  ") + oGames [i].sNote);
+    if (oView [i] == LIST_LEVEL_UP)
+    {
+      oInputs.push_back ("");
+      oNames.push_back ("(o uroven vys)");
+      oNotes.push_back ("");
+      continue;
+    }
+    if (oView [i] < 0)
+    {
+      // A category: counts its games (the note stays empty, the name is longer than the name column).
+      const std::string &sCategory = oCategories [-oView [i] - 1];
+      int iGames = 0;
+      for (size_t j = 0 ; j < oGames.size () ; j ++)
+        iGames += oGames [j].sCategory == sCategory;
+      oInputs.push_back ("");
+      oNames.push_back ("[ " + sCategory + " ] (" + std::to_string (iGames) + ")");
+      oNotes.push_back ("");
+      continue;
+    }
+    oInputs.push_back (oGames [oView [i]].sInput);
+    oNames.push_back (oGames [oView [i]].sTape);
+    oNotes.push_back ((oGames [oView [i]].iModel == 2 ? "PMD 85-2  " : "PMD 85-1  ") + oGames [oView [i]].sNote);
   }
-  DSPRenderGameList (fullscreen.w, fullscreen.h, listIndex, oNames, oNotes, oInputs, oGames.empty () ? std::string () : oGames [listIndex].sHelp);
+  std::string sHelp;
+  if (!oView.empty ())
+    sHelp = oView [listIndex] == LIST_LEVEL_UP ? "Enter vrati o uroven vys" : oView [listIndex] < 0 ? "Enter otevre kategorii" : oGames [oView [listIndex]].sHelp;
+  DSPRenderGameList (fullscreen.w, fullscreen.h, listIndex, iCategory < 0 ? std::string ("Vsechny hry") : oCategories [iCategory], oNames, oNotes, oInputs, sHelp);
 }
 
 
@@ -539,6 +603,20 @@ static void StateLoad ()
   }
 }
 
+/// Back in the games list: from a category to the main list (on the row of the category), from the main list to the menu.
+static void ListBack ()
+{
+  if (iCategory >= 0)
+  {
+    iCategory = -1;
+    listIndex = iMainIndex;
+  }
+  else
+    inList = false;
+  MenuRender ();
+}
+
+
 /// What Esc does: back from a game to the menu, from the games list to the main menu, quit in the main menu.
 static void EscapeAction ()
 {
@@ -548,8 +626,7 @@ static void EscapeAction ()
     MenuRender ();
     inMenu = true;
   } else if (inList) {
-    inList = false;
-    MenuRender ();
+    ListBack ();
   } else {
     SIMRequestShutdown ();
   }
@@ -757,10 +834,11 @@ int main (int iArgC, const char *apArgV [])
              bool bUp = (iSym == SDLK_UP || iSym == SDLK_e);
              bool bDown = (iSym == SDLK_DOWN || iSym == SDLK_z);
              if (inList) {
-               int iCount = (int) oGames.size ();
+               std::vector <int> oView = ListView ();
+               int iCount = (int) oView.size ();
                if (iSym == SDLK_ESCAPE) {
-                 inList = false;
-                 MenuRender ();
+                 ListBack ();
+                 continue;
                }
                if (bUp || bDown || iSym == SDLK_LEFT || iSym == SDLK_RIGHT || iSym == SDLK_PAGEUP || iSym == SDLK_PAGEDOWN) {
                  int iStep = bUp ? -1 : bDown ? 1 : (iSym == SDLK_LEFT || iSym == SDLK_PAGEUP) ? -10 : 10;
@@ -771,10 +849,20 @@ int main (int iArgC, const char *apArgV [])
                    listIndex = std::max (0, std::min (iCount - 1, listIndex + iStep));
                  MenuRender ();
                }
-               if (iSym == SDLK_RETURN) {
-                 DSPMenuShutdown ();
-                 EmulationInitialize (PMD_SHARE + oGames [listIndex].sTape, oGames [listIndex].iModel);
-                 inMenu = false;
+               if (iSym == SDLK_RETURN && iCount > 0) {
+                 if (oView [listIndex] == LIST_LEVEL_UP) {
+                   ListBack ();
+                 } else if (oView [listIndex] < 0) {
+                   // Open the category, the cursor on its first game.
+                   iMainIndex = listIndex;
+                   iCategory = -oView [listIndex] - 1;
+                   listIndex = 1;
+                   MenuRender ();
+                 } else {
+                   DSPMenuShutdown ();
+                   EmulationInitialize (PMD_SHARE + oGames [oView [listIndex]].sTape, oGames [oView [listIndex]].iModel);
+                   inMenu = false;
+                 }
                }
              } else {
                if (iSym == SDLK_ESCAPE) { 

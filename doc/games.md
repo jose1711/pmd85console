@@ -43,7 +43,7 @@ known yet.
 One line per tape, columns separated by `;` (do not use `;` inside a column), `#` starts a comment.
 
 ```
-NAME;MODEL;NOTE[;REMAP[;PAD[;KEYS[;INPUT]]]]
+NAME;MODEL;NOTE[;REMAP[;PAD[;KEYS[;INPUT[;CATEGORY]]]]]
 ```
 
 | # | Column | Meaning |
@@ -55,6 +55,16 @@ NAME;MODEL;NOTE[;REMAP[;PAD[;KEYS[;INPUT]]]]
 | 5 | `PAD` | buttons of the web remote control for this game |
 | 6 | `KEYS` | free text with the controls, shown under the list (without diacritics) |
 | 7 | `INPUT` | devices besides the keyboard: `P` gamepad, `R` TV remote |
+| 8 | `CATEGORY` | a sub list of the games list (see below), empty for the games of the main list |
+
+### `CATEGORY`
+
+The games list shows the categories first, as rows `[ Name ] (number of games)`, then the games without a category.
+[Enter] opens a category, its first row `(o uroven vys)` (or a held [Esc]) goes back to the main list. A category exists
+as soon as a game names it (the order is the order of the first game in `games.lst`); the name is shown as it is
+written, without diacritics. The columns before it must be there, empty if needed (`ZMRZLINY;2;MGLD 00;;;;;Pro nejmensi`).
+The web remote control gets the same rows. Now: `Pro nejmensi` (DOMCEKY, POSTARIK, ROBOTIK, ZMRZLINY, SASKO), `Dema`
+(FERLAJT, KANKAN), `Programovani` (KAREL, KAREL3D).
 
 ### `REMAP`
 
