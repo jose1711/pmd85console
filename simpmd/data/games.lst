@@ -12,8 +12,6 @@ AUTO;1;MGLD 00, JUMP 2000;Left=Left Shift,Right=V;Left:Left,Right:Right,Shift:Le
 BLUDISTE;2;MGLD 00;Up=Left Shift,E=Left Shift,H=M,I=Left Ctrl;Forward:Left Shift,Left:Left,Right:Right,Space:Space,M:m,Stop:Left Ctrl,Esc:Escape;krok: Shift (pad: nahoru), obrat: sipky, M mapa (pad: X), Ctrl = STOP, konec hry (pad: Y), Space start;P
 BOULD+3;2;MGLD 03;Return=H,Space=H,Up=E,Down=Z;E up:e,Y down:z,Left:Left,Right:Right,H:h,Esc:Escape;H hra, I informace, sipky vlevo/vpravo, E/Y nahoru/dolu (pad a TV: OK = H);PR
 BOULDER;1;MGLD 03;Return=H,Space=H,Up=E,Down=Z;E up:e,Y down:z,Left:Left,Right:Right,H:h,Esc:Escape;H hra, I informace, sipky vlevo/vpravo, E/Y nahoru/dolu (pad a TV: OK = H);PR
-CERES-1.A;2
-CERES-2.A;2
 CROSSI;1;MGLD 00, JUMP 0000, POKE 39A4 01
 DOMCEKY;1;MGLD 00, JUMP 0000;;Left:Left,Right:Right,Fast left:End,Fast right:PageDown,Space:Space,Enter:Return,RCL:Keypad +,F12:F12,Esc:Escape;sipky, End/PgDn rychle, Space, Enter, Num+ (RCL), F12;
 FERLAJT;1;MGLD 13
