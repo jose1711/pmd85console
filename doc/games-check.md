@@ -15,7 +15,7 @@ How to go through the games one by one and write down what works, so that `games
 
 ## Order
 
-1. Games that already have icons (AUTO, ZED, INVADERS, MANIC+, MANIC-1, BLUDISTE, CERES-1, POSTARIK): confirm only.
+1. Games that already have icons (AUTO, ZED, INVADERS, MANIC+, MANIC-1, BLUDISTE, POSTARIK): confirm only.
 2. Games without `KEYS` and `PAD` (most of them), alphabetically, 5 to 10 minutes each.
 3. Games that scan the whole keyboard (FRED, SACH, TETRIS, PENETR, SABOTER) last.
 
