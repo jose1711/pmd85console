@@ -27,7 +27,7 @@ To add a game, copy its tape to the share directory and add a line to `games.lst
 
 ### BASIC games and the ROM module
 
-The BASIC games (category `Basic`) run in BASIC-G V2.0, which the PMD 85 has in a ROM module. The emulator has the
+The BASIC games (category `BASIC`) run in BASIC-G V2.0, which the PMD 85 has in a ROM module. The emulator has the
 module: an 8255 at the ports `0x88`-`0x8B` (the address goes to ports B and C, the byte comes from port A), a 32 KB ROM
 pack. The note of `games.lst` describes the game:
 
