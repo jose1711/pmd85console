@@ -17,7 +17,7 @@ DOMCEKY;1;MGLD 00, JUMP 0000;;Left:Left,Right:Right,Fast left:End,Fast right:Pag
 FERLAJT;1;MGLD 13;Space=Return;Enter:Return,Esc:Escape;hudebni demo, staci Enter (TV: OK, pad: A, B nebo Start);PR
 FLAPPY;1;MGLD 03;Up=E,Down=Z;E up:e,Y down:z,Left:Left,Right:Right,Space:Space,Enter:Return,H:h,I:i,Shift:Left Shift,RCL:Keypad +,Stop:Left Ctrl,F1:F1,Esc:Escape;E/Y nahoru/dolu, Space = hod, F1 = konec, Stop (Ctrl) = reset, kody jen klavesnici
 FRED;2;MGLD 03;;E up:e,Y down:z,Left:Left,Right:Right,Space:Space,H:h,RCL:Keypad +,Esc:Escape;H start hry, RCL rychlost ptaku, sipky vlevo/vpravo, E/Y, Space start (pad: X = H, RB = RCL, A = Space);P
-GALAXIA;1;MGLD 00
+GALAXIA;1;MGLD 00;;Space:Space,M:m,T:t,Z:y,S:s,Enter:Return,Backspace:Backspace,Esc:Escape;jen klavesnice: Space start, M/T/Z/S vyber, Enter potvrzeni, Backspace maze;
 GALAXIA.A;1
 GLUTTON;1;MGLD 00
 HLIPA;1;MGLD 00
