@@ -9,7 +9,7 @@
 # e.g. Left=Left Shift,Right=V: AUTO and ZED steer with [Shift] and [V]). PAD lists the buttons of the web remote
 # control for the game, Label:key,... (SDL key names, key&key presses two at once), the default set is used without it. Generated from simpmd/data/tapes and the table in simpmd/README.
 AUTO;1;MGLD 00, JUMP 2000;Left=Left Shift,Right=V;Left:Left,Right:Right,Shift:Left Shift,Esc:Escape;Shift = vlevo, V = vpravo;PR
-BLUDISTE;2;MGLD 00;Up=Left Shift,E=Left Shift;Forward:Left Shift,Left:Left,Right:Right,Space:Space,M:m,Esc:Escape;krok: Shift (pad: nahoru), obrat: sipky, M mapa, Space start;P
+BLUDISTE;2;MGLD 00;Up=Left Shift,E=Left Shift,H=M,I=Left Ctrl;Forward:Left Shift,Left:Left,Right:Right,Space:Space,M:m,Stop:Left Ctrl,Esc:Escape;krok: Shift (pad: nahoru), obrat: sipky, M mapa (pad: X), Ctrl = STOP, konec hry (pad: Y), Space start;P
 BOULD+3;2;MGLD 03
 BOULDER;1;MGLD 03
 CERES-1;2;MGLD 00;;E up:e,Y down:z,Left:Left,Right:Right,Space:Space,Enter:Return,1:1,2:2,3:3,4:4,Esc:Escape;E/Y nahoru/dolu, sipky, Space, Enter, 1-4;P
