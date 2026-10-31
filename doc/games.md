@@ -38,6 +38,9 @@ this way (the program stays in the file between runs); it is meant for programs 
 the word the bytes written to the tape are dropped, as before. `TAPESAVE <name>` uses `saves/<name>` instead of the
 tape name, so that two games share one tape: EVIDEDIT writes the data files that EVIDENCE reads.
 
+`TAPELOOP` in the note rewinds the tape of the game when the program reads past its end (the cassette is read from the
+start again). It is for programs that load data by name from their own tape: LEMMINGS (sectors) and TVARE (levels).
+
 EVIDENCE (Tomas Svec) asks for the maximal address (Enter), the date and the name of the file to load from the tape.
 The name has 8 characters: `ZAJ.CIN` and a space, `CLEN.ZAK`, `PROGRAMY`, ` SEZNAM ` (a space on both sides). [F11]
 switches to capital letters (it also types a stray character: press it before the name and clear the field). The tape
@@ -48,7 +51,7 @@ To add a game, copy its tape to the share directory and add a line to `games.lst
 
 ### BASIC games and the ROM module
 
-The BASIC games (category `BASIC`) run in BASIC-G V2.0, which the PMD 85 has in a ROM module. The emulator has the
+The BASIC games (no category, they show `BASIC-G` in the list) run in BASIC-G V2.0, which the PMD 85 has in a ROM module. The emulator has the
 module: an 8255 at the ports `0x88`-`0x8B` (the address goes to ports B and C, the byte comes from port A), a 32 KB ROM
 pack. The note of `games.lst` describes the game:
 
@@ -118,7 +121,7 @@ NAME;MODEL;NOTE[;REMAP[;PAD[;KEYS[;INPUT[;CATEGORY]]]]]
 | 5 | `PAD` | buttons of the web remote control for this game |
 | 6 | `KEYS` | free text with the controls, shown under the list (without diacritics) |
 | 7 | `INPUT` | devices besides the keyboard: `P` gamepad, `R` TV remote |
-| 8 | `CATEGORY` | a sub list of the games list (see below), empty for the games of the main list |
+| 8 | `CATEGORY` | a sub list of the games list (see below), empty for the games of the main list, several categories separated by `\|` (e.g. `Deskove hry\|2 hraci`; written without the backslash in the file) put the game in each of them |
 
 ### `CATEGORY`
 

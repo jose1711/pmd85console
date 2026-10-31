@@ -81,6 +81,9 @@ static int iLastOutputClock;
 
 /// File of the tape that keeps what the program saves ("TAPESAVE" in the note of the game), empty: the output is dropped.
 static std::string sSavePath;
+/// File of the tape of the game that is read again from its start when the program asks for more data after the
+/// end ("TAPELOOP" in the note of the game: Lemmings, levels loaded by name), empty: no rewinding.
+static std::string sLoopPath;
 /// Time (SDL ticks) of the last try to open the save file for reading.
 static Uint32 iSaveTry = 0;
 
@@ -145,6 +148,16 @@ bool TAPInputFileStatus ()
       if (!oTapeInput.is_open () || oTapeInput.peek () == EOF)
         return (false);
       iSaveTry = 0;
+      continue;
+    }
+    if (!sLoopPath.empty ())
+    {
+      // A rewound cassette: the program looks for a block by its name and has passed it.
+      if (oTapeInput.is_open ()) oTapeInput.close ();
+      oTapeInput.clear ();
+      oTapeInput.open (sLoopPath.c_str (), std::ios::binary);
+      if (!oTapeInput.is_open () || oTapeInput.peek () == EOF)
+        return (false);
       continue;
     }
     //if (!TAPNextInputFile ()) return (false);
@@ -285,6 +298,12 @@ void TAPSetSaveFile (const std::string &sPath)
 {
   sSavePath = sPath;
   iSaveTry = 0;
+}
+
+
+void TAPSetLoopFile (const std::string &sPath)
+{
+  sLoopPath = sPath;
 }
 
 

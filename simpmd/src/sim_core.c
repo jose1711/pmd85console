@@ -345,7 +345,7 @@ static std::string ListNote (const std::string &sNote)
     iPos = iEnd + 1;
     while (!sPart.empty () && sPart [0] == ' ')
       sPart.erase (0, 1);
-    if (sPart == "FONT" || sPart == "NOBLINK" || sPart.compare (0, 8, "TAPESAVE") == 0)
+    if (sPart == "FONT" || sPart == "NOBLINK" || sPart == "TAPELOOP" || sPart.compare (0, 8, "TAPESAVE") == 0)
       continue;
     if (sPart.compare (0, 4, "ROM ") == 0 || sPart.compare (0, 5, "TYPE ") == 0)
       bBasic = bBasic || sPart.find ("basic") != std::string::npos;
@@ -353,6 +353,22 @@ static std::string ListNote (const std::string &sNote)
       sResult += (sResult.empty () ? "" : ", ") + sPart;
   }
   return (bBasic ? std::string ("BASIC-G") + (sResult.empty () ? "" : ", ") + sResult : sResult);
+}
+
+/// Is the game in the category? The CATEGORY column may list several categories separated by '|'.
+static bool InCategory (const std::string &sList, const std::string &sCategory)
+{
+  size_t iStart = 0;
+  while (iStart <= sList.size ())
+  {
+    size_t iEnd = sList.find ('|', iStart);
+    if (iEnd == std::string::npos)
+      iEnd = sList.size ();
+    if (sList.compare (iStart, iEnd - iStart, sCategory) == 0)
+      return true;
+    iStart = iEnd + 1;
+  }
+  return false;
 }
 
 /// The row "(o uroven vys)" of an open category.
@@ -373,7 +389,7 @@ static std::vector <int> ListView ()
   for (size_t i = 0 ; i < oGames.size () ; i ++)
   {
     const std::string &sCategory = oGames [i].sCategory;
-    if (iCategory < 0 ? sCategory.empty () : sCategory == oCategories [iCategory])
+    if (iCategory < 0 ? sCategory.empty () : InCategory (sCategory, oCategories [iCategory]))
       oView.push_back ((int) i);
   }
   return oView;
@@ -793,8 +809,16 @@ static void GamesLoad ()
     sGame.sHelp = oColumns [5];
     sGame.sInput = oColumns [6];
     sGame.sCategory = oColumns [7];
-    if (!sGame.sCategory.empty () && std::find (oCategories.begin (), oCategories.end (), sGame.sCategory) == oCategories.end ())
-      oCategories.push_back (sGame.sCategory);
+    for (size_t iStart = 0 ; !sGame.sCategory.empty () && iStart <= sGame.sCategory.size () ;)
+    {
+      size_t iEnd = sGame.sCategory.find ('|', iStart);
+      if (iEnd == std::string::npos)
+        iEnd = sGame.sCategory.size ();
+      std::string sOne = sGame.sCategory.substr (iStart, iEnd - iStart);
+      if (!sOne.empty () && std::find (oCategories.begin (), oCategories.end (), sOne) == oCategories.end ())
+        oCategories.push_back (sOne);
+      iStart = iEnd + 1;
+    }
     oGames.push_back (sGame);
   }
 }
@@ -830,11 +854,11 @@ static void MenuRender ()
       const std::string &sCategory = oCategories [-oView [i] - 1];
       int iGames = 0;
       for (size_t j = 0 ; j < oGames.size () ; j ++)
-        iGames += oGames [j].sCategory == sCategory;
+        iGames += InCategory (oGames [j].sCategory, sCategory);
       // The state icon of a category: one of its games has a saved state.
       std::string sSaved;
       for (size_t j = 0 ; j < oGames.size () && sSaved.empty () ; j ++)
-        if (oGames [j].sCategory == sCategory && HasState (oGames [j].sTape))
+        if (InCategory (oGames [j].sCategory, sCategory) && HasState (oGames [j].sTape))
           sSaved = "S";
       oInputs.push_back (sSaved);
       oNames.push_back ("[ " + sCategory + " ] (" + std::to_string (iGames) + ")");
@@ -968,6 +992,9 @@ static void EmulationInitialize (const std::string &sTape, int iModel)
       sSaveName = sSaveShared;
     TAPSetSaveFile (GameHasCommand (sTape, "TAPESAVE") ? std::string (PMD_SHARE) + "saves/" + sSaveName : std::string ());
   }
+
+  // "TAPELOOP" in the note: the tape is rewound to its start when the program reads past its end.
+  TAPSetLoopFile (GameHasCommand (sTape, "TAPELOOP") ? sTape : std::string ());
 
   KeysStart (sTape);
   RomModuleLoad (sTape);
