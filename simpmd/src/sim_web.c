@@ -257,6 +257,9 @@ static void WEBHandle (int iClient)
     std::string sScreen;
     for (int iLine = 0 ; iLine < PMD_WEB_VRAM_HEIGHT ; iLine ++)
       sScreen.append (reinterpret_cast <const char *> (abMemoryData + PMD_WEB_VRAM_BASE + iLine * PMD_WEB_VRAM_LINE), PMD_WEB_VRAM_WIDTH);
+    if (DSPNoBlink ())
+      for (size_t i = 0 ; i < sScreen.size () ; i ++)
+        sScreen [i] &= 0x7F;
     WEBRespond (iClient, 200, "application/octet-stream", sScreen);
   }
   else if (sPath == "/state")

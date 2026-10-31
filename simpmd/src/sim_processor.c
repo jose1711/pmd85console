@@ -1273,6 +1273,10 @@ void InstIN ()
                 break;
     case 0xF6:  RegA = iPortC;
                 break;
+    // Port B of the optional 8255 at 0x5C: ARKANOID (Lasota) waits in a loop until it reads zero, which is the
+    // state of a machine without that module; the 0xFF of an unknown port would stop the game on its first sound.
+    case 0x5D:  RegA = 0x00;
+                break;
     default:    RegA = 0xFF;
                 break;
   }

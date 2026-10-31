@@ -173,6 +173,8 @@ void CPUShutdown ();
 
 void DSPPaintHandler ();
 void DSPInvalidate ();
+void DSPSetNoBlink (bool);
+bool DSPNoBlink ();
 void DSPSaveScreenshot (const char *pPath);
 void DSPResizeHandler ();
 void DSPInitialize ();
@@ -215,6 +217,7 @@ byte TAPReadData ();
 void TAPWriteData (byte iData);
 byte TAPReadStatus ();
 void TAPInitialize ();
+void TAPSetSaveFile (const std::string &);
 void TAPShutdown ();
 Uint32 TAPLastRead ();
 bool TAPNextInputFile (std::vector <std::string> oArgTapeInputs);

@@ -34,6 +34,7 @@ limitations under the License.
 #include <string>
 #include <vector>
 #include <fstream>
+#include <sys/stat.h>
 
 
 //--------------------------------------------------------------------------
@@ -77,6 +78,11 @@ static int iLastInputClock;
 static std::atomic <Uint32> iLastInputTime (0);
 /// Last value of simulated clock at output.
 static int iLastOutputClock;
+
+/// File of the tape that keeps what the program saves ("TAPESAVE" in the note of the game), empty: the output is dropped.
+static std::string sSavePath;
+/// Time (SDL ticks) of the last try to open the save file for reading.
+static Uint32 iSaveTry = 0;
 
 
 //--------------------------------------------------------------------------
@@ -122,6 +128,25 @@ bool TAPInputFileStatus ()
   while (true)
   {
     if (oTapeInput.peek () != EOF) return (true);
+    if (!sSavePath.empty ())
+    {
+      // The tape of the game is read to its end: the saved tape follows, from its start (as a rewound cassette),
+      // and again from the start when the program has read it all and asks for data once more. Looking for the
+      // file is limited, the program polls the status very often.
+      Uint32 iNow = SDL_GetTicks ();
+      if (iNow - iSaveTry < 200)
+        return (false);
+      iSaveTry = iNow;
+      // What the program has written must be in the file before it is read.
+      if (oTapeOutput.is_open ()) oTapeOutput.flush ();
+      if (oTapeInput.is_open ()) oTapeInput.close ();
+      oTapeInput.clear ();
+      oTapeInput.open (sSavePath.c_str (), std::ios::binary);
+      if (!oTapeInput.is_open () || oTapeInput.peek () == EOF)
+        return (false);
+      iSaveTry = 0;
+      continue;
+    }
     //if (!TAPNextInputFile ()) return (false);
     if (!TAPNextInputFile (oArgTapeInputs)) return (false);
   }
@@ -175,7 +200,7 @@ bool TAPStatusTxRDY ()
 {
   // Without an output tape a written byte is dropped, but the character time still has to pass: games
   // (HLIPA) take the TxRDY bit as their timer.
-  bool bNoOutput = !oTapeOutput.is_open () && oArgTapeOutputs.empty ();
+  bool bNoOutput = !oTapeOutput.is_open () && oArgTapeOutputs.empty () && sSavePath.empty ();
   if (bArgTimeTapeOutput || bNoOutput)
   {
     // If the tape output timing is to be simulated,
@@ -219,6 +244,15 @@ void TAPWriteData (byte bData)
   if (TAPStatusTxRDY ())
   {
     iLastOutputClock = iProcessorClock;
+    if (!sSavePath.empty () && !oTapeOutput.is_open ())
+    {
+      // The first byte of a save: a new tape replaces the old one.
+      size_t iSlash = sSavePath.rfind ('/');
+      if (iSlash != std::string::npos)
+        mkdir (sSavePath.substr (0, iSlash).c_str (), 0755);
+      oTapeOutput.clear ();
+      oTapeOutput.open (sSavePath.c_str (), std::ios::binary | std::ios::trunc);
+    }
     if (oTapeOutput.is_open () || !oArgTapeOutputs.empty ())
       oTapeOutput.put (bData);
   }
@@ -244,6 +278,13 @@ byte TAPReadStatus ()
 void TAPInitialize ()
 {
   iLastInputTime = 0;
+}
+
+
+void TAPSetSaveFile (const std::string &sPath)
+{
+  sSavePath = sPath;
+  iSaveTry = 0;
 }
 
 

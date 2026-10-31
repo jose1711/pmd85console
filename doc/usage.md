@@ -81,8 +81,8 @@ SDL_VIDEODRIVER=dummy SDL_RENDER_DRIVER=software SDL_AUDIODRIVER=disk bin/simpmd
 | `PMD_GAME=<name>` | Skip the logo and the menu, start a game of `games.lst`. |
 | `PMD_AUTOLOAD=0` | Do not type the load command of the game automatically (default on). |
 | `PMD_KEYS=<text>` | Type text on the PMD 85 keyboard, see below. |
-| `PMD_KEY_MS=<ms>` | Key press/release time of `PMD_KEYS`, default 150. |
-| `PMD_TAPE_IDLE_MS=<ms>` | Idle time of the tape for `~` (the autoload of `JUMP`), default 2000. |
+| `PMD_KEY_MS=<ms>` | Key press/release time of `PMD_KEYS`, default 100. |
+| `PMD_TAPE_IDLE_MS=<ms>` | Idle time of the tape for `~` (the autoload of `JUMP`), default 700. |
 | `PMD_SCREENSHOT=<file>` | Save the screen as BMP after `PMD_SCREENSHOT_MS` and exit. |
 | `PMD_SCREENSHOT_MS=<ms>` | Screenshot delay, default 3000. |
 | `PMD_KEYLOG=<file>` | Log keyboard and window events, paint duration and queue lag. |

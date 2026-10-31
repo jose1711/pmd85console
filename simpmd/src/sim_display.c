@@ -157,6 +157,9 @@ static bool bLastValid = false;
 //--------------------------------------------------------------------------
 // Screen paint
 
+/// The blink bit of the video memory is ignored (the note of the game has NOBLINK).
+static bool bNoBlink = false;
+
 /** Determine whether blinking pixels are visible.
  *
  *  Visibility of blinking pixels is based on actual time.
@@ -165,7 +168,20 @@ static bool bLastValid = false;
  */
 bool DSPBlinkVisible ()
 {
+  // A game with "NOBLINK" in its note uses the blink bit as a color of the PMD 85-2A/3 that cannot be shown here.
+  if (bNoBlink)
+    return (true);
   return ((SDL_GetTicks () / PMD_BLINK_RATE) & 1);
+}
+
+void DSPSetNoBlink (bool bValue)
+{
+  bNoBlink = bValue;
+}
+
+bool DSPNoBlink ()
+{
+  return (bNoBlink);
 }
 
 
@@ -597,7 +613,7 @@ void DSPRenderLogo (int screen_width, int screen_height)
 
   SDL_RenderCopy (lRenderer, logoTexture, NULL, &logoRectangle);
   SDL_RenderPresent (lRenderer);
-  SDL_Delay(6000);// wait 6 sec.
+  SDL_Delay(1500);// wait 1.5 sec.
  
   SDL_DestroyTexture (logoTexture);
   SDL_FreeSurface (logoSurface);

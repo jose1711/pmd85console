@@ -23,6 +23,27 @@ after `JUMP`, because a game clears its variables when it starts. It is for a ga
 (the RAM of the real PMD 85 is not cleared at power on, here it is zero): CROSSI (Kamikadze) hangs in its explosion
 routine when `39A4` is 0, so its note is `MGLD 00, JUMP 0000, POKE 39A4 01`.
 
+`SHIFT` in the note holds [Shift] from the first key of the autoload until the game has started. Magicland Dizzy asks for
+it at the start of the load and then runs in the monochrome mode (no blink and gray bits in the video memory); pressing
+it later does not help, the load takes 15 s with it.
+
+`NOBLINK` in the note ignores the blink bit of the video memory (bit 7) in the picture and in the web remote. Magicland
+Dizzy (for the PMD 85-2A/3) sets the bit on large areas, probably as a color that this emulator cannot show, and the
+picture would flash.
+
+`TAPESAVE` in the note keeps what the program writes to the tape in `<share>/saves/<tape name>` (a new save replaces
+the file) and reads it back after the tape of the game: when the program asks for tape data again and the tape of the
+game is at its end, the saved file is read from its start, like a rewound cassette. BASIC-G `SAVE n` and `LOAD n` work
+this way (the program stays in the file between runs); it is meant for programs that save (EVIDENCE, editors). Without
+the word the bytes written to the tape are dropped, as before. `TAPESAVE <name>` uses `saves/<name>` instead of the
+tape name, so that two games share one tape: EVIDEDIT writes the data files that EVIDENCE reads.
+
+EVIDENCE (Tomas Svec) asks for the maximal address (Enter), the date and the name of the file to load from the tape.
+The name has 8 characters: `ZAJ.CIN` and a space, `CLEN.ZAK`, `PROGRAMY`, ` SEZNAM ` (a space on both sides). [F11]
+switches to capital letters (it also types a stray character: press it before the name and clear the field). The tape
+of the game has the program, EVIDEDIT and the four example data files; a file saved by EVIDENCE (the menu `M`, `S`,
+`C`) goes to `saves/EVIDENCE` and is found there when it is not on the tape of the game.
+
 To add a game, copy its tape to the share directory and add a line to `games.lst`.
 
 ### BASIC games and the ROM module

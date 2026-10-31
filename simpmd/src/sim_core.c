@@ -345,7 +345,7 @@ static std::string ListNote (const std::string &sNote)
     iPos = iEnd + 1;
     while (!sPart.empty () && sPart [0] == ' ')
       sPart.erase (0, 1);
-    if (sPart == "FONT")
+    if (sPart == "FONT" || sPart == "NOBLINK" || sPart.compare (0, 8, "TAPESAVE") == 0)
       continue;
     if (sPart.compare (0, 4, "ROM ") == 0 || sPart.compare (0, 5, "TYPE ") == 0)
       bBasic = bBasic || sPart.find ("basic") != std::string::npos;
@@ -439,6 +439,43 @@ static bool GameHasCommand (const std::string &sTape, const char *sCommand)
     }
   }
   return (false);
+}
+
+
+/** Argument of a command of the note of a game ("TAPESAVE EVIDENCE" gives "EVIDENCE"), empty when there is none.
+ */
+static std::string GameCommandArgument (const std::string &sTape, const char *sCommand)
+{
+  std::string sName = sTape;
+  size_t iShare = strlen (PMD_SHARE);
+  if (sName.compare (0, iShare, PMD_SHARE) == 0)
+    sName.erase (0, iShare);
+  for (size_t i = 0 ; i < oGames.size () ; i ++)
+  {
+    if (oGames [i].sTape != sName)
+      continue;
+    const std::string &sNote = oGames [i].sNote;
+    size_t iPos = 0;
+    while (iPos < sNote.size ())
+    {
+      size_t iEnd = sNote.find (',', iPos);
+      if (iEnd == std::string::npos)
+        iEnd = sNote.size ();
+      std::string sPart = sNote.substr (iPos, iEnd - iPos);
+      iPos = iEnd + 1;
+      while (!sPart.empty () && sPart [0] == ' ')
+        sPart.erase (0, 1);
+      size_t iLength = strlen (sCommand);
+      if (sPart.compare (0, iLength, sCommand) == 0)
+      {
+        std::string sArgument = sPart.substr (iLength);
+        while (!sArgument.empty () && sArgument [0] == ' ')
+          sArgument.erase (0, 1);
+        return (sArgument);
+      }
+    }
+  }
+  return (std::string ());
 }
 
 
@@ -568,6 +605,7 @@ static void RomModuleLoad (const std::string &sTape)
 static std::string AutoloadKeys (const std::string &sNote)
 {
   std::string sResult;
+  bool bShiftHold = false;
   size_t iPos = 0;
   while (iPos < sNote.size ())
   {
@@ -586,17 +624,16 @@ static std::string AutoloadKeys (const std::string &sNote)
       // "TYPE LOAD" is typed with [Enter] after the tape has stopped loading (BASIC commands).
       sResult += "~" + sPart.substr (5) + "|";
     else if (sPart == "SHIFT")
-      // Shift pressed repeatedly while the loader runs (a game that picks the monochrome mode that way).
-    {
-      sResult += "___";
-      for (int i = 0 ; i < 10 ; i ++)
-        sResult += "^__________";
-    }
+      // [Shift] held from the first key until the game has started: the loader of the game picks the monochrome mode
+      // that way (Magicland Dizzy reads it at the start of the load, holding it later does not help).
+      bShiftHold = true;
     else if (sPart.compare (0, 4, "POKE") == 0)
       // "POKE 39A4 01" becomes "{39A4=01}", written to the memory after the tape stops loading.
       sResult += "~{" + sPart.substr (5, sPart.find (' ', 5) == std::string::npos ? 0 : sPart.find (' ', 5) - 5) + "=" +
                  (sPart.find (' ', 5) == std::string::npos ? "" : sPart.substr (sPart.find (' ', 5) + 1)) + "}";
   }
+  if (bShiftHold)
+    sResult = "[" + sResult + "_____]";
   return (sResult);
 }
 
@@ -605,7 +642,8 @@ static std::string AutoloadKeys (const std::string &sNote)
  */
 static std::string WebState ()
 {
-  std::string sState = std::string ("{\"mode\":\"") + (!inMenu ? "game" : inList ? "list" : "menu") + "\",\"index\":" +
+  std::string sState = std::string ("{\"mode\":\"") + (!inMenu ? "game" : inList ? "list" : "menu") + "\",\"typing\":" +
+                       (iKeyPos < (int) sKeys.size () ? "true" : "false") + ",\"index\":" +
                        std::to_string (inList ? listIndex : gameIndex) + ",\"pad\":\"" + (inMenu ? pPadMenu : sPad.c_str ()) +
                        "\",\"featured\":[\"FLAPPY\",\"BOULDER\",\"MANIC\",\"FRED\"],\"games\":[";
   std::vector <int> oView = ListView ();
@@ -917,6 +955,19 @@ static void EmulationInitialize (const std::string &sTape, int iModel)
   gameIn.clear();
   gameIn.push_back(sTape);
   TAPNextInputFile(gameIn);
+  {
+    // "TAPESAVE" in the note: what the program writes to the tape is kept in <PMD_SHARE>saves/<game> and read back
+    // after the tape of the game.
+    std::string sSaveName = sTape;
+    size_t iShareLength = strlen (PMD_SHARE);
+    if (sSaveName.compare (0, iShareLength, PMD_SHARE) == 0)
+      sSaveName.erase (0, iShareLength);
+    // "TAPESAVE <name>" shares the saved tape with other games (EVIDEDIT creates the data file of EVIDENCE).
+    std::string sSaveShared = GameCommandArgument (sTape, "TAPESAVE");
+    if (!sSaveShared.empty ())
+      sSaveName = sSaveShared;
+    TAPSetSaveFile (GameHasCommand (sTape, "TAPESAVE") ? std::string (PMD_SHARE) + "saves/" + sSaveName : std::string ());
+  }
 
   KeysStart (sTape);
   RomModuleLoad (sTape);
@@ -924,6 +975,7 @@ static void EmulationInitialize (const std::string &sTape, int iModel)
   bCtrlPending = bCtrlSent = bCtrlSwallow = false;
   iCtrlSerial ++;
 
+  DSPSetNoBlink (GameHasCommand (sTape, "NOBLINK"));
   if (iModel == 2)
   {
     InitializePMD2();
@@ -988,9 +1040,9 @@ int main (int iArgC, const char *apArgV [])
   // Test mode: PMD_AUTOSTART=<0-3> skips logo and menu, PMD_KEYS=<text> types
   // the text on the simulated keyboard ('|' is Enter, '_' a 2 s pause), PMD_SCREENSHOT=<file>
   // saves the screen after PMD_SCREENSHOT_MS (default 3000) and exits.
-  // PMD_KEY_MS is the key press and release time of PMD_KEYS (default 150).
+  // PMD_KEY_MS is the key press and release time of PMD_KEYS (default 100).
   const char *pKeyMs = getenv ("PMD_KEY_MS");
-  iKeyMs = pKeyMs ? atoi (pKeyMs) : 150;
+  iKeyMs = pKeyMs ? atoi (pKeyMs) : 100;
   const char *pAutostart = getenv ("PMD_AUTOSTART");
   const char *pGame = getenv ("PMD_GAME");
   GamesLoad ();
@@ -1348,7 +1400,7 @@ int main (int iArgC, const char *apArgV [])
               iWaitSince = 0;
             } else if (cKey == '~') {
               // Wait until the tape stops loading (nothing was read for PMD_TAPE_IDLE_MS) and the program scans the keyboard again.
-              static int iIdleMs = getenv ("PMD_TAPE_IDLE_MS") ? atoi (getenv ("PMD_TAPE_IDLE_MS")) : 2000;
+              static int iIdleMs = getenv ("PMD_TAPE_IDLE_MS") ? atoi (getenv ("PMD_TAPE_IDLE_MS")) : 700;
               Uint32 iLastRead = TAPLastRead ();
               // No tape was read at all (a BASIC game): the program has to scan the keyboard for 2 s.
               bool bIdle = iLastRead != 0 ? iNow - iLastRead > (Uint32) iIdleMs : iNow - iWaitSince > 2000;
@@ -1359,6 +1411,15 @@ int main (int iArgC, const char *apArgV [])
               } else {
                 iKeyTime = iNow + 40;
               }
+            } else if (cKey == '[' || cKey == ']') {
+              // "[" holds [Shift] down, "]" lets it go.
+              SDL_KeyboardEvent sShiftKey = {};
+              sShiftKey.keysym.sym = SDLK_LSHIFT;
+              sShiftKey.state = cKey == '[' ? SDL_PRESSED : SDL_RELEASED;
+              KBDEventHandler (&sShiftKey);
+              iKeyPos ++;
+              iKeyTime = iNow + 40;
+              iWaitSince = 0;
             } else if (cKey == '{') {
               // POKE of the games list: "{39A4=01}", a hex address and a hex value.
               unsigned iAddr = 0, iValue = 0;
