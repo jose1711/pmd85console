@@ -18,7 +18,7 @@ ADC;2;ROM basic2.rmm, FONT, TYPE LOAD 1, TYPE RUN;Left=F10,Right=F12,E=F8,Z=F11,
 AIRRAID;1;MGLD 00, JUMP 1000;;;Air Raid (Nitra 1987): R hra, S strelba, sipky vlevo/vpravo;
 AUTO;1;MGLD 00, JUMP 2000;Left=Left Shift,Right=V;Left:Left,Right:Right,Shift:Left Shift,Esc:Escape;Shift = vlevo, V = vpravo;PR
 BARBAR;2;ROM basic2.rmm, FONT, TYPE LOAD 1, TYPE RUN;Left=F10,Right=F12,E=F8,Z=F11,Up=F8,Down=F11,Space=F1,Left Shift=F2;Left:F10,Right:F12,Up:F8,Down:F11,K0:F1,K1:F2,Esc:Escape;chodicka: F10 vlevo, F12 vpravo, F8 nahoru, F11 dolu, F1 mec, F2 pouzij (pad: D-pad, A = F1, LB = F2, B = Enter);P;BASIC
-BASIC-G;2;ROM basic2.rmm, FONT;;;BASIC-G V2.0: vlastni programy z klavesnice (LIST, RUN, ...), SAVE se nikam neuklada;;Programovani
+BASIC-G;2;ROM basic2.rmm, FONT, TAPESAVE;;;BASIC-G V2.0: vlastni programy z klavesnice (LIST, RUN, ...), SAVE n a LOAD n pres soubor saves/BASIC-G;;Programovani
 BLACK;2;ROM basic2.rmm, FONT, TYPE LOAD 1, TYPE RUN;;;F1-F3 (K0-K2) volba tahu, F5 a F6 (K4, K5) prvni pozice, odpovedi A/N z klavesnice;;BASIC
 BLUDISTE;2;MGLD 00;Up=Left Shift,E=Left Shift,H=M,I=Left Ctrl;Forward:Left Shift,Left:Left,Right:Right,Space:Space,M:m,Stop:Left Ctrl,Esc:Escape;krok: Shift (pad: nahoru), obrat: sipky, M mapa (pad: X), Ctrl = STOP, konec hry (pad: Y), Space start;P
 BOMBARDE;2;ROM basic2.rmm, FONT, TYPE LOAD 2, TYPE RUN;Space=F1,Left Shift=F6;Bomb:F1,Fire:F6,Esc:Escape;F1 (K0) bomba, F6 (K5) strelba, libovolna klavesa start (pad: A bomba, LB strelba);P;BASIC
@@ -66,7 +66,7 @@ MANIC-2;2;MGLD 03
 MATODEMO;2;ROM basic2.rmm, FONT, TYPE LOAD 55, TYPE RUN;;;ukazka pocitace MATO: bez ovladani;;Dema
 MESIAC;2;ROM basic2.rmm, FONT, TYPE LOAD 23, TYPE RUN;;;mezernik pokracuje;;BASIC
 MESTO;1;MGLD 00;;;HESLO: konvalinka (textova hra);
-MICRHYTM;1;MGLD 05;;;Micro Rhythm (M. Urda): G hra, R nahravani;
+MICRHYTM;1;MGLD 05;;Left:Left,Right:Right,Enter:Return,1:1,2:2,P:p,S:s,Esc:Escape;Micro Rhythm (M. Urda): P = hra na bubny, S = ulozit, pak sipky vlevo/vpravo a Enter (PATERNS EDIT PLAY TEMPO LOAD), v podmenu 1 a 2;;
 MISSION;1;MGLD 06;;;Super Mission (M. Urda): G hra, R nahravani;
 MRAVEC;2;ROM basic2.rmm, FONT, TYPE LOAD 34, TYPE RUN;;;jednoduchy logicky jazyk Mravec: prikazy z klavesnice;;Programovani
 MTRON-1;1;MGLD 00;;;zadani inicialu;
@@ -102,7 +102,7 @@ SACH;1;MGLD 00, JUMP 0000
 SASKO;2;MGLD 00;;Left:Left,Right:Right,Fast left:End,Fast right:PageDown,Space:Space,Enter:Return,RCL:Keypad +,F12:F12,Esc:Escape;sipky, End/PgDn rychle, Space, Enter, Num+ (RCL), F12;;Pro nejmensi
 SP-DEMIS;1;MGLD 00;;;zadani jmena;
 SPACE-RA;1;MGLD 00
-STRIPPED;1;MGLD 03;;;Stripped (M. Urda): G hra, S ulozit;
+STRIPPED;1;MGLD 03;Z=D,Down=D,Up=E;Up:e,Down:d,Fire:Space,1:1,2:2,3:3,4:4,Esc:Escape;E hore, D dole, Space strelba, menu cisly 1 ovladani, 2 start hry, 4 konec, 5 smazat rekord (po G chvili pocka na titulce);
 T.MRAVEC;2;ROM basic2.rmm, FONT, TYPE LOAD 52, TYPE RUN;;;Toci-Mravec: velikost desky 4 az 8 (cislo), potom prikazy z klavesnice;;Programovani
 TANK;1;MGLD 00, JUMP 2000
 TANKY;2;ROM basic2.rmm, FONT, TYPE LOAD 53, TYPE RUN;E=F2,Z=F1,Up=F2,Down=F1,Return=F4,Space=F4;Down:F1,Up:F2,Fire:F4,Esc:Escape;F1 dolu, F2 nahoru, F4 palba (K0, K1, K3), pak libovolna klavesa;PR;BASIC
@@ -113,17 +113,17 @@ VIDEOSTP;2;ROM basic2.rmm, FONT, TYPE LOAD 11, TYPE RUN;;;F1 (K0) zastavi kostky
 VOTRELCI;2;ROM basic2.rmm, FONT, TYPE LOAD 0, TYPE RUN;E=F1,Z=F2,Up=F1,Down=F2,Left Shift=F9;Up:F1,Down:F2,Fire:F9,Space:Space,Esc:Escape;F1 zbran nahoru, F2 dolu, F9 vystrel, mezernik start, pri konci 1 nebo 0 (pad: D-pad, LB vystrel, A start);;BASIC
 WILLY;1;MGLD 00
 WURMI;2;ROM basic2.rmm, FONT, TYPE LOAD 7, TYPE RUN;Left=F1,Right=F4,Up=F3,Down=F2,E=F3,Z=F2;Left:F1,Down:F2,Up:F3,Right:F4,Esc:Escape;F1 vlevo, F2 dole, F3 nahoru, F4 vpravo (K0-K3), pak libovolna klavesa;PR;BASIC
-ZABY;1;MGLD 00, JUMP 1500;;;zapis jmena do tabulky;
+ZABY;1;MGLD 00, JUMP 1500;;Jump:F5,Start line:F10,Esc:Escape;F5 = skok, F10 = startovaci cara, zapis jmena do tabulky z klavesnice;
 ZED;1;MGLD 00, JUMP 1000;Left=Left Shift,Right=V;Left:Left,Right:Right,Shift:Left Shift,Esc:Escape;Shift = vlevo, V = vpravo;PR
 ZMRZLINY;2;MGLD 00;;;;;Pro nejmensi
 ZOFKA2;2;ROM basic2.rmm, FONT, TYPE LOAD 10, TYPE RUN;;;korytnacka Zofka (Logo): prikazy z klavesnice, potvrzeni Enter;;Programovani
 ZOFKA2-STARA;2;ROM basic2.rmm, FONT, TYPE LOAD 12, TYPE RUN;;;starsi verze Zofky: prikazy z klavesnice, potvrzeni Enter;;Programovani
 ZOFKA2T;2;ROM basic2.rmm, FONT, TYPE LOAD 11, TYPE RUN;;;Zofka s prikazem pro tisk: prikazy z klavesnice, potvrzeni Enter;;Programovani
 ZOFKA3;2;MGLD 00, JUMP 0003;;;korytnacka Zofka v strojovem kodu (verze 2.2): prikazy z klavesnice, potvrzeni Enter;;Programovani
-DIZZY;2;MGLD 00, SHIFT;Space=Left Shift;Left:Left,Right:Right,Space jump:Space,Enter action:Return,Esc:Escape;Magicland Dizzy (PMD 85-2A/3, cb verze bez hudby): sipky = pohyb, Shift = skok/start, Enter = akce/zvednout (pad: A skok, B akce);P;
+DIZZY;2;MGLD 00, SHIFT, NOBLINK;Space=Left Shift;Left:Left,Right:Right,Space jump:Space,Enter action:Return,Esc:Escape;Magicland Dizzy (PMD 85-2A/3, cb verze bez hudby): sipky = pohyb, Shift = skok/start, Enter = akce/zvednout (pad: A skok, B akce);P;
 JETPAC;1;MGLD 01;;;Jetpac: v menu 3 = klavesnice, 5 = start, 7 = nastaveni klaves;;Libor Lasota
 PSSST;1;MGLD 02;;;Pssst: v menu 3 = klavesnice, 5 = start, 7 = nastaveni klaves;;Libor Lasota
-ARKANOID;1;MGLD 04;;;Space = start, ovladani viz informace ve hre (jen klavesnice);;Libor Lasota
+ARKANOID;1;MGLD 04;Return=Space;Left:Left,Right:Right,Space:Space,Esc:Escape;sipky vlevo/vpravo = palka, Space = start a odpal micku (pad: A, B nebo Start, TV: OK = Space), na tabulce neprepinat J (ovladac);PR;Libor Lasota
 TREAISLA;1;MGLD 05;Left=O,Right=P,Up=Q,Down=A,Space=M,Return=S;Q up:q,A down:a,O left:o,P right:p,M hod mece/skok:m,S start:s,H pauza:h,T pokracovat:t,Esc:Escape;S = start, pak M (PRESS FIRE), Q/A/O/P = pohyb, M = hod mece/skok, H pauza, T pokracovat, F1 = zvuk (pad: D-pad, A = M, B = S);P;Libor Lasota
 TRAILBLA;1;MGLD 06;;;Enter = hra, I informace, B barvy, H hudba, J joystick (jen klavesnice);;Libor Lasota
 JSWILLY;1;MGLD 08;;;Jet Set Willy: v menu 3 = start, 1 = ovladani (jen klavesnice);;Libor Lasota
@@ -131,6 +131,7 @@ FFRUITS;1;MGLD 09;;;Enter = nova hra, Keypad + (RCL) = redefinice klaves, Ctrl (
 MAGICIAN;1;MGLD 0A;Left=O,Right=P,Up=Q,Down=A,Space=M;Q up:q,A down:a,O left:o,P right:p,M akce:m,1:1,2:2,3:3,4:4,Esc:Escape;v menu 1 = start, 2 obtiznost, 3 ovladani, 4 zvuk, hra: Q/A/O/P a M (pad: D-pad, A = M);P;Libor Lasota
 FLAPPY2K;1;MGLD 0B;Up=E,Down=Z;E up:e,Y down:z,Left:Left,Right:Right,Space:Space,Enter:Return,G:g,P:p,S:s,Stop:Left Ctrl,Esc:Escape;menu G = hra (vyber sceny: sipky a Space), P = heslo, S = nastaveni, ve hre sipky = pohyb, Space = ohen, Stop (Ctrl) = zpet;P;Libor Lasota
 KASWORD3;1;MGLD 00, JUMP 0000;;;textovy editor KASWORD 3 (nic se neuklada, jen klavesnice);;Programy
-EVIDENCE;1;MGLD 00;;;databazovy system EVIDENCE (nic se neuklada, jen klavesnice);;Programy
+EVIDENCE;1;MGLD 00, TAPESAVE;;;EVIDENCE: adresa a datum Enter, jmeno souboru na 8 znaku (ZAJ.CIN a mezera, CLEN.ZAK, PROGRAMY, SEZNAM s mezerou na zacatku i na konci), F11 = velka pismena, ulozeni M S C, jen klavesnice;;Programy
+EVIDEDIT;1;MGLD 00, TAPESAVE EVIDENCE;;;EVIDEDIT: nazvy souboru a polozek, nova data pro EVIDENCE (ulozi se na magnetofon do saves/EVIDENCE), jen klavesnice;;Programy
 K-STUDIO;2;MGLD 01;;;graficky editor K-STUDIO (nic se neuklada, bez mysi);;Programy
 GR;2;MGLD 00;;;graficky editor GR (nic se neuklada, bez mysi);;Programy
