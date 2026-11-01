@@ -255,8 +255,81 @@ void DSPInvalidate ()
 }
 
 
+/// Paint statistics for PMD_PAINTSTATS=1 (stderr every 10 s): calls, painted frames, worst call, worst gap between calls [ms].
+static void DSPPaintStats (bool bPainted, Uint32 iBegin, Uint32 iEnd)
+{
+  static int bOn = getenv ("PMD_PAINTSTATS") != NULL;
+  static Uint32 iStart = SDL_GetTicks (), iLastCall = 0, iMaxCall = 0, iMaxGap = 0, iPaintedMax = 0;
+  static int iCalls = 0, iPaints = 0, iSlow = 0, iBig = 0;
+  if (!bOn)
+    return;
+  iCalls ++;
+  if (iLastCall && iBegin - iLastCall > iMaxGap)
+    iMaxGap = iBegin - iLastCall;
+  if (iLastCall && iBegin - iLastCall > 60)
+    iBig ++;
+  iLastCall = iBegin;
+  if (bPainted)
+  {
+    iPaints ++;
+    if (iEnd - iBegin > iPaintedMax)
+      iPaintedMax = iEnd - iBegin;
+    if (iEnd - iBegin > 20)
+      iSlow ++;
+  }
+  if (iEnd - iStart >= 10000)
+  {
+    fprintf (stderr, "PAINT: %d calls, %d painted, max paint %u ms, %d paints >20 ms, max gap between calls %u ms, %d gaps >60 ms (in %u ms)\n",
+             iCalls, iPaints, iPaintedMax, iSlow, iMaxGap, iBig, iEnd - iStart);
+    iStart = iEnd; iCalls = iPaints = iSlow = iBig = 0; iMaxGap = iPaintedMax = 0;
+  }
+}
+
+
+/// Debug sampler for PMD_PADDLETRACE=1: left edge of the widest lit run in lines 208-215, logged to stderr on a change (every ~2 ms).
+static int DSPPaddleThread (void *pArgs)
+{
+  int iLast = -2;
+  for (;;)
+  {
+    const byte *pVideo = abMemoryData + PMD_VRAM_BASE;
+    bool abLit [PMD_VRAM_WIDTH * PMD_PIXEL_COUNT + 6];
+    memset (abLit, 0, sizeof (abLit));
+    for (int y = 208 ; y < 216 ; y ++)
+      for (int x = 0 ; x < PMD_VRAM_WIDTH * PMD_PIXEL_COUNT ; x ++)
+        if ((pVideo [y * (PMD_VRAM_WIDTH + PMD_VRAM_BLANK) + x / PMD_PIXEL_COUNT] >> (x % PMD_PIXEL_COUNT)) & 1)
+          abLit [x] = true;
+    int iEdge = -1;
+    for (int x = 17 ; x < 216 && iEdge < 0 ; x ++)
+      if (abLit [x])
+      {
+        int iEnd = x;
+        while (iEnd < PMD_VRAM_WIDTH * PMD_PIXEL_COUNT && abLit [iEnd]) iEnd ++;
+        if (iEnd - x >= 15) iEdge = x;
+        x = iEnd;
+      }
+    // ARKANOID variables: paddle x 1AD1, its speed 1AD2, width 1AD8, ball x 1B08, key bits 1B74 (see routine 0x35AC).
+    int iState = abMemoryData [0x1AD1] | abMemoryData [0x1AD2] << 8 | abMemoryData [0x1B08] << 16 | abMemoryData [0x1B74] << 24;
+    static int iLastState = -1;
+    if (iEdge != iLast || iState != iLastState)
+    {
+      int iCenter = (abMemoryData [0x1AD1] + 2 * abMemoryData [0x1AD8] + 0x0A) & 0xFF;
+      fprintf (stderr, "PD %u %d x=%d spd=%d ball=%d keys=%02x cf=%d\n", SDL_GetTicks (), iEdge, abMemoryData [0x1AD1],
+               (signed char) abMemoryData [0x1AD2], abMemoryData [0x1B08], abMemoryData [0x1B74], iCenter < abMemoryData [0x1B08]);
+      iLast = iEdge;
+      iLastState = iState;
+    }
+    SDL_Delay (2);
+  }
+  return (0);
+}
+
+
 void DSPPaintHandler ()
 {
+  static bool bPaddle = getenv ("PMD_PADDLETRACE") && (SDL_CreateThread (DSPPaddleThread, "paddle", NULL), true);
+  (void) bPaddle;
+  Uint32 iPaintBegin = SDL_GetTicks ();
   // TODO Consider using HQX ?
 
   // Painting a 1080p frame costs most of the CPU on a Raspberry Pi, skip frames that did not change
@@ -271,7 +344,10 @@ void DSPPaintHandler ()
     while (iFirst < PMD_VRAM_HEIGHT && memcmp (pVideo + iFirst * (PMD_VRAM_WIDTH + PMD_VRAM_BLANK), abLastVideo + iFirst * PMD_VRAM_WIDTH, PMD_VRAM_WIDTH) == 0)
       iFirst ++;
     if (iFirst == PMD_VRAM_HEIGHT)
+    {
+      DSPPaintStats (false, iPaintBegin, SDL_GetTicks ());
       return;
+    }
     while (memcmp (pVideo + iLast * (PMD_VRAM_WIDTH + PMD_VRAM_BLANK), abLastVideo + iLast * PMD_VRAM_WIDTH, PMD_VRAM_WIDTH) == 0)
       iLast --;
   }
@@ -281,6 +357,16 @@ void DSPPaintHandler ()
   bLastValid = true;
 
   int iCount = iLast - iFirst + 1;
+  static int bTrace = getenv ("PMD_PAINTTRACE") != NULL;
+  if (bTrace)
+  {
+    // Debug: leftmost lit pixel of lines 206-215 (the ARKANOID paddle) at the time of each painted frame.
+    int iMinX = -1;
+    for (int y = 206 ; y < 216 && iMinX < 0 ; y ++)
+      for (int x = 22 ; x < 206 ; x ++)
+        if ((pVideo [y * (PMD_VRAM_WIDTH + PMD_VRAM_BLANK) + x / 6] >> (x % 6)) & 1) { if (iMinX < 0 || x < iMinX) iMinX = x; break; }
+    fprintf (stderr, "PT %u %d\n", iPaintBegin, iMinX);
+  }
   DSPDecodeScreen (iFirst, iCount);
 
   // TODO Check if render clear is really needed ?
@@ -291,6 +377,7 @@ void DSPPaintHandler ()
   SDL_CheckZero (SDL_UpdateTexture (pTexture, &sArea, aiScreenData + iFirst * PMD_SCREEN_WIDTH, PMD_SCREEN_PITCH));
   SDL_CheckZero (SDL_RenderCopy (pRenderer, pTexture, NULL, NULL));
   SDL_RenderPresent (pRenderer);
+  DSPPaintStats (true, iPaintBegin, SDL_GetTicks ());
 }
 
 
