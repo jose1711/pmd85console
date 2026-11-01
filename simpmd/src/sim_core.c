@@ -50,7 +50,7 @@ limitations under the License.
 byte abMemoryData [65536] __attribute__ ((aligned (SAFE_ALIGNMENT)));
 /// Simulator memory mask.
 /// Distinguishes readable and writable memory.
-bool abMemoryMask [65536] __attribute__ ((aligned (SAFE_ALIGNMENT)));
+byte abMemoryMask [65536] __attribute__ ((aligned (SAFE_ALIGNMENT)));
 
 /// Processor clock counter.
 /// Note that access to clock is not ordered !!!
@@ -81,7 +81,7 @@ struct tGame
 {
   /// Tape file name.
   std::string sTape;
-  /// PMD 85 model, 1 or 2.
+  /// PMD 85 model, 1, 2 or 3 (the PMD 85-2A, with the AllRAM paging).
   int iModel;
   /// Note shown in the list, the commands to type.
   std::string sNote;
@@ -290,7 +290,7 @@ static void SetMemoryReadWrite (int iFrom, int iSize)
 {
   for (int iAddr = iFrom ; iAddr < iFrom + iSize ; iAddr ++)
   {
-    abMemoryMask [iAddr] = true;
+    abMemoryMask [iAddr] = 1;
   }
 }
 
@@ -304,7 +304,7 @@ static void SetMemoryReadOnly (int iFrom, int iSize)
 {
   for (int iAddr = iFrom ; iAddr < iFrom + iSize ; iAddr ++)
   {
-    abMemoryMask [iAddr] = false;
+    abMemoryMask [iAddr] = 0;
   }
 }
 
@@ -328,6 +328,7 @@ static void FillMemoryFromFile (int iFrom, int iSize, const char *pFile)
 /// Initialize a PMD 85-1 model.
 static void InitializePMD1 ()
 {
+  CPUAllRamDisable ();
   // Read the monitor image.
   FillMemoryFromFile (0x8000, 4096, PMD_SHARE "M1");
   FillMemoryFromFile (0xA000, 4096, PMD_SHARE "M1");
@@ -343,10 +344,22 @@ static void InitializePMD1 ()
 /// Initialize a PMD 85-2 model.
 static void InitializePMD2 ()
 {
+  CPUAllRamDisable ();
   // Read the monitor image, patched to read the tape the PMD 85-1 way (the only way the tape port is simulated).
   FillMemoryFromFile (0x8000, 4096, PMD_SHARE "M2-Patched-Tape");
   // The entire 64k is read write.
   SetMemoryReadWrite (0x0000, 65536);
+}
+
+
+/// Initialize a PMD 85-2A model: as the PMD 85-2, but the monitor ROM at 0x8000-0x8FFF can be switched off by PC4 of the
+/// system 8255 (the RAM under it, AllRAM). The ROM is the monitor of the PMD 85-2 (monit2A.rom of pmd85.borik.net is the
+/// same, here patched to read the tape the PMD 85-1 way).
+static void InitializePMD2A ()
+{
+  FillMemoryFromFile (0x8000, 4096, PMD_SHARE "M2-Patched-Tape");
+  SetMemoryReadWrite (0x0000, 65536);
+  CPUAllRamEnable (abMemoryData + 0x8000);
 }
 
 
@@ -879,7 +892,7 @@ static void GamesLoad ()
     oColumns.resize (8);
     tGame sGame;
     sGame.sTape = oColumns [0];
-    sGame.iModel = atoi (oColumns [1].c_str ()) == 2 ? 2 : 1;
+    sGame.iModel = oColumns [1] == "2A" ? 3 : atoi (oColumns [1].c_str ()) == 2 ? 2 : 1;
     sGame.sNote = oColumns [2];
     sGame.sRemap = oColumns [3];
     sGame.sPad = oColumns [4];
@@ -954,7 +967,7 @@ static void MenuRender ()
     }
     oInputs.push_back (oGames [oView [i]].sInput + (HasState (oGames [oView [i]].sTape) ? "S" : ""));
     oNames.push_back (oGames [oView [i]].sTape);
-    oNotes.push_back ((oGames [oView [i]].iModel == 2 ? "PMD 85-2  " : "PMD 85-1  ") + ListNote (oGames [oView [i]].sNote));
+    oNotes.push_back ((oGames [oView [i]].iModel == 3 ? "PMD 85-2A " : oGames [oView [i]].iModel == 2 ? "PMD 85-2  " : "PMD 85-1  ") + ListNote (oGames [oView [i]].sNote));
   }
   std::string sHelp;
   if (!oView.empty ())
@@ -1067,7 +1080,7 @@ static void EscapeAction ()
 static void EmulationInitialize (const std::string &sTape, int iModel)
 {
   sCurTape = sTape;
-  iCurModel = iModel == 2 ? 2 : 1;
+  iCurModel = iModel == 3 ? 3 : iModel == 2 ? 2 : 1;
   // Flush garbage
   FlushMemory(0x0000, 65536);
   // Reset processor clock
@@ -1100,9 +1113,12 @@ static void EmulationInitialize (const std::string &sTape, int iModel)
   iCtrlSerial ++;
 
   DSPSetNoBlink (GameHasCommand (sTape, "NOBLINK"));
-  if (iModel == 2)
+  if (iModel >= 2)
   {
-    InitializePMD2();
+    if (iModel == 3)
+      InitializePMD2A ();
+    else
+      InitializePMD2 ();
     if (GameHasCommand (sTape, "FONT"))
       FontPatch ();
   }

@@ -16,6 +16,8 @@
 #define STATE_MAGIC     "PMD85SAV"
 #define STATE_VERSION   1
 #define STATE_SIZE      (8 + 4 + 4 + 2 + 2 + 7 + 1 + 1 + 1 + 4 + 65536)
+/// The PMD 85-2A (AllRAM) adds the flags of the paging and the 4 kB of RAM under the monitor ROM.
+#define STATE_ALLRAM    (1 + 4096)
 
 
 static void Put16 (byte *&p, uint32 v) { *p ++ = v & 0xFF; *p ++ = (v >> 8) & 0xFF; }
@@ -32,7 +34,8 @@ static uint32 Get32 (const byte *&p) { uint32 v = Get16 (p); return (v | (Get16 
  */
 bool STSave (const std::string &sPath, int iModel)
 {
-  std::vector <byte> oBuffer (STATE_SIZE);
+  bool bAllRam = CPUAllRamActive ();
+  std::vector <byte> oBuffer (STATE_SIZE + (bAllRam ? STATE_ALLRAM : 0));
   byte *p = &oBuffer [0];
   tCPUState sCPU;
 
@@ -54,6 +57,9 @@ bool STSave (const std::string &sPath, int iModel)
   *p ++ = iColumn;
   Put32 (p, sCPU.iClock);
   memcpy (p, abMemoryData, 65536);
+  p += 65536;
+  if (bAllRam)
+    CPUAllRamSave (p, p + 1);
   CPUUnpause ();
 
   // The directory of the file (one level), then write under a temporary name and rename, a failed save keeps the old state.
@@ -83,13 +89,15 @@ bool STSave (const std::string &sPath, int iModel)
  */
 const char *STLoad (const std::string &sPath, int iModel)
 {
-  std::vector <byte> oBuffer (STATE_SIZE + 1);
+  bool bAllRam = CPUAllRamActive ();
+  size_t iExpected = STATE_SIZE + (bAllRam ? STATE_ALLRAM : 0);
+  std::vector <byte> oBuffer (iExpected + 1);
   FILE *pFile = fopen (sPath.c_str (), "rb");
   if (!pFile)
     return ("no saved state");
   size_t iRead = fread (&oBuffer [0], 1, oBuffer.size (), pFile);
   fclose (pFile);
-  if (iRead != STATE_SIZE || memcmp (&oBuffer [0], STATE_MAGIC, 8) != 0)
+  if (iRead != iExpected || memcmp (&oBuffer [0], STATE_MAGIC, 8) != 0)
     return ("not a saved state");
 
   const byte *p = &oBuffer [8];
@@ -109,9 +117,12 @@ const char *STLoad (const std::string &sPath, int iModel)
 
   if (!CPUPause ())
     return ("the processor did not stop");
-  // The read only memory (monitor) is left as it is.
+  // The paging of the PMD 85-2A first (the view of 0x8000-0x8FFF is the ROM or the RAM), then the memory.
+  if (bAllRam)
+    CPUAllRamRestore (p [65536], p + 65537);
+  // The read only memory (monitor) is left as it is, the ROM mapped by the AllRAM paging too (mask 2).
   for (int iAddr = 0 ; iAddr < 65536 ; iAddr ++)
-    if (abMemoryMask [iAddr])
+    if (abMemoryMask [iAddr] == 1)
       abMemoryData [iAddr] = p [iAddr];
   CPUSetState (&sCPU);
   KBDWriteColumn (iColumn);

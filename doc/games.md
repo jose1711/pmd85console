@@ -127,7 +127,7 @@ NAME;MODEL;NOTE[;REMAP[;PAD[;KEYS[;INPUT[;CATEGORY]]]]]
 | # | Column | Meaning |
 |---|---|---|
 | 1 | `NAME` | the tape file in the share directory |
-| 2 | `MODEL` | `1` or `2`: the PMD 85-1 ROM `M1` or the PMD 85-2 ROM `M2-Patched-Tape` |
+| 2 | `MODEL` | `1`, `2` or `2A`: the PMD 85-1 ROM `M1`, the PMD 85-2 ROM `M2-Patched-Tape`, or the PMD 85-2A (the same ROM with the AllRAM paging, see below) |
 | 3 | `NOTE` | shown in the list, the commands to type (`MGLD 00, JUMP 2000`) |
 | 4 | `REMAP` | host keys mapped to other PMD 85 keys for this game |
 | 5 | `PAD` | buttons of the web remote control for this game |
@@ -158,6 +158,23 @@ triangle (`MANIC ▶`, the web remote control `MANIC >`) instead of the brackets
 has the name with its parent (`#FAMILY Programovani/KAREL`, the games of it `...;Programovani/KAREL`). Now: MANIC, FLAPPY,
 ARKANOID, BOULDER, PAMPUCH, PONTRIS, KVADRO, WILLY, GALAXIA, MTRON, MYTH, `Deskove hry/PEXESO`, `Deskove hry/REVERZ`, `Programovani/ZOFKA`,
 `Programovani/KAREL`, `Programovani/KAREL3D`. A family with one version is not needed, use the game itself.
+
+### PMD 85-2A (`MODEL` `2A`)
+
+The PMD 85-2A has 64 kB of RAM, and the monitor ROM at `0x8000`-`0x8FFF` can be switched off to give the RAM under it
+(AllRAM, the 8255 of the system, PC4: 1 the ROM, 0 the RAM; a write goes to the RAM also while the ROM is mapped). The
+ROM `M2` of this emulator is the monitor of the PMD 85-2A byte for byte (`monit2A.rom` of the ROM package of
+pmd85.borik.net, it differs from the PMD 85-2 `monit2.rom` only in `HEADIN` at `0x8EBE`); `M1` is `monit1u.rom`.
+
+- The paging: the control word `0x8A` makes the upper port C an input (PC4 has a pull-up, the ROM stays, the monitor does
+  it), `0x82` an output with the latches cleared (the RAM), then `0x09` or `0x08` (bit set/reset) or a write to port C change
+  PC4; the saved state of a game keeps the mapping and the 4 kB under the ROM.
+- The model `2` stays as it was (64 kB of RAM writable everywhere, the ROM is not switched).
+- `basic2A.rmm` (BASIC-G V2.A, 9 kB, more memory for the programs) is in `simpmd/data/roms`, use it as `ROM basic2A.rmm`.
+- Not done: the colours of the PMD 85-2A (bits 6 and 7 of a byte of the video RAM choose one of 4 colours of six pixels).
+
+Tested with a small program that writes to the RAM under the mapped ROM and reads it with the ROM and with the RAM
+(`23 55 23 AA 23` as it must be, the model `2` gives `55 55 AA AA AA`) and with BOMBARDE in BASIC-G V2.A.
 
 ### `REMAP`
 

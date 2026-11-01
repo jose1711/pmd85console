@@ -147,10 +147,17 @@ inline word MemReadWord (word iAddr)
   return (MemReadByte (iAddr) + ((word) MemReadByte (iAddr + (word) 1) << 8));
 }
 
+/// The RAM under the monitor ROM of the PMD 85-2A (AllRAM), written while the ROM is mapped.
+static byte abRamUnderRom [4096];
+
 /// Writes a byte to simulated memory array if it is writable.
 inline void MemWriteByte (word iAddr, byte iData)
 {
-  if (abMemoryMask [iAddr]) abMemoryData [iAddr] = iData;
+  byte iMask = abMemoryMask [iAddr];
+  if (iMask == 1)
+    abMemoryData [iAddr] = iData;
+  else if (iMask == 2)
+    abRamUnderRom [iAddr & 0x0FFF] = iData;
 }
 
 /// Writes a word to simulated memory array if it is writable.
@@ -1190,6 +1197,98 @@ void InstSPHL ()
 /// Output latch of the port C of the system 8255, the games read it back to change single bits (speaker).
 static byte iPortC = 0;
 
+// PMD 85-2A AllRAM. PC4 of the system 8255 chooses what is at 0x8000-0x8FFF: 1 the monitor ROM (a write still goes to the
+// RAM under it), 0 the RAM. PC4 has a pull-up, so with the upper port C an input (control word 0x8A, the monitor does it)
+// the ROM stays; 0x82 makes it an output with the latches cleared (the RAM), the bit set/reset 0x09 and 0x08 and a write to
+// port C change PC4.
+static bool bAllRam = false;
+static bool bRomMapped = true;
+static bool bPchInput = true;
+static byte abRomImage [4096];
+
+static void AllRamMap (bool bRom)
+{
+  if (bRom == bRomMapped)
+    return;
+  if (bRom)
+  {
+    memcpy (abRamUnderRom, abMemoryData + 0x8000, 4096);
+    memcpy (abMemoryData + 0x8000, abRomImage, 4096);
+    for (int i = 0 ; i < 4096 ; i ++)
+      abMemoryMask [0x8000 + i] = 2;
+  }
+  else
+  {
+    memcpy (abMemoryData + 0x8000, abRamUnderRom, 4096);
+    for (int i = 0 ; i < 4096 ; i ++)
+      abMemoryMask [0x8000 + i] = 1;
+  }
+  bRomMapped = bRom;
+}
+
+/// Called after every change of port C or of the mode of the system 8255.
+static void AllRamUpdate ()
+{
+  if (bAllRam)
+    AllRamMap (bPchInput || (iPortC & 0x10));
+}
+
+/// The monitor ROM (4 kB) is at 0x8000-0x8FFF of the memory, the RAM under it is empty and hidden.
+void CPUAllRamEnable (const byte *pRom)
+{
+  memcpy (abRomImage, pRom, 4096);
+  memset (abRamUnderRom, 0, sizeof (abRamUnderRom));
+  memcpy (abMemoryData + 0x8000, abRomImage, 4096);
+  for (int i = 0 ; i < 4096 ; i ++)
+    abMemoryMask [0x8000 + i] = 2;
+  bAllRam = true;
+  bRomMapped = true;
+  bPchInput = true;
+}
+
+void CPUAllRamDisable ()
+{
+  bAllRam = false;
+  bRomMapped = true;
+  bPchInput = true;
+}
+
+bool CPUAllRamActive ()
+{
+  return (bAllRam);
+}
+
+void CPUAllRamSave (byte *pFlags, byte *pHidden)
+{
+  *pFlags = (bRomMapped ? 1 : 0) | (bPchInput ? 2 : 0);
+  // Mapped ROM: the RAM is in abRamUnderRom, otherwise it is the memory (the hidden copy is not up to date).
+  memcpy (pHidden, bRomMapped ? abRamUnderRom : abMemoryData + 0x8000, 4096);
+}
+
+/// Sets the mapping of a saved state (the processor is stopped): the memory of 0x8000-0x8FFF is set by the caller
+/// when the RAM is mapped (the loop of STLoad writes where the mask is 1).
+void CPUAllRamRestore (byte iFlags, const byte *pHidden)
+{
+  bPchInput = (iFlags & 2) != 0;
+  bool bRom = (iFlags & 1) != 0;
+  bRomMapped = !bRom;                  // force the change of the view
+  if (bRom)
+  {
+    memcpy (abRamUnderRom, pHidden, 4096);
+    memcpy (abMemoryData + 0x8000, abRomImage, 4096);
+    for (int i = 0 ; i < 4096 ; i ++)
+      abMemoryMask [0x8000 + i] = 2;
+    bRomMapped = true;
+  }
+  else
+  {
+    for (int i = 0 ; i < 4096 ; i ++)
+      abMemoryMask [0x8000 + i] = 1;
+    memcpy (abMemoryData + 0x8000, pHidden, 4096);
+    bRomMapped = false;
+  }
+}
+
 /// Test of the sound timing (PMD_BEEPSLOW=1): the delay loop of the model 1 monitor beep routine (DCR E, JNZ at 0x88B5)
 /// takes 15 clocks per round, the model 2/2A one 87 (4x XTHL more), so notes of the games sound ~5.5 times longer there.
 /// The loop is slowed down only when called by the beep routine (return address 0x88B1) with a note table in RAM
@@ -1306,11 +1405,13 @@ void InstOUT ()
                 break;
     case 0xF6:  iPortC = RegA;
                 SNDWriteSpeaker (iPortC);
+                AllRamUpdate ();
                 break;
     case 0xF7:  if (RegA & 0x80)
                 {
                   // Mode set clears the output latches.
                   iPortC = 0;
+                  bPchInput = (RegA & 0x08) != 0;
                 }
                 else
                 {
@@ -1319,6 +1420,7 @@ void InstOUT ()
                   iPortC = (RegA & 1) ? (iPortC | iMask) : (iPortC & ~iMask);
                 }
                 SNDWriteSpeaker (iPortC);
+                AllRamUpdate ();
                 break;
   }
   iProcessorClock += 10;

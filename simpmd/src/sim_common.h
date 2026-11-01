@@ -133,7 +133,8 @@ class relaxed_int
 // This would likely be much syntactic work with little semantic impact.
 
 extern byte abMemoryData [65536];
-extern bool abMemoryMask [65536];
+/// 0 read only (ROM), 1 read write, 2 the ROM of the PMD 85-2A is mapped here and a write goes to the RAM under it.
+extern byte abMemoryMask [65536];
 
 extern relaxed_int iProcessorClock;
 
@@ -197,6 +198,14 @@ byte KBDReadColumn ();
 void KBDWriteColumn (byte iData);
 void KBDEventHandler (const SDL_KeyboardEvent *);
 void KBDSetHold (int iMs);
+
+// PMD 85-2A AllRAM: the monitor ROM at 0x8000-0x8FFF or the RAM under it, chosen by PC4 of the system 8255.
+void CPUAllRamEnable (const byte *pRom);
+void CPUAllRamDisable ();
+bool CPUAllRamActive ();
+/// Flags (bit 0: the ROM is mapped, bit 1: the upper port C is an input) and the 4 kB of RAM under the ROM.
+void CPUAllRamSave (byte *pFlags, byte *pHidden);
+void CPUAllRamRestore (byte iFlags, const byte *pHidden);
 void KBDPoll ();
 bool DSPResolution (int *, int *);
 void KBDInitialize ();
