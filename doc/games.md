@@ -144,16 +144,16 @@ PMD 85-1, `MGLD 01`), `TBASICV2` (1.02 for the PMD 85-2 and higher, `MGLD 02`) a
 to 13: SYNTAX, DIRECT, PRINT, FOR_NEXT, IF, GOSUB, ARR_SIZE, INPUT, RND, BOOLEAN, ERASTOTE) that the interpreter loads
 with `LOAD n` from the tape that follows it. The repo has two tapes, `TINYBASIC` (model 1) and `TINYBASIC-2` (model 2), each of
 the interpreter and the 11 samples, the 2 byte frames of the blocks cut off (the interpreter is an autorun block that has
-to be started with `JUMP 0000`), in the family `Programy/TINYBASIC`.
+to be started with `JUMP 0000`), in the family `Programovani/TINYBASIC`.
 
 ### MPY85
 
 A subset of Python written for this repo in 8080 assembly (`mpy85/mpy.asm`, 4.6 kB), an interactive REPL for the PMD 85-1 (monitor M1,
-the tape `MPY85`, `MGLD 00`, `JUMP 0100`, category `Programy`). 16 bit integers, strings, `None`, `True`/`False`; `+ - * // / %`
+the tape `MPY85`, `MGLD 00`, `JUMP 0100`, category `Programovani`). 16 bit integers, strings, `None`, `True`/`False`; `+ - * // / %`
 (`/` is the integer division, `//` and `%` floor like Python), comparisons, `and or not`, `if/elif/else`, `while`,
 `for x in range(...)`, `break`, `continue`, `def` with `return` and recursion, `print len str int chr ord abs input peek poke`.
 The font of the PMD 85 has no lower case, so the input is converted to capitals (names and keywords ignore the case).
-Enter confirms, Backspace deletes, a block (a line ending with `:`) ends with an empty line. On the PC keyboard the PMD 85 symbols are on
+Enter confirms, Backspace deletes, the cursor up and down browse the history of the last lines, a block (a line ending with `:`) ends with an empty line. On the PC keyboard the PMD 85 symbols are on
 Shift: `(` `)` = Shift+8, Shift+9, `-` = Shift+0, `+` = Shift+`;`, `*` = Shift+`'`, `=` = Shift+`_`. It is a tree walker over the source
 text, so it is slow (`fib(15)` is about 7 million instructions). Details, memory map and tests: [mpy85/README.md](../mpy85/README.md).
 

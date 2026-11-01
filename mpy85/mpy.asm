@@ -38,6 +38,12 @@ SLQ     EQU 2F25H
 SLC     EQU 2F26H
 NAMEBUF EQU 2F28H
 NUMBUF  EQU 2F30H
+HCUR    EQU 2F38H
+HEND    EQU 2F3AH
+HIST    EQU 6000H
+HISTEND EQU 61FFH
+KEY_UP  EQU 81H
+KEY_DOWN EQU 87H
 
 SYMTAB  EQU 1C00H
 SYMEND  EQU 2EFEH
@@ -86,6 +92,8 @@ start:  lxi sp,STACKTOP
         shld GLBEND
         xra a
         sta STRST
+        lxi h,HIST
+        shld HEND
         mvi a,1CH
         call PUTC
         lxi h,M_BANNER
@@ -293,9 +301,15 @@ KEY_BS1    EQU 83H
 KEY_BS2    EQU 7FH
 KEY_BS3    EQU 8AH
 
-readline: lxi h,LINEBUF
+readline: lhld HEND
+        shld HCUR
+        lxi h,LINEBUF
         mvi b,0
 rl_k:   call GETK
+        cpi KEY_UP
+        jz rl_up
+        cpi KEY_DOWN
+        jz rl_dn
         cpi KEY_ENTER1
         jz rl_end
         cpi KEY_ENTER2
@@ -343,6 +357,100 @@ rl_bs:  mov a,b
         jmp rl_k
 rl_end: xra a
         mov m,a
+        mov a,b
+        ora a
+        jz rl_fin
+        mov e,b
+        mvi d,0
+        lhld HEND
+        dad d
+        inx h
+        lxi d,HISTEND+1
+        call cmp16
+        jc rl_ok
+        lxi h,HIST
+        shld HEND
+rl_ok:  lhld HEND
+        xchg
+        lxi h,LINEBUF
+rl_cp:  mov a,m
+        stax d
+        inx h
+        inx d
+        ora a
+        jnz rl_cp
+        xchg
+        shld HEND
+rl_fin: lhld HEND
+        shld HCUR
+        ret
+rl_k2:  lxi h,LINEBUF
+        mov e,b
+        mvi d,0
+        dad d
+        jmp rl_k
+rl_up:  lhld HCUR
+        lxi d,HIST
+        call cmp16
+        jz rl_k2
+        dcx h
+hp1:    mov a,l
+        cmp e
+        jnz hp2
+        mov a,h
+        cmp d
+        jz hp_f
+hp2:    dcx h
+        mov a,m
+        ora a
+        jnz hp1
+        inx h
+hp_f:   shld HCUR
+        jmp hl_show
+rl_dn:  lhld HEND
+        xchg
+        lhld HCUR
+        call cmp16
+        jz rl_k2
+dn1:    mov a,m
+        inx h
+        ora a
+        jnz dn1
+        shld HCUR
+        lhld HEND
+        xchg
+        lhld HCUR
+        call cmp16
+        jnz hl_show
+        call erase_line
+        mvi b,0
+        jmp rl_k2
+hl_show: call erase_line
+        lhld HCUR
+        lxi d,LINEBUF
+        mvi b,0
+hs1:    mov a,m
+        ora a
+        jz rl_k2
+        stax d
+        inx h
+        inx d
+        inr b
+        call pc
+        jmp hs1
+erase_line: mov a,b
+        ora a
+        rz
+el1:    lhld CURSOR
+        dcx h
+        shld CURSOR
+        mvi a,' '
+        call PUTC
+        lhld CURSOR
+        dcx h
+        shld CURSOR
+        dcr b
+        jnz el1
         ret
 
 ; ---------------------------------------------------------------- pomocne
