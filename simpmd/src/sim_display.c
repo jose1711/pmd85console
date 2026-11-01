@@ -67,6 +67,9 @@ static const char *menuText[7] = {
   "Richard Bruna (c) 2019"
 };
 
+/// The origin of many of the programs and games, shown under the games of the menu.
+static const char *creditsText = "Hry a programy: pmd85.borik.net";
+
 static const char *pmdLogo[1] = {PMD_SHARE "pmd85_830_570.bmp"};
 
 static const char *gameLogo[4] = {
@@ -634,6 +637,18 @@ void DSPRenderText (int screen_width, int screen_height)
   if (!textFont)
     return;
 
+  // Credits
+  textSurface = TTF_RenderText_Solid (textFont, creditsText, textColor);
+  textTexture = SDL_CreateTextureFromSurface (mRenderer, textSurface);
+
+  textRectangle.h = FONT_HEIGHT;
+  textRectangle.w = FONT_WIDTH * strlen(creditsText);
+  textRectangle.x = (screen_width - MENU_WIDTH)/2 + (MENU_WIDTH - textRectangle.w)/2;
+  textRectangle.y = 630;
+
+  SDL_RenderCopy (mRenderer, textTexture, NULL, &textRectangle);
+  SDL_DestroyTexture (textTexture);
+  SDL_FreeSurface (textSurface);
   // Copyright
   textSurface = TTF_RenderText_Solid (textFont, menuText[6], textColor);
   textTexture = SDL_CreateTextureFromSurface (mRenderer, textSurface);
