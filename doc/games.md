@@ -101,6 +101,16 @@ stop at them with the monitor. The tape here has the three frames cut off: `73 0
 are cut off too. The loader of the program does not work with the monitor of the PMD 85-2 (`0x8DDB` is in the middle
 of an instruction there). Keys: `B` colours (Mono, RGBM, Video, ACE), [Enter] starts, the commands are typed.
 
+### SPINDIZZY (RM-TEAM, PMD 85-2A)
+
+Port of the ZX Spectrum game Spindizzy (Electric Dreams 1986) by RM-TEAM (Roman and Martin Bórik, 2013), the tape block
+`SPINDZ` of `games-rm-team.ptp` (`pmd85emu_games_rm-team.zip`, <https://pmd85.borik.net/wiki/Spindizzy>). It needs the
+64 kB RAM of the PMD 85-2A and checks the paging of the RAM under the monitor ROM (`MODEL` `2A`; with `2` it prints
+`64K RAM IS REQUIRED FOR RUNNING OF THIS GAME!`). The block has the two 2 byte frames cut off like the other packages of
+RM-TEAM (the one after the header and the one after the checksum of the loader), the same tape works with `MGLD 00`.
+Keys: O/P left and right, Q/A up and down, [Space] fire, N freeze, T pause, M map, S score, C shape, F1-F4 the view.
+The same package has Highway Encounter (`HIGHENC`, PMD 85-2A/3) and `KUBANOID` (2026), they start the same way.
+
 ### Icons
 
 Icons left of the name show what the game can be played with besides the keyboard

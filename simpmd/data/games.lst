@@ -120,6 +120,7 @@ SACH;1;MGLD 00, JUMP 0000;;;;;Deskove hry
 SASKO;2;MGLD 00;;Left:Left,Right:Right,Fast left:End,Fast right:PageDown,Space:Space,Enter:Return,RCL:Keypad +,F12:F12,Esc:Escape;sipky, End/PgDn rychle, Space, Enter, Num+ (RCL), F12;;Pro nejmensi
 SP-DEMIS;1;MGLD 00;;;zadani jmena;;
 SPACE-RA;1;MGLD 00;;;;;
+SPINDIZZY;2A;MGLD 00;Up=Q,Down=A,Left=O,Right=P,E=Q,Z=A,H=N,I=M,Return=Space;Up:Q,Down:A,Left:O,Right:P,Fire:Space,Freeze:N,Map:m,Pause:t,Score:s,Shape:c,K0:F1,K1:F2,K2:F3,K3:F4,Esc:Escape;Spindizzy (Electric Dreams 1986, port RM-TEAM 2013, jen PMD 85-2A a 3): O vlevo, P vpravo, Q nahoru, A dolu, Space = start a zrychleni, N brzda, T pauza, M mapa, S skore (obtiznost, save, load), C tvar kulicky, F1-F4 otoceni pohledu, R zmena klaves, H napoveda (pad: D-pad, A = Space, X = N, Y = M);P;
 STRIPPED;1;MGLD 03;Z=D,Down=D,Up=E;Up:e,Down:d,Fire:Space,1:1,2:2,3:3,4:4,Esc:Escape;E hore, D dole, Space strelba, menu cisly 1 ovladani, 2 start hry, 4 konec, 5 smazat rekord (po G chvili pocka na titulce);;
 T.MRAVEC;2;ROM basic2.rmm, FONT, TYPE LOAD 52, TYPE RUN;;;Toci-Mravec: velikost desky 4 az 8 (cislo), potom prikazy z klavesnice;;Programovani
 TANK;1;MGLD 00, JUMP 2000;;;;;2 hraci
