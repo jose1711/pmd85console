@@ -176,6 +176,19 @@ static void KBDApply (SDL_Keycode iSym, Uint8 iState)
  */
 #define PMD_KBD_HOLD_MS         60
 
+/// Minimal hold time of the running game [ms], PMD_KBD_HOLD_MS by default (see KBDSetHold).
+static int iHoldMs = PMD_KBD_HOLD_MS;
+
+/** Sets the minimal time a key stays pressed.
+ *
+ *  A game in BASIC reads the key (INKEY) once in a pass of its loop, in BOMBARDE it is about 150 ms,
+ *  a shorter tap of a gamepad button is missed in a part of the passes.
+ */
+void KBDSetHold (int iMs)
+{
+  iHoldMs = iMs;
+}
+
 /// Time of the last press of a key.
 static std::map <SDL_Keycode, Uint32> oPressTime;
 /// Releases waiting for the minimal hold time, key and time of the release.
@@ -194,8 +207,8 @@ void KBDEventHandler (const SDL_KeyboardEvent *pEvent)
       KBDApply (iSym, SDL_PRESSED);
       break;
     case SDL_RELEASED:
-      if (oPressTime.count (iSym) && iNow - oPressTime [iSym] < PMD_KBD_HOLD_MS)
-        oPendingRelease [iSym] = oPressTime [iSym] + PMD_KBD_HOLD_MS;
+      if (oPressTime.count (iSym) && iNow - oPressTime [iSym] < (Uint32) iHoldMs)
+        oPendingRelease [iSym] = oPressTime [iSym] + iHoldMs;
       else
         KBDApply (iSym, SDL_RELEASED);
       break;

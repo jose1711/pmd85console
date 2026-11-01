@@ -1025,6 +1025,9 @@ static void EmulationInitialize (const std::string &sTape, int iModel)
   DSPInitialize();
   printf("DSP initializing..\n");
   KBDInitialize ();
+  // A BASIC program reads the keys once in a pass of its loop (BOMBARDE ~150 ms), a short tap would be missed;
+  // PMD_KBD_HOLD_MS overrides the minimal hold time [ms] (default 170 for BASIC games, 60 for the others).
+  KBDSetHold (getenv ("PMD_KBD_HOLD_MS") ? atoi (getenv ("PMD_KBD_HOLD_MS")) : GameHasCommand (sTape, "ROM basic") ? 170 : 60);
   printf("KBD initializing..\n");
   SNDInitialize ();
   printf("SND initializing..\n");

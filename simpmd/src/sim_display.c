@@ -325,8 +325,39 @@ static int DSPPaddleThread (void *pArgs)
 }
 
 
+/// Debug sampler for PMD_SCANTRACE=1: the moments the emulated program starts to scan the keyboard (bursts of row reads).
+static int DSPScanThread (void *pArgs)
+{
+  uint32 iLast = KBDScanCount (), iLastSeen = KBDSeenCount ();
+  Uint32 iLastChange = 0, iLastSeenTime = 0;
+  for (;;)
+  {
+    uint32 iNow = KBDScanCount ();
+    Uint32 iTicks = SDL_GetTicks ();
+    if (KBDSeenCount () != iLastSeen)
+    {
+      if (iTicks - iLastSeenTime >= 6)
+        fprintf (stderr, "SEEN %u\n", iTicks);
+      iLastSeenTime = iTicks;
+      iLastSeen = KBDSeenCount ();
+    }
+    if (iNow != iLast)
+    {
+      if (iTicks - iLastChange >= 6)
+        fprintf (stderr, "SCAN %u\n", iTicks);
+      iLastChange = iTicks;
+      iLast = iNow;
+    }
+    SDL_Delay (1);
+  }
+  return (0);
+}
+
+
 void DSPPaintHandler ()
 {
+  static bool bScan = getenv ("PMD_SCANTRACE") && (SDL_CreateThread (DSPScanThread, "scan", NULL), true);
+  (void) bScan;
   static bool bPaddle = getenv ("PMD_PADDLETRACE") && (SDL_CreateThread (DSPPaddleThread, "paddle", NULL), true);
   (void) bPaddle;
   Uint32 iPaintBegin = SDL_GetTicks ();

@@ -196,6 +196,7 @@ uint32 KBDSeenCount ();
 byte KBDReadColumn ();
 void KBDWriteColumn (byte iData);
 void KBDEventHandler (const SDL_KeyboardEvent *);
+void KBDSetHold (int iMs);
 void KBDPoll ();
 bool DSPResolution (int *, int *);
 void KBDInitialize ();
