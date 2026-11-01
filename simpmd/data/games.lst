@@ -39,7 +39,7 @@ BARBAR;2;ROM basic2.rmm, FONT, TYPE LOAD 1, TYPE RUN;Left=F10,Right=F12,E=F8,Z=F
 BASIC-G;2;ROM basic2.rmm, FONT, TAPESAVE;;;BASIC-G V2.0: vlastni programy z klavesnice (LIST, RUN, ...), SAVE n a LOAD n pres soubor saves/BASIC-G;;Programovani
 BLACK;2;ROM basic2.rmm, FONT, TYPE LOAD 1, TYPE RUN;;;F1-F3 (K0-K2) volba tahu, F5 a F6 (K4, K5) prvni pozice, odpovedi A/N z klavesnice;;
 BLUDISTE;2;MGLD 00;Up=Left Shift,E=Left Shift,H=M,I=Left Ctrl;Forward:Left Shift,Left:Left,Right:Right,Space:Space,M:m,Stop:Left Ctrl,Esc:Escape;krok: Shift (pad: nahoru), obrat: sipky, M mapa (pad: X), Ctrl = STOP, konec hry (pad: Y), Space start;P;
-BOMBARDE;2;ROM basic2.rmm, FONT, TYPE LOAD 2, TYPE RUN;Space=F1,Left Shift=F6;Bomb:F1,Fire:F6,Esc:Escape;F1 (K0) bomba, F6 (K5) strelba, libovolna klavesa start (pad: A bomba, LB strelba);P;
+BOMBARDE;2;ROM basic2.rmm, FONT, KEYHOLD 170, TYPE LOAD 2, TYPE RUN;Space=F1,Left Shift=F6;Bomb:F1,Fire:F6,Esc:Escape;F1 (K0) bomba, F6 (K5) strelba, libovolna klavesa start (pad: A bomba, LB strelba);P;
 BOULD+3;2;MGLD 03;Return=H,Space=H,Up=E,Down=Z;E up:e,Y down:z,Left:Left,Right:Right,H:h,Esc:Escape;H hra, I informace, sipky vlevo/vpravo, E/Y nahoru/dolu (pad a TV: OK = H);PR;BOULDER
 BOULDER;1;MGLD 03;Return=H,Space=H,Up=E,Down=Z;E up:e,Y down:z,Left:Left,Right:Right,H:h,Esc:Escape;H hra, I informace, sipky vlevo/vpravo, E/Y nahoru/dolu (pad a TV: OK = H);PR;BOULDER
 BUBLSORT;2;ROM basic2.rmm, FONT, TYPE LOAD 0, TYPE RUN;;;ukazka trideni: Enter pokracuje;;Dema

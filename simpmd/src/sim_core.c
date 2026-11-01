@@ -397,7 +397,7 @@ static std::string ListNote (const std::string &sNote)
     iPos = iEnd + 1;
     while (!sPart.empty () && sPart [0] == ' ')
       sPart.erase (0, 1);
-    if (sPart == "FONT" || sPart == "NOBLINK" || sPart == "TAPELOOP" || sPart.compare (0, 8, "TAPESAVE") == 0)
+    if (sPart == "FONT" || sPart == "NOBLINK" || sPart == "TAPELOOP" || sPart.compare (0, 8, "TAPESAVE") == 0 || sPart.compare (0, 7, "KEYHOLD") == 0)
       continue;
     if (sPart.compare (0, 4, "ROM ") == 0 || sPart.compare (0, 5, "TYPE ") == 0)
       bBasic = bBasic || sPart.find ("basic") != std::string::npos;
@@ -1130,9 +1130,13 @@ static void EmulationInitialize (const std::string &sTape, int iModel)
   DSPInitialize();
   printf("DSP initializing..\n");
   KBDInitialize ();
-  // A BASIC program reads the keys once in a pass of its loop (BOMBARDE ~150 ms), a short tap would be missed;
-  // PMD_KBD_HOLD_MS overrides the minimal hold time [ms] (default 170 for BASIC games, 60 for the others).
-  KBDSetHold (getenv ("PMD_KBD_HOLD_MS") ? atoi (getenv ("PMD_KBD_HOLD_MS")) : GameHasCommand (sTape, "ROM basic") ? 170 : 60);
+  // Minimal time a key stays pressed [ms]: 60 by default, "KEYHOLD <ms>" in the note of the game sets another (BOMBARDE reads
+  // a key once in a pass of its loop of about 150 ms and misses a shorter tap, VOTRELCI would move the gun twice with that),
+  // PMD_KBD_HOLD_MS overrides both.
+  {
+    std::string sHold = GameCommandArgument (sTape, "KEYHOLD");
+    KBDSetHold (getenv ("PMD_KBD_HOLD_MS") ? atoi (getenv ("PMD_KBD_HOLD_MS")) : !sHold.empty () ? atoi (sHold.c_str ()) : 60);
+  }
   printf("KBD initializing..\n");
   SNDInitialize ();
   printf("SND initializing..\n");

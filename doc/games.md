@@ -65,6 +65,9 @@ ROM basic2.rmm, TYPE LOAD 53, TYPE RUN
 - `TYPE <text>`: the text is typed with [Enter] when the program scans the keyboard (after the tape stopped loading,
   or after 2 s when nothing was read yet). The usual letters, digits, `"` `(` `)` `=` `+` `-` `*` `:` `?` work.
   Note: the PMD 85 is QWERTZ, the typed `Y` and `Z` are its keys of those names.
+- `KEYHOLD <ms>`: the minimal time a key stays pressed for this game (default 60). A BASIC game reads a key once in a pass of
+  its loop (`INKEY`), a tap shorter than the pass is missed in a part of the passes (BOMBARDE: about 150 ms, `KEYHOLD 170`),
+  a longer hold than the pass moves a figure more than once (VOTRELCI moves the gun by 2 positions with 170 ms, 60 is right).
 - `FONT`: the Czech and Slovak letters of the PMD 85-3 for a program of that machine (REVERZ, VOTRELCI, ...). Its texts
   use the character set of the PMD 85-3 (codes `0xC0`-`0xDF` the small letters, the capitals 0x20 higher), the font of
   the monitor ends at `0x7F` and draws dots. The emulator makes the glyphs of the letters á č ď í ľ ň ô š ť ú é ý ž

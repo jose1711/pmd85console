@@ -86,7 +86,7 @@ SDL_VIDEODRIVER=dummy SDL_RENDER_DRIVER=software SDL_AUDIODRIVER=disk bin/simpmd
 | `PMD_SCREENSHOT=<file>` | Save the screen as BMP after `PMD_SCREENSHOT_MS` and exit. |
 | `PMD_SCREENSHOT_MS=<ms>` | Screenshot delay, default 3000. |
 | `PMD_KEYLOG=<file>` | Log keyboard and window events, paint duration and queue lag. |
-| `PMD_KBD_HOLD_MS=<ms>` | Minimal time a key stays pressed in the emulated keyboard, default 60, 170 for the games in BASIC (their `INKEY` reads a key once in a pass of the loop, about 150 ms, a shorter tap of a gamepad button is missed). |
+| `PMD_KBD_HOLD_MS=<ms>` | Minimal time a key stays pressed in the emulated keyboard, default 60; the game can set another one with `KEYHOLD <ms>` in its note of `games.lst` (BOMBARDE 170: its `INKEY` reads a key once in a pass of the loop of about 150 ms and a shorter tap would be missed, in VOTRELCI such a long hold moves the gun by 2 positions); this variable overrides both. |
 | `PMD_PAINTSTATS=1` | Debug: every 10 s the number of paint calls, painted frames, the slowest paint and the longest gap between paints (stderr). |
 | `PMD_PAINTTRACE=1` | Debug: the position of the leftmost lit pixel in lines 206-215 at each painted frame. |
 | `PMD_PADDLETRACE=1` | Debug: ARKANOID paddle sampler (2 ms): edge, `x`, speed, ball x, key bits and carry of the speed routine. |
