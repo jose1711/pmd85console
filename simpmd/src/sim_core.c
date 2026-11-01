@@ -649,7 +649,13 @@ static std::string AutoloadKeys (const std::string &sNote)
                  (sPart.find (' ', 5) == std::string::npos ? "" : sPart.substr (sPart.find (' ', 5) + 1)) + "}";
   }
   if (bShiftHold)
-    sResult = "[" + sResult + "_____]";
+  {
+    // [Shift] goes down right after the [Enter] of the first command, not before: with it down the letters of the
+    // command are typed as lower case and the monitor answers "No command". The loader of the game reads it later,
+    // at the start of the load.
+    size_t iEnter = sResult.find ('|');
+    sResult = (iEnter == std::string::npos ? "[" + sResult : sResult.substr (0, iEnter + 1) + "[" + sResult.substr (iEnter + 1)) + "_____]";
+  }
   return (sResult);
 }
 
