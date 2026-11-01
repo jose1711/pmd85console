@@ -737,7 +737,8 @@ static std::string WebState ()
   std::vector <int> oView = ListView ();
   for (size_t i = 0 ; i < oView.size () ; i ++)
     sState += std::string (i ? "," : "") + "\"" + (oView [i] == LIST_LEVEL_UP ? std::string ("(o uroven vys)") :
-              oView [i] < 0 ? "[ " + CategoryLabel (oCategories [-oView [i] - 1]) + " ]" : oGames [oView [i]].sTape) + "\"";
+              oView [i] < 0 ? (CategoryIsFamily (oCategories [-oView [i] - 1]) ? CategoryLabel (oCategories [-oView [i] - 1]) + " >" :
+                               "[ " + CategoryLabel (oCategories [-oView [i] - 1]) + " ]") : oGames [oView [i]].sTape) + "\"";
   return (sState + "]}");
 }
 
@@ -937,8 +938,17 @@ static void MenuRender ()
       for (size_t j = 0 ; j < oGames.size () && sSaved.empty () ; j ++)
         if (InCategoryTree (oGames [j].sCategory, sCategory) && HasState (oGames [j].sTape))
           sSaved = "S";
-      oInputs.push_back (sSaved);
-      oNames.push_back ("[ " + CategoryLabel (sCategory) + " ] (" + std::to_string (iGames) + ")");
+      if (CategoryIsFamily (sCategory))
+      {
+        // A family (the versions of one game): the name without brackets, the list draws a triangle after it ('F').
+        oInputs.push_back (sSaved + "F");
+        oNames.push_back (CategoryLabel (sCategory));
+      }
+      else
+      {
+        oInputs.push_back (sSaved);
+        oNames.push_back ("[ " + CategoryLabel (sCategory) + " ] (" + std::to_string (iGames) + ")");
+      }
       oNotes.push_back ("");
       continue;
     }
@@ -948,7 +958,7 @@ static void MenuRender ()
   }
   std::string sHelp;
   if (!oView.empty ())
-    sHelp = oView [listIndex] == LIST_LEVEL_UP ? "Enter vrati o uroven vys" : oView [listIndex] < 0 ? "Enter otevre kategorii" : oGames [oView [listIndex]].sHelp;
+    sHelp = oView [listIndex] == LIST_LEVEL_UP ? "Enter vrati o uroven vys" : oView [listIndex] < 0 ? (CategoryIsFamily (oCategories [-oView [listIndex] - 1]) ? "Enter otevre verze hry" : "Enter otevre kategorii") : oGames [oView [listIndex]].sHelp;
   DSPRenderGameList (fullscreen.w, fullscreen.h, listIndex, iCategory < 0 ? std::string ("Vsechny hry") : CategoryPath (oCategories [iCategory]), oNames, oNotes, oInputs, sHelp);
 }
 

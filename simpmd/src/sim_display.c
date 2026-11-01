@@ -871,6 +871,17 @@ static void DSPDrawIconState (int iX, int iY, int iSize)
   SDL_RenderDrawRect (mRenderer, &sLabel);
 }
 
+/// A filled triangle pointing right: the row opens a group of the versions of one game (a family).
+static void DSPDrawIconMore (int iX, int iY, int iSize)
+{
+  int iW = iSize / 2, iH = iSize * 2 / 3, iCenter = iY + iSize / 2;
+  for (int i = 0 ; i < iW ; i ++)
+  {
+    int iHalf = (iH / 2) * (iW - i) / iW;
+    SDL_RenderDrawLine (mRenderer, iX + i, iCenter - iHalf, iX + i, iCenter + iHalf);
+  }
+}
+
 /** Draw a text broken at spaces (preferably double ones) into at most iMaxLines lines of iMaxChars characters (the rest is cut with "..."),
  *  the first line at iY, the next ones iLineHeight lower.
  */
@@ -945,6 +956,9 @@ void DSPRenderGameList (int screen_width, int screen_height, int index, const st
     if (oInputs [i].find ('S') != std::string::npos)
       DSPDrawIconState (iX + 2 * ICON_SLOT, iY, FONT_HEIGHT);
     DSPDrawText (pFont, oNames [i], iX + 3 * ICON_SLOT, iY);
+    // A family (the versions of one game): the triangle after the name says that it opens.
+    if (oInputs [i].find ('F') != std::string::npos)
+      DSPDrawIconMore (iX + 3 * ICON_SLOT + FONT_WIDTH * (int) oNames [i].size () + 10, iY, FONT_HEIGHT);
     DSPDrawText (pFont, oNotes [i], iX + 3 * ICON_SLOT + FONT_WIDTH * 14, iY);
   }
   DSPDrawIconGamepad (iX, screen_height - 30, FONT_HEIGHT);
