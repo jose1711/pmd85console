@@ -101,6 +101,14 @@ stop at them with the monitor. The tape here has the three frames cut off: `73 0
 are cut off too. The loader of the program does not work with the monitor of the PMD 85-2 (`0x8DDB` is in the middle
 of an instruction there). Keys: `B` colours (Mono, RGBM, Video, ACE), [Enter] starts, the commands are typed.
 
+### PODRAZ
+
+Text game in BASIC (an unemployed programmer in New York moves money with a computer and a modem), `podraz.ptp` of the
+forum thread "Podraz 3" of pmd85.borik.net (Roman Bórik found it on the Zbrojováček disks, it is not an exact copy of
+the Podraz 3 of the ZX Spectrum). The `.ptp` has only the 2 byte frame of the tape cut off after the header (the header
+and the checksum of the data are valid), the program starts at `0x2401` with the line 2, so it works without the second cut
+that the BASIC programs of `basic.zip` need. It runs in BASIC-G V2.0 (`ROM basic2.rmm, FONT, TYPE LOAD 0, TYPE RUN`).
+
 ### SPINDIZZY (RM-TEAM, PMD 85-2A)
 
 Port of the ZX Spectrum game Spindizzy (Electric Dreams 1986) by RM-TEAM (Roman and Martin Bórik, 2013), the tape block
