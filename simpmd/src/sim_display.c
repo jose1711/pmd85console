@@ -39,6 +39,7 @@ limitations under the License.
 
 #include "sim_common.h"
 #include "SDL2/SDL_ttf.h"
+#include <map>
 
 
 //-------------------------------------------------------------------------------------------------------
@@ -606,8 +607,93 @@ void DSPShutdown ()
 }
 
 
+/** The menu is painted again at every key press, and rendering a text with TTF and uploading it as a texture is slow on a
+ *  Raspberry Pi (about 100 ms for a screen of the list). The textures of the texts, the logos and the font are kept for the
+ *  life of the menu renderer; PMD_PAINTSTATS=1 prints the time of a menu paint.
+ */
+static std::map <std::string, SDL_Texture *> oTextCache;
+static SDL_Texture *apLogoCache [4];
+static TTF_Font *pFontCache = NULL;
+
+static void DSPMenuCacheClear ()
+{
+  for (std::map <std::string, SDL_Texture *>::iterator x = oTextCache.begin () ; x != oTextCache.end () ; ++ x)
+    SDL_DestroyTexture (x->second);
+  oTextCache.clear ();
+  for (int i = 0 ; i < 4 ; i ++)
+  {
+    if (apLogoCache [i])
+      SDL_DestroyTexture (apLogoCache [i]);
+    apLogoCache [i] = NULL;
+  }
+  if (pFontCache)
+    TTF_CloseFont (pFontCache);
+  pFontCache = NULL;
+}
+
+static TTF_Font *DSPMenuFont ()
+{
+  if (!pFontCache)
+    pFontCache = TTF_OpenFont (gameFont [0], FONT_HEIGHT);
+  return (pFontCache);
+}
+
+/// Draws a text line on the menu renderer (the font has the same width of all the characters).
+static void DSPDrawText (TTF_Font *pFont, const std::string &sText, int iX, int iY)
+{
+  if (sText.empty ())
+    return;
+  std::map <std::string, SDL_Texture *>::iterator xFound = oTextCache.find (sText);
+  SDL_Texture *pText = xFound == oTextCache.end () ? NULL : xFound->second;
+  if (!pText)
+  {
+    SDL_Color sColor = {255, 255, 255, SDL_ALPHA_OPAQUE};
+    SDL_Surface *pSurface = TTF_RenderText_Solid (pFont, sText.c_str (), sColor);
+    if (!pSurface)
+      return;
+    pText = SDL_CreateTextureFromSurface (mRenderer, pSurface);
+    SDL_FreeSurface (pSurface);
+    if (!pText)
+      return;
+    // The list has about 150 different texts, a runaway growth is cut.
+    if (oTextCache.size () > 1500)
+    {
+      for (std::map <std::string, SDL_Texture *>::iterator x = oTextCache.begin () ; x != oTextCache.end () ; ++ x)
+        SDL_DestroyTexture (x->second);
+      oTextCache.clear ();
+    }
+    oTextCache [sText] = pText;
+  }
+  SDL_Rect sRect = {iX, iY, FONT_WIDTH * (int) sText.size (), FONT_HEIGHT};
+  SDL_RenderCopy (mRenderer, pText, NULL, &sRect);
+}
+
+/// PMD_PAINTSTATS=1: the time of a paint of the menu or the list, printed every 10 s (the number of paints, mean, slowest).
+static void DSPMenuStat (Uint64 iBegin)
+{
+  static bool bOn = getenv ("PMD_PAINTSTATS") != NULL;
+  static Uint32 iStart = SDL_GetTicks ();
+  static int iCount = 0;
+  static double dMax = 0, dSum = 0;
+  if (!bOn)
+    return;
+  double dMs = (double) (SDL_GetPerformanceCounter () - iBegin) * 1000.0 / (double) SDL_GetPerformanceFrequency ();
+  iCount ++;
+  dSum += dMs;
+  if (dMs > dMax)
+    dMax = dMs;
+  fprintf (stderr, "MENU paint %.1f ms\n", dMs);
+  if (SDL_GetTicks () - iStart >= 10000)
+  {
+    fprintf (stderr, "MENU: %d paints in 10 s, mean %.1f ms, slowest %.1f ms\n", iCount, dSum / iCount, dMax);
+    iStart = SDL_GetTicks (); iCount = 0; dMax = dSum = 0;
+  }
+}
+
+
 void DSPMenuShutdown ()
 {
+  DSPMenuCacheClear ();
   SDL_DestroyRenderer (mRenderer);
   mRenderer = NULL;
   SDL_DestroyWindow (mWindow);
@@ -626,106 +712,47 @@ void DSPLogoShutdown ()
 
 void DSPRenderText (int screen_width, int screen_height)
 {
-  TTF_Font *textFont;
-  SDL_Surface* textSurface;
-  SDL_Texture* textTexture;
-  SDL_Rect textRectangle;
-  SDL_Rect gameTextRectangle;
-  SDL_Color textColor = {255,255,255};// white
-
-  textFont = TTF_OpenFont (gameFont[0], FONT_HEIGHT);
+  TTF_Font *textFont = DSPMenuFont ();
   if (!textFont)
     return;
+  int iX = (screen_width - MENU_WIDTH)/2;
 
-  // Credits
-  textSurface = TTF_RenderText_Solid (textFont, creditsText, textColor);
-  textTexture = SDL_CreateTextureFromSurface (mRenderer, textSurface);
-
-  textRectangle.h = FONT_HEIGHT;
-  textRectangle.w = FONT_WIDTH * strlen(creditsText);
-  textRectangle.x = (screen_width - MENU_WIDTH)/2 + (MENU_WIDTH - textRectangle.w)/2;
-  textRectangle.y = 630;
-
-  SDL_RenderCopy (mRenderer, textTexture, NULL, &textRectangle);
-  SDL_DestroyTexture (textTexture);
-  SDL_FreeSurface (textSurface);
-  // Copyright
-  textSurface = TTF_RenderText_Solid (textFont, menuText[6], textColor);
-  textTexture = SDL_CreateTextureFromSurface (mRenderer, textSurface);
-
-  textRectangle.h = FONT_HEIGHT;
-  textRectangle.w = FONT_WIDTH * strlen(menuText[6]);
-  textRectangle.x = (screen_width - MENU_WIDTH)/2 + (MENU_WIDTH - textRectangle.w)/2;
-  textRectangle.y = 665;
- 
-  SDL_RenderCopy (mRenderer, textTexture, NULL, &textRectangle);
-  SDL_DestroyTexture (textTexture);
-  SDL_FreeSurface (textSurface);
+  // Credits and copyright
+  DSPDrawText (textFont, creditsText, iX + (MENU_WIDTH - FONT_WIDTH * (int) strlen (creditsText))/2, 630);
+  DSPDrawText (textFont, menuText[6], iX + (MENU_WIDTH - FONT_WIDTH * (int) strlen (menuText[6]))/2, 665);
   // About
-  textSurface = TTF_RenderText_Solid (textFont, menuText[0], textColor);
-  textTexture = SDL_CreateTextureFromSurface (mRenderer, textSurface);
-
-  textRectangle.h = FONT_HEIGHT;
-  textRectangle.w = FONT_WIDTH * strlen(menuText[0]);
-  textRectangle.x = (screen_width - MENU_WIDTH)/2 + (MENU_WIDTH - textRectangle.w)/2;
-  textRectangle.y = 100;
- 
-  SDL_RenderCopy (mRenderer, textTexture, NULL, &textRectangle);
-  SDL_DestroyTexture (textTexture);
-  SDL_FreeSurface (textSurface);
+  DSPDrawText (textFont, menuText[0], iX + (MENU_WIDTH - FONT_WIDTH * (int) strlen (menuText[0]))/2, 100);
   // Help text
-  for (int i = 1; i < 6; i++) {
-    textSurface = TTF_RenderText_Solid (textFont, menuText[i], textColor);
-    textTexture = SDL_CreateTextureFromSurface (mRenderer, textSurface);
-
-    textRectangle.h = FONT_HEIGHT;
-    textRectangle.w = FONT_WIDTH * strlen(menuText[i]);
-    textRectangle.x = (screen_width - MENU_WIDTH)/2;
-    textRectangle.y = 100 + FONT_HEIGHT + 2 + i * (FONT_HEIGHT + 2);// 2-px v-spacing 
-
-    SDL_RenderCopy (mRenderer, textTexture, NULL, &textRectangle);
-    SDL_DestroyTexture (textTexture);
-    SDL_FreeSurface (textSurface);
-  }
+  for (int i = 1; i < 6; i++)
+    DSPDrawText (textFont, menuText[i], iX, 100 + FONT_HEIGHT + 2 + i * (FONT_HEIGHT + 2));// 2-px v-spacing
   // Game text
-  for (int i = 0; i < 4; i++) {
-    textSurface = TTF_RenderText_Solid (textFont, gameText[i], textColor);
-    textTexture = SDL_CreateTextureFromSurface (mRenderer, textSurface);
-
-    textRectangle.h = FONT_HEIGHT;
-    textRectangle.w = FONT_WIDTH * strlen(gameText[i]);
-    textRectangle.x = (screen_width - MENU_WIDTH)/2 + (FRAME_WIDTH - textRectangle.w)/2 + i * (FRAME_WIDTH + FRAME_SPACE);
-    textRectangle.y = 310 + FRAME_WIDTH + 15;// 15px text spacing
-
-    SDL_RenderCopy (mRenderer, textTexture, NULL, &textRectangle);
-    SDL_DestroyTexture (textTexture);
-    SDL_FreeSurface (textSurface);
-  }
-
-  TTF_CloseFont (textFont);
+  for (int i = 0; i < 4; i++)
+    DSPDrawText (textFont, gameText[i], iX + (FRAME_WIDTH - FONT_WIDTH * (int) strlen (gameText[i]))/2 + i * (FRAME_WIDTH + FRAME_SPACE),
+                 310 + FRAME_WIDTH + 15);// 15px text spacing
 }
 
 
 void DSPRenderImage (int screen_width, int screen_height)
 {
-  SDL_Surface* imageSurface;
-  SDL_Texture* imageTexture;
   SDL_Rect imageRectangle;
 
   for (int i = 0; i < 4; i++) {
-    imageSurface = SDL_LoadBMP (gameLogo[i]);
-    if (!imageSurface)
+    if (!apLogoCache [i])
+    {
+      SDL_Surface *imageSurface = SDL_LoadBMP (gameLogo[i]);
+      if (!imageSurface)
+        continue;
+      apLogoCache [i] = SDL_CreateTextureFromSurface (mRenderer, imageSurface);
+      SDL_FreeSurface (imageSurface);
+    }
+    if (!apLogoCache [i])
       continue;
-    imageTexture = SDL_CreateTextureFromSurface (mRenderer, imageSurface);
- 
     imageRectangle.w = IMAGE_WIDTH;
     imageRectangle.h = imageRectangle.w;
     imageRectangle.x = (screen_width - MENU_WIDTH)/2 + 13 + i * (IMAGE_WIDTH + 26 + FRAME_SPACE);// 13-px spacing
     imageRectangle.y = 320 + 13;
-  
-    SDL_RenderCopy (mRenderer, imageTexture, NULL, &imageRectangle);
-    SDL_DestroyTexture (imageTexture);
-    SDL_FreeSurface (imageSurface);
+
+    SDL_RenderCopy (mRenderer, apLogoCache [i], NULL, &imageRectangle);
   }
 }
 
@@ -760,6 +787,7 @@ void DSPRenderMenu (int screen_width, int screen_height, int index, const bool *
 {
   SDL_Rect frameRectangle;
   SDL_Rect frameRectangleInner;
+  Uint64 iPerfBegin = SDL_GetPerformanceCounter ();
 
   // The display swaps buffers, without a clear the games list drawn earlier shows through in every other frame.
   SDL_SetRenderDrawColor (mRenderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
@@ -792,25 +820,10 @@ void DSPRenderMenu (int screen_width, int screen_height, int index, const bool *
   DSPRenderImage (screen_width, screen_height);
  
   SDL_RenderPresent (mRenderer);
+  DSPMenuStat (iPerfBegin);
 }
 
 
-/** Draw a text line on the menu renderer.
- */
-static void DSPDrawText (TTF_Font *pFont, const std::string &sText, int iX, int iY)
-{
-  if (sText.empty ())
-    return;
-  SDL_Color sColor = {255, 255, 255, SDL_ALPHA_OPAQUE};
-  SDL_Surface *pSurface = TTF_RenderText_Solid (pFont, sText.c_str (), sColor);
-  if (!pSurface)
-    return;
-  SDL_Texture *pText = SDL_CreateTextureFromSurface (mRenderer, pSurface);
-  SDL_Rect sRect = {iX, iY, FONT_WIDTH * (int) sText.size (), FONT_HEIGHT};
-  SDL_RenderCopy (mRenderer, pText, NULL, &sRect);
-  SDL_DestroyTexture (pText);
-  SDL_FreeSurface (pSurface);
-}
 
 
 
@@ -903,7 +916,8 @@ void DSPRenderGameList (int screen_width, int screen_height, int index, const st
   if (iFirst < 0)
     iFirst = 0;
 
-  TTF_Font *pFont = TTF_OpenFont (gameFont[0], FONT_HEIGHT);
+  Uint64 iPerfBegin = SDL_GetPerformanceCounter ();
+  TTF_Font *pFont = DSPMenuFont ();
   if (!pFont)
     return;
   SDL_SetRenderDrawColor (mRenderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
@@ -943,8 +957,8 @@ void DSPRenderGameList (int screen_width, int screen_height, int index, const st
   int iChars = std::max (20, (screen_width - iX - 24) / FONT_WIDTH);
   DSPDrawWrapped (pFont, sHelp.empty () ? "Ovladani: neznamo (zkus sipky, mezernik, Enter)" : "Ovladani: " + sHelp, iX, screen_height - 170, iChars, 2, 28);
   DSPDrawWrapped (pFont, "Sipky nebo [ E ] [ Y ]: vyber  <- -> strana  [ Enter ]: spust  [ Esc ]: zpet", iX, screen_height - 100, iChars, 2, 28);
-  TTF_CloseFont (pFont);
   SDL_RenderPresent (mRenderer);
+  DSPMenuStat (iPerfBegin);
 }
 
 //-------------------------------------------------------------------------------------------------------
