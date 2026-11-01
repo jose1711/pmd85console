@@ -104,6 +104,16 @@ stop at them with the monitor. The tape here has the three frames cut off: `73 0
 are cut off too. The loader of the program does not work with the monitor of the PMD 85-2 (`0x8DDB` is in the middle
 of an instruction there). Keys: `B` colours (Mono, RGBM, Video, ACE), [Enter] starts, the commands are typed.
 
+### The other game packages of pmd85.borik.net (VBG, 4004/482, Libor Lasota, Lemmings)
+
+The packages `Games VBG.zip` (did=8), `Games 4004-482.zip` (did=9), `Games Libor Lasota.zip` (did=82) and `Game Lemmings.zip`
+(did=86) of <https://pmd85.borik.net/wiki/Download> hold, by their block names, almost only games that are in the list
+already (the tapes of those packages were added earlier or come from the RM-TEAM and `games_other` packages). New from
+them: `JERRY` (VBG software, the block at `0x1100`, started with `JUMP 1100`, works in all models) and `FRED-4` (the version +4
+of FRED, "for both types of the PMD", the repo had +3; they are in the family `FRED`). Not added: `IHLAVICK` (a text data
+block of the package 4004/482), `LEMMINGS` for 256 kB of RAM (`game-lemmings-256k.ptp`, the RAM expansion is not emulated),
+the images of the PMD 32 disks and of the ROM MEGAmodul.
+
 ### Games of Libor L.A. (pmd85.cz): MINY and VLAK
 
 Programs of the page <https://www.pmd85.cz/?page_id=236> (Libor L.A.). `MINY` (a minesweeper, 2021, `miny.zip`) and `VLAK` (a
