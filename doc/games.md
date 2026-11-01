@@ -145,7 +145,7 @@ MANIC+, MANIC+2, MANIC-1, MANIC-2, MANIC23C). The versions name it in `CATEGORY`
 family is not at the top of the list, it stands among the games in alphabetical order, shown as the name with a filled
 triangle (`MANIC ▶`, the web remote control `MANIC >`) instead of the brackets and the count of a category. A family of a category
 has the name with its parent (`#FAMILY Programovani/KAREL`, the games of it `...;Programovani/KAREL`). Now: MANIC, FLAPPY,
-ARKANOID, BOULDER, PAMPUCH, PONTRIS, KVADRO, WILLY, `Deskove hry/PEXESO`, `Deskove hry/REVERZ`, `Programovani/ZOFKA`,
+ARKANOID, BOULDER, PAMPUCH, PONTRIS, KVADRO, WILLY, GALAXIA, MTRON, MYTH, `Deskove hry/PEXESO`, `Deskove hry/REVERZ`, `Programovani/ZOFKA`,
 `Programovani/KAREL`, `Programovani/KAREL3D`. A family with one version is not needed, use the game itself.
 
 ### `REMAP`
