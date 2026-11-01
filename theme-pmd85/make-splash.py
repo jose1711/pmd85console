@@ -1,8 +1,12 @@
 #!/usr/bin/env python3 -I
-"""Generates the scene images of the splash theme (scene-N.png, block.png, count in scenes.count).
+"""Generates the scene images of the splash theme (scene-N.png, block.png, count in scenes.count and SCENES in
+theme-pmd85.script). The scenes 1-7 are drawn here, the next ones are the photos of ../theme-photos (in the order of
+their names), scaled down to fit 830x570 (the originals stay out of the theme, they would go to the initramfs).
 Usage: python3 -I make-splash.py   (needs Pillow, run from theme-pmd85/)"""
 from PIL import Image, ImageDraw, ImageFont
+import glob
 import os
+import re
 
 DATA = '../simpmd/data'
 W, H = 830, 570
@@ -55,8 +59,18 @@ text_c(d, 240, 'LOADING', FONT)
 text_c(d, 300, 'TAPE  00', SMALL, GRAY)
 scenes.append(im)
 
+# 8-: the photos, scaled down (never up) to fit the box, the transparency is kept
+for name in sorted(glob.glob('../theme-photos/*.jpg') + glob.glob('../theme-photos/*.png')):
+    im = Image.open(name)
+    im = im.convert('RGBA' if 'A' in im.getbands() else 'RGB')
+    im.thumbnail((W, H), Image.LANCZOS)
+    scenes.append(im)
+
 for n, im in enumerate(scenes, 1):
-    im.save(f'scene-{n}.png')
+    im.save(f'scene-{n}.png', optimize=True)
 open('scenes.count', 'w').write(f'{len(scenes)}\n')
+# the script cannot read a file, keep its SCENES in sync
+script = open('theme-pmd85.script').read()
+open('theme-pmd85.script', 'w').write(re.sub(r'SCENES = \d+;', f'SCENES = {len(scenes)};', script, count=1))
 Image.new('RGBA', (14, 22), (255, 255, 255, 255)).save('block.png')
 print(len(scenes), 'scenes')
