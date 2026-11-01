@@ -101,6 +101,28 @@ stop at them with the monitor. The tape here has the three frames cut off: `73 0
 are cut off too. The loader of the program does not work with the monitor of the PMD 85-2 (`0x8DDB` is in the middle
 of an instruction there). Keys: `B` colours (Mono, RGBM, Video, ACE), [Enter] starts, the commands are typed.
 
+### Games of Libor L.A. (pmd85.cz): MINY and VLAK
+
+Programs of the page <https://www.pmd85.cz/?page_id=236> (Libor L.A.). `MINY` (a minesweeper, 2021, `miny.zip`) and `VLAK` (a
+snake with a train, the DOS game of Miroslav Němeček 1993, port 2025, `vlak.zip`) are autorun tapes with their own loader
+like BKP (the two or three 2 byte frames of the blocks are cut off, `tools/playtest/unframe2.py` does it for any such
+`.ptp`: `[lead][header][frame][data][checksum]` and then `([frame][block of that many bytes])*`, applied to BKP it gives
+the tape of this repo byte for byte). Both are `MODEL` `1`: the loader calls the tape routine of the monitor of the
+PMD 85-1 (`0x8DDB`) or, when `0x8B6C` holds `0xC5` (the original monitor of the PMD 85-2), that routine, and the patched
+monitor of this emulator has other code there, so in the models 2 and 2A they stop in the monitor. The header number of VLAK
+(`0x10`) is set to 0 (the monitor refuses numbers above `0x0F`), `MGLD 00`; MINY has `0x0C`, `MGLD 0C`.
+
+- MINY: the menu `L` level (9x9, 15x15, 21x16), `C` colours, `M` the mouse 602 (not emulated), [Enter] starts, `I` info.
+  In the game: Left, Right and Down are the arrows, up is the key `End` of the PC (the PMD 85 key LINE LEFT), the left
+  button (opens) is the arrow Up (the PMD 85 key DEL), the right button (flag) is `CLR` (PageUp), `K1` restarts, STOP leaves.
+  The list maps the gamepad: D-pad, A = open (Space), X = flag (H), Y = restart (F2).
+- VLAK: any key starts, QAOP drives the train, `K4` (F4) is the password, STOP goes to the title, on the title `J` the
+  joystick, `Z` the sound, `C` colours.
+
+Not added from that page: Tenebra Extended (a licensed port, only from the author's page itch.io), Bad Apple (a 512 kB
+ROM MEGAmodul, not emulated), Prince of Persia (a project without a file), Falcon Monitor (a tool for the PMD 85-2A),
+TINY BASIC 1.0 (an interpreter, `TINYBASIC.zip`), the programs for the SAPI-1 (another computer).
+
 ### DIKTATOR
 
 Text/economic game Diktátor (Don Priestley, DK'Tronics 1983, Czech translation František Fuka, FUXOFT) as a port of the ZX

@@ -85,6 +85,8 @@ MESIAC;2;ROM basic2.rmm, FONT, TYPE LOAD 23, TYPE RUN;;;mezernik pokracuje;;
 MESTO;1;MGLD 00;;;HESLO: konvalinka (textova hra);;Textove adventury
 BKP;1;MGLD 0E;;;Bratrstvo kocici pracky (Petr K. a Libor L.A., 2023), textova hra v cestine: B barva (Mono, RGBM, Video, ACE), Enter = start, prikazy z klavesnice: SEVER JIH ZAPAD VYCHOD NAHORU DOLU DOVNITR VEN, PROZKOUMEJ SEBER POLOZ POUZIJ OTEVRI DEJ OSLOV, I inventura, SKORE SLOVNIK POMOC, RS RL ulozeni do RAM, K konec;;Textove adventury
 MICRHYTM;1;MGLD 05;;Left:Left,Right:Right,Enter:Return,1:1,2:2,P:p,S:s,Esc:Escape;Micro Rhythm (M. Urda): P = hra na bubny, S = ulozit, pak sipky vlevo/vpravo a Enter (PATERNS EDIT PLAY TEMPO LOAD), v podmenu 1 a 2;;
+MINY;1;MGLD 0C;Up=End,E=End,Space=Up,H=PageUp,I=F2;Left:Left,Right:Right,Up:End,Down:Down,Open:Up,Flag:PageUp,Restart:F2,Start:Return,Esc:Escape;Miny (hledani min, Libor L.A. 2021, jen model 1 pro tento zavadec): menu L obtiznost, C barvy, M mys (602 neni), Enter start, I info, hra: sipky vlevo vpravo dolu, nahoru = sipka nahoru, Space otevre policko, H oznaci (CLR), F2 restart, Esc zpet do menu (pad: D-pad, A = otevrit, X = oznacit);P;
+VLAK;1;MGLD 00;Up=Q,Down=A,Left=O,Right=P,E=Q,Z=A;Left:O,Right:P,Up:Q,Down:A,Password:F4,Esc:Escape;Vlak (Miroslav Nemecek 1993, port Libor L.A. 2025, jen model 1 pro tento zavadec): na titulce J joystick, Z zvuk, C barvy, libovolna klavesa start, hra QAOP, F4 heslo, Esc zpet na titulku (pad: D-pad);P;
 MISSION;1;MGLD 06;;;Super Mission (M. Urda): G hra, R nahravani;;
 MRAVEC;2;ROM basic2.rmm, FONT, TYPE LOAD 34, TYPE RUN;;;jednoduchy logicky jazyk Mravec: prikazy z klavesnice;;Programovani
 MTRON-1;1;MGLD 00;;;zadani inicialu;;MTRON
