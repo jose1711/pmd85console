@@ -27,7 +27,7 @@
 # (the buttons of the pad are enough), R TV remote control over HDMI-CEC (only cursor keys, OK, digits). Empty = keyboard only or unknown.
 # Rule for R: the game needs at most 5 buttons (the keys of PAD without Escape and without the keys that REMAP maps onto)
 # and all of them are on the remote (cursor keys, OK = Enter, digits). Do not use ';' in the text of a column.
-# NAME is the tape file in the share directory, MODEL is the PMD 85 model (1 or 2), NOTE is shown
+# NAME is the tape file in the share directory, MODEL is the PMD 85 model (1, 2 or 2A), NOTE is shown
 # in the list (the commands to type), REMAP maps host keys to the PMD 85 keys a game reads (SDL key names,
 # e.g. Left=Left Shift,Right=V: AUTO and ZED steer with [Shift] and [V]). PAD lists the buttons of the web remote
 # control for the game, Label:key,... (SDL key names, key&key presses two at once), the default set is used without it. Generated from simpmd/data/tapes and the table in simpmd/README.
