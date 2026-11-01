@@ -143,6 +143,7 @@ ZOFKA2-STARA;2;ROM basic2.rmm, FONT, TYPE LOAD 12, TYPE RUN;;;starsi verze Zofky
 ZOFKA2T;2;ROM basic2.rmm, FONT, TYPE LOAD 11, TYPE RUN;;;Zofka s prikazem pro tisk: prikazy z klavesnice, potvrzeni Enter;;Programovani/ZOFKA
 ZOFKA3;2;MGLD 00, JUMP 0003;;;korytnacka Zofka v strojovem kodu (verze 2.2): prikazy z klavesnice, potvrzeni Enter;;Programovani/ZOFKA
 DIZZY;2;MGLD 00, SHIFT, NOBLINK;Space=Left Shift;Left:Left,Right:Right,Space jump:Space,Enter action:Return,Esc:Escape;Magicland Dizzy (PMD 85-2A/3, cb verze bez hudby): sipky = pohyb, Shift = skok/start, Enter = akce/zvednout (pad: A skok, B akce);P;
+DIKTATOR;2A;MGLD 00, JUMP 0000;;;Diktator (Don Priestley, DK Tronics 1983, preklad Frantisek Fuka, port ZX Spectrum hry pro PMD 85-2A a 3 s ColorACE): uvod trva asi minutu, pak libovolna klavesa, dale klavesnice, ColorACE (barvy) neni emulovan;;
 JETPAC;1;MGLD 01;;;Jetpac: v menu 3 = klavesnice, 5 = start, 7 = nastaveni klaves;;
 PSSST;1;MGLD 02;;;Pssst: v menu 3 = klavesnice, 5 = start, 7 = nastaveni klaves;;
 ARKANOID;1;MGLD 04;Return=Space;Left:Left,Right:Right,Space:Space,Esc:Escape;sipky vlevo/vpravo = palka, Space = start a odpal micku (pad: A, B nebo Start, TV: OK = Space), na tabulce neprepinat J (ovladac);PR;ARKANOID

@@ -101,6 +101,17 @@ stop at them with the monitor. The tape here has the three frames cut off: `73 0
 are cut off too. The loader of the program does not work with the monitor of the PMD 85-2 (`0x8DDB` is in the middle
 of an instruction there). Keys: `B` colours (Mono, RGBM, Video, ACE), [Enter] starts, the commands are typed.
 
+### DIKTATOR
+
+Text/economic game Diktátor (Don Priestley, DK'Tronics 1983, Czech translation František Fuka, FUXOFT) as a port of the ZX
+Spectrum program for the PMD 85-2A/3 (AllRAM and ColorACE, the readme of `diktator01.zip` of
+<http://busy.speccy.cz/tmp/diktator01.zip>, mentioned in the forum thread "Diktátor" of pmd85.borik.net). The file
+`Diktator01.cod` (29 401 bytes) is one block loaded at `0x0000` and started there (`DI`, `LXI SP,0`, the AllRAM switch
+`MVI A,82H / OUT F7H`); the tape of this repo is made of it (the header `00 3F 00 00 D8 72 DIKTATOR`, the checksums), the
+list loads it with `MGLD 00, JUMP 0000`. It is a ZX BASIC program in a Z80 interpreter, it fills the screen with the title for about a
+minute and then shows the flag of the Ritimban Republic. The colours of ColorACE are not emulated. The other game
+of the thread, `chamurabi.ptp` (Hammurabi), is on ulozto.cz only and is not here.
+
 ### PODRAZ
 
 Text game in BASIC (an unemployed programmer in New York moves money with a computer and a modem), `podraz.ptp` of the
