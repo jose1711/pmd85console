@@ -109,7 +109,17 @@ Port of the ZX Spectrum game Spindizzy (Electric Dreams 1986) by RM-TEAM (Roman 
 `64K RAM IS REQUIRED FOR RUNNING OF THIS GAME!`). The block has the two 2 byte frames cut off like the other packages of
 RM-TEAM (the one after the header and the one after the checksum of the loader), the same tape works with `MGLD 00`.
 Keys: O/P left and right, Q/A up and down, [Space] fire, N freeze, T pause, M map, S score, C shape, F1-F4 the view.
-The same package has Highway Encounter (`HIGHENC`, PMD 85-2A/3) and `KUBANOID` (2026), they start the same way.
+The same package has two more games, added the same way (the two frames cut off, `MGLD 00`):
+
+- `HIGHENC`: Highway Encounter (Vortex Software 1985, port RM-TEAM 2016, <https://pmd85.borik.net/wiki/Highway_Encounter>),
+  `MODEL` `2A` (it needs the RAM paging like Spindizzy). The menu: `5` starts, `1` keyboard, `2` joystick, `3` the
+  information with the keys (also on the screen), `4` demonstration. Keys: O left, P right, Q fast, A slow, [Space] fire,
+  H hold, T and C abort the game. The gamepad: D-pad, A = [Space], X = H, Y = `5`.
+- `KUBANOID`: Kubanoid (Stardust 2025, port RM-TEAM and X-Agon 2026, <https://pmd85.borik.net/wiki/Kubanoid>), a logic game
+  of falling dice, `MODEL` `1` (it works on all models). The menu: `S` starts, `K` keyboard, `J` joystick, `D` redefines
+  the keys, `F` colours, `T` the target, `H` music (the MIF 85 card is not emulated). Default keys found by trying: O left,
+  P right, Q and A turn the dice, [Space] the fast drop; the pause, the music and the end are defined by `D`. The gamepad:
+  D-pad, A = [Space], Y = `S` (the first screen needs a key, the high score table is not kept).
 
 ### Icons
 
