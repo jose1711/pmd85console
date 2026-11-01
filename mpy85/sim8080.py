@@ -3,6 +3,37 @@
 PARITY = [bin(i).count('1') % 2 == 0 for i in range(256)]
 
 
+def _cyc():
+    t = [4] * 256
+    for op in range(256):
+        hi, lo = op >> 6, op & 7
+        if hi == 0:
+            if lo == 1: t[op] = 10 if not op & 8 else 10      # LXI / DAD
+            elif lo == 2: t[op] = 7 if op < 0x20 else (16 if op in (0x22, 0x2A) else 13)
+            elif lo == 3: t[op] = 5
+            elif lo in (4, 5): t[op] = 10 if (op >> 3) == 6 else 5
+            elif lo == 6: t[op] = 10 if (op >> 3) == 6 else 7
+        elif hi == 1:
+            t[op] = 7 if (op & 7 == 6 or (op >> 3) & 7 == 6) else 5
+        elif hi == 2:
+            t[op] = 7 if lo == 6 else 4
+        else:
+            if lo == 0: t[op] = 11
+            elif lo == 1: t[op] = 10
+            elif lo == 2: t[op] = 10
+            elif lo == 3: t[op] = {0xC3: 10, 0xE3: 18, 0xF3: 4, 0xFB: 4, 0xD3: 10, 0xDB: 10}.get(op, 10) if op in (0xC3, 0xE3, 0xF3, 0xFB) else 10
+            elif lo == 4: t[op] = 17
+            elif lo == 5: t[op] = 17 if op & 8 == 0 and op in (0xCD,) or op & 1 == 0 and op & 8 else 11
+            elif lo == 6: t[op] = 7
+            elif lo == 7: t[op] = 11
+    for op in (0xC5, 0xD5, 0xE5, 0xF5): t[op] = 11
+    for op in (0xC1, 0xD1, 0xE1, 0xF1, 0xC9): t[op] = 10
+    t[0xCD] = 17; t[0xE9] = 5; t[0xF9] = 5; t[0xEB] = 4; t[0xE3] = 18
+    t[0x76] = 7
+    return t
+CYC = _cyc()
+
+
 class Sim:
     def __init__(self):
         self.m = bytearray(65536)
@@ -13,6 +44,9 @@ class Sim:
         self.hooks = {}
         self.halted = False
         self.cycles = 0
+        self.tcycles = 0
+        self.inport = {}
+        self.ports = {}
         self.stop = set()
 
     # helpers
@@ -115,6 +149,7 @@ class Sim:
             return
         op = self.fetch()
         self.cycles += 1
+        self.tcycles += CYC[op]
         if op == 0x76:
             self.halted = True
         elif 0x40 <= op < 0x80:
@@ -187,8 +222,13 @@ class Sim:
         elif op == 0x37: self.cy = True
         elif op == 0x3F: self.cy = not self.cy
         elif op in (0xF3, 0xFB, 0x00): pass
-        elif op == 0xD3: self.fetch()
-        elif op == 0xDB: self.a = 0xFF; self.fetch()
+        elif op == 0xD3:
+            port = self.fetch()
+            self.ports[port] = self.a
+        elif op == 0xDB:
+            port = self.fetch()
+            f = self.inport.get(port)
+            self.a = f(self) & 255 if f else 0xFF
         else:
             raise RuntimeError('unknown opcode %02X at %04X' % (op, pc0))
 
