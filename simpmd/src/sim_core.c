@@ -200,8 +200,47 @@ static int listIndex = 0;
 static std::vector <std::string> oCategories;
 /// The category that is open in the list, -1 for the main list.
 static int iCategory = -1;
-/// The row of the main list to come back to when a category is closed.
-static int iMainIndex = 0;
+/// Names of the categories that are families: the versions of one game ("#FAMILY name"), shown among the games
+/// in alphabetical order instead of at the top of the list.
+static std::vector <std::string> oFamilies;
+
+/// The parent of a category: "Programovani/KAREL" is in "Programovani", the empty string is the main list.
+static std::string CategoryParent (const std::string &sName)
+{
+  size_t iSlash = sName.rfind ('/');
+  return (iSlash == std::string::npos ? std::string () : sName.substr (0, iSlash));
+}
+
+/// The name of a category without its parent.
+static std::string CategoryLabel (const std::string &sName)
+{
+  size_t iSlash = sName.rfind ('/');
+  return (iSlash == std::string::npos ? sName : sName.substr (iSlash + 1));
+}
+
+/// The name of a category for a title: "Programovani / KAREL".
+static std::string CategoryPath (const std::string &sName)
+{
+  std::string sPath;
+  for (size_t i = 0 ; i < sName.size () ; i ++)
+    sPath += sName [i] == '/' ? std::string (" / ") : std::string (1, sName [i]);
+  return (sPath);
+}
+
+/// Adds a category and its parents ("A/B/C" adds "A", "A/B" and "A/B/C") to oCategories.
+static void CategoryAdd (const std::string &sName)
+{
+  if (sName.empty ())
+    return;
+  CategoryAdd (CategoryParent (sName));
+  if (std::find (oCategories.begin (), oCategories.end (), sName) == oCategories.end ())
+    oCategories.push_back (sName);
+}
+
+static bool CategoryIsFamily (const std::string &sName)
+{
+  return (std::find (oFamilies.begin (), oFamilies.end (), sName) != oFamilies.end ());
+}
 
 
 //--------------------------------------------------------------------------
@@ -371,27 +410,54 @@ static bool InCategory (const std::string &sList, const std::string &sCategory)
   return false;
 }
 
+/// Is the game in the category or in one of its subcategories?
+static bool InCategoryTree (const std::string &sList, const std::string &sCategory)
+{
+  size_t iStart = 0;
+  while (iStart <= sList.size ())
+  {
+    size_t iEnd = sList.find ('|', iStart);
+    if (iEnd == std::string::npos)
+      iEnd = sList.size ();
+    std::string sOne = sList.substr (iStart, iEnd - iStart);
+    if (sOne == sCategory || sOne.compare (0, sCategory.size () + 1, sCategory + "/") == 0)
+      return true;
+    iStart = iEnd + 1;
+  }
+  return false;
+}
+
 /// The row "(o uroven vys)" of an open category.
 static const int LIST_LEVEL_UP = -1000000;
 
-/** The rows of the games list: the main list shows the categories first (a value below zero, -(n + 1) is the
- *  category n) and then the games without a category, an open category shows the row LIST_LEVEL_UP (back to the main
- *  list) and its games (the index of oGames).
+/** The rows of the games list: a list (the main one or an open category) shows the row LIST_LEVEL_UP (open category
+ *  only, back to the parent), then its categories (a value below zero, -(n + 1) is the category n), then the games
+ *  of the category (the index of oGames) mixed in alphabetical order with its families (categories of the versions
+ *  of one game, "#FAMILY name").
  */
 static std::vector <int> ListView ()
 {
   std::vector <int> oView;
+  std::string sLevel = iCategory < 0 ? std::string () : oCategories [iCategory];
   if (iCategory >= 0)
     oView.push_back (LIST_LEVEL_UP);
-  else
-    for (size_t k = 0 ; k < oCategories.size () ; k ++)
+  for (size_t k = 0 ; k < oCategories.size () ; k ++)
+    if (!CategoryIsFamily (oCategories [k]) && CategoryParent (oCategories [k]) == sLevel)
       oView.push_back (-(int) k - 1);
+  std::vector <std::pair <std::string, int> > oMixed;
+  for (size_t k = 0 ; k < oCategories.size () ; k ++)
+    if (CategoryIsFamily (oCategories [k]) && CategoryParent (oCategories [k]) == sLevel)
+      oMixed.push_back (std::make_pair (CategoryLabel (oCategories [k]), -(int) k - 1));
   for (size_t i = 0 ; i < oGames.size () ; i ++)
   {
     const std::string &sCategory = oGames [i].sCategory;
-    if (iCategory < 0 ? sCategory.empty () : InCategory (sCategory, oCategories [iCategory]))
-      oView.push_back ((int) i);
+    if (iCategory < 0 ? sCategory.empty () : InCategory (sCategory, sLevel))
+      oMixed.push_back (std::make_pair (oGames [i].sTape, (int) i));
   }
+  std::stable_sort (oMixed.begin (), oMixed.end (), [] (const std::pair <std::string, int> &a, const std::pair <std::string, int> &b)
+                    { return a.first < b.first; });
+  for (size_t i = 0 ; i < oMixed.size () ; i ++)
+    oView.push_back (oMixed [i].second);
   return oView;
 }
 
@@ -671,7 +737,7 @@ static std::string WebState ()
   std::vector <int> oView = ListView ();
   for (size_t i = 0 ; i < oView.size () ; i ++)
     sState += std::string (i ? "," : "") + "\"" + (oView [i] == LIST_LEVEL_UP ? std::string ("(o uroven vys)") :
-              oView [i] < 0 ? "[ " + oCategories [-oView [i] - 1] + " ]" : oGames [oView [i]].sTape) + "\"";
+              oView [i] < 0 ? "[ " + CategoryLabel (oCategories [-oView [i] - 1]) + " ]" : oGames [oView [i]].sTape) + "\"";
   return (sState + "]}");
 }
 
@@ -779,14 +845,18 @@ static void GamesLoad ()
   std::string sLine;
   while (std::getline (oFile, sLine))
   {
-    // "#CATEGORY name" fixes the order of the categories in the list (otherwise: the first game of a category).
-    if (sLine.compare (0, 10, "#CATEGORY ") == 0)
+    // "#CATEGORY name" fixes the order of the categories in the list (otherwise: the first game of a category),
+    // "#FAMILY name" declares a family: the versions of one game, a category that is shown among the games in
+    // alphabetical order. "Parent/Name" puts a category into another one.
+    bool bFamily = sLine.compare (0, 8, "#FAMILY ") == 0;
+    if (sLine.compare (0, 10, "#CATEGORY ") == 0 || bFamily)
     {
-      std::string sCategory = sLine.substr (10);
+      std::string sCategory = sLine.substr (bFamily ? 8 : 10);
       while (!sCategory.empty () && (sCategory [sCategory.size () - 1] == '\r' || sCategory [sCategory.size () - 1] == ' '))
         sCategory.erase (sCategory.size () - 1);
-      if (!sCategory.empty () && std::find (oCategories.begin (), oCategories.end (), sCategory) == oCategories.end ())
-        oCategories.push_back (sCategory);
+      CategoryAdd (sCategory);
+      if (bFamily && !sCategory.empty ())
+        oFamilies.push_back (sCategory);
       continue;
     }
     if (sLine.empty () || sLine [0] == '#')
@@ -821,8 +891,7 @@ static void GamesLoad ()
       if (iEnd == std::string::npos)
         iEnd = sGame.sCategory.size ();
       std::string sOne = sGame.sCategory.substr (iStart, iEnd - iStart);
-      if (!sOne.empty () && std::find (oCategories.begin (), oCategories.end (), sOne) == oCategories.end ())
-        oCategories.push_back (sOne);
+      CategoryAdd (sOne);
       iStart = iEnd + 1;
     }
     oGames.push_back (sGame);
@@ -862,14 +931,14 @@ static void MenuRender ()
       const std::string &sCategory = oCategories [-oView [i] - 1];
       int iGames = 0;
       for (size_t j = 0 ; j < oGames.size () ; j ++)
-        iGames += InCategory (oGames [j].sCategory, sCategory);
+        iGames += InCategoryTree (oGames [j].sCategory, sCategory);
       // The state icon of a category: one of its games has a saved state.
       std::string sSaved;
       for (size_t j = 0 ; j < oGames.size () && sSaved.empty () ; j ++)
-        if (InCategory (oGames [j].sCategory, sCategory) && HasState (oGames [j].sTape))
+        if (InCategoryTree (oGames [j].sCategory, sCategory) && HasState (oGames [j].sTape))
           sSaved = "S";
       oInputs.push_back (sSaved);
-      oNames.push_back ("[ " + sCategory + " ] (" + std::to_string (iGames) + ")");
+      oNames.push_back ("[ " + CategoryLabel (sCategory) + " ] (" + std::to_string (iGames) + ")");
       oNotes.push_back ("");
       continue;
     }
@@ -880,7 +949,7 @@ static void MenuRender ()
   std::string sHelp;
   if (!oView.empty ())
     sHelp = oView [listIndex] == LIST_LEVEL_UP ? "Enter vrati o uroven vys" : oView [listIndex] < 0 ? "Enter otevre kategorii" : oGames [oView [listIndex]].sHelp;
-  DSPRenderGameList (fullscreen.w, fullscreen.h, listIndex, iCategory < 0 ? std::string ("Vsechny hry") : oCategories [iCategory], oNames, oNotes, oInputs, sHelp);
+  DSPRenderGameList (fullscreen.w, fullscreen.h, listIndex, iCategory < 0 ? std::string ("Vsechny hry") : CategoryPath (oCategories [iCategory]), oNames, oNotes, oInputs, sHelp);
 }
 
 
@@ -949,8 +1018,18 @@ static void ListBack ()
 {
   if (iCategory >= 0)
   {
+    // To the parent (or the main list), on the row of the category that is left.
+    int iLeft = iCategory;
+    std::string sParent = CategoryParent (oCategories [iCategory]);
     iCategory = -1;
-    listIndex = iMainIndex;
+    for (size_t k = 0 ; k < oCategories.size () && !sParent.empty () ; k ++)
+      if (oCategories [k] == sParent)
+        iCategory = (int) k;
+    std::vector <int> oView = ListView ();
+    listIndex = 0;
+    for (size_t i = 0 ; i < oView.size () ; i ++)
+      if (oView [i] == -iLeft - 1)
+        listIndex = (int) i;
   }
   else
     inList = false;
@@ -1234,7 +1313,6 @@ int main (int iArgC, const char *apArgV [])
                    ListBack ();
                  } else if (oView [listIndex] < 0) {
                    // Open the category, the cursor on its first game.
-                   iMainIndex = listIndex;
                    iCategory = -oView [listIndex] - 1;
                    listIndex = 1;
                    MenuRender ();

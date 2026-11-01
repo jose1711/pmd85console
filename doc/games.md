@@ -132,7 +132,20 @@ as soon as a game names it (the order is the order of the first game in the list
 written, without diacritics. The columns before it must be there, empty if needed (`ZMRZLINY;2;MGLD 00;;;;;Pro nejmensi`).
 The order of the categories is the order of the first game of each, or fixed by lines `#CATEGORY Name` in the head of
 `games.lst`. The web remote control gets the same rows. Now: `Pro nejmensi` (DOMCEKY, POSTARIK, ROBOTIK, ZMRZLINY, SASKO), `Dema`
-(FERLAJT, KANKAN), `Programovani` (KAREL, KAREL3D).
+(FERLAJT, KANKAN), `Programovani`, `Deskove hry`, `2 hraci` and the families below.
+
+A category can be inside another one: `Parent/Name` (e.g. `Programovani/KAREL`) is a sub list of `Programovani`; the parents
+are created by themselves, [Enter] opens it, `(o uroven vys)` or a held [Esc] goes one level up (the cursor on the row that
+was left).
+
+#### Families (the versions of one game)
+
+A line `#FAMILY Name` in the head of `games.lst` declares a category that is a family: the versions of one game (MANIC with
+MANIC+, MANIC+2, MANIC-1, MANIC-2, MANIC23C). The versions name it in `CATEGORY`. Unlike the other categories, the row of a
+family `[ MANIC ] (5)` is not at the top of the list, it stands among the games in alphabetical order. A family of a category
+has the name with its parent (`#FAMILY Programovani/KAREL`, the games of it `...;Programovani/KAREL`). Now: MANIC, FLAPPY,
+ARKANOID, BOULDER, PAMPUCH, PONTRIS, KVADRO, WILLY, `Deskove hry/PEXESO`, `Deskove hry/REVERZ`, `Programovani/ZOFKA`,
+`Programovani/KAREL`, `Programovani/KAREL3D`. A family with one version is not needed, use the game itself.
 
 ### `REMAP`
 
