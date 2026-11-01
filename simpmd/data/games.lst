@@ -83,6 +83,7 @@ MANIC-2;2;MGLD 03;Space=Left Shift,Up=@Left Shift,Down=A;Left:Left,Right:Right,J
 MATODEMO;2;ROM basic2.rmm, FONT, TYPE LOAD 55, TYPE RUN;;;ukazka pocitace MATO: bez ovladani;;Dema
 MESIAC;2;ROM basic2.rmm, FONT, TYPE LOAD 23, TYPE RUN;;;mezernik pokracuje;;
 MESTO;1;MGLD 00;;;HESLO: konvalinka (textova hra);;Textove adventury
+BKP;1;MGLD 0E;;;Bratrstvo kocici pracky (Petr K. a Libor L.A., 2023), textova hra v cestine: B barva (Mono, RGBM, Video, ACE), Enter = start, prikazy z klavesnice: SEVER JIH ZAPAD VYCHOD NAHORU DOLU DOVNITR VEN, PROZKOUMEJ SEBER POLOZ POUZIJ OTEVRI DEJ OSLOV, I inventura, SKORE SLOVNIK POMOC, RS RL ulozeni do RAM, K konec;;Textove adventury
 MICRHYTM;1;MGLD 05;;Left:Left,Right:Right,Enter:Return,1:1,2:2,P:p,S:s,Esc:Escape;Micro Rhythm (M. Urda): P = hra na bubny, S = ulozit, pak sipky vlevo/vpravo a Enter (PATERNS EDIT PLAY TEMPO LOAD), v podmenu 1 a 2;;
 MISSION;1;MGLD 06;;;Super Mission (M. Urda): G hra, R nahravani;;
 MRAVEC;2;ROM basic2.rmm, FONT, TYPE LOAD 34, TYPE RUN;;;jednoduchy logicky jazyk Mravec: prikazy z klavesnice;;Programovani

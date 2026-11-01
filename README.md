@@ -79,7 +79,8 @@ simpmd/data/font/atari-classic.ttf   TTF font by Mark Simonson (c) 2016
 
 - The emulator is based on [simpmd](https://github.com/ceresek/simpmd) by Petr Tůma (c) 2008.
 - Many of the programs and games (the BASIC, Logo, KAREL and other packages, their tapes were converted for the games
-  list, see [doc/games.md](doc/games.md)) come from [pmd85.borik.net](https://pmd85.borik.net). The start menu names the site.
+  list, see [doc/games.md](doc/games.md)) come from [pmd85.borik.net](https://pmd85.borik.net) (and the text adventure BKP from [pmd85.cz](https://www.pmd85.cz)). The start menu names
+  the first site.
 - Font: Atari Classic by Mark Simonson (c) 2016.
 
 ## Source

@@ -90,6 +90,17 @@ that are loaded by a block number `MGLD nn` work with `00` or with a number belo
 monitor stops after the name (`16/? NAME`), so these tapes have the number 0 in the header and are loaded with
 `MGLD 00`. GRDEMO of `games_other` does not load (stops after the name) and is not included.
 
+### BKP (Bratrstvo kočičí pracky)
+
+Czech text adventure of 2023 (Petr K. and Libor L.A., after the comic Rychlé šípy), `BKP.zip` of
+[pmd85.cz](https://www.pmd85.cz/wp-content/uploads/BKP.zip), PMD 85-1, `MGLD 0E`. The `.ptp` has the 2 byte lengths
+(`length + 2`) at the block boundaries, the program has its own loader (it reads the tape bytes by the monitor routine
+`0x8DDB` of the PMD 85-1: a picture of the screen `K...`, then the program `P...` of 0x764C bytes to `0x0000`) and would
+stop at them with the monitor. The tape here has the three frames cut off: `73 01` before the data of the first block,
+`51 16` after its checksum and `5E 76` after the checksum of the picture. The first two bytes of the `.ptp` (`3F 00`)
+are cut off too. The loader of the program does not work with the monitor of the PMD 85-2 (`0x8DDB` is in the middle
+of an instruction there). Keys: `B` colours (Mono, RGBM, Video, ACE), [Enter] starts, the commands are typed.
+
 ### Icons
 
 Icons left of the name show what the game can be played with besides the keyboard
