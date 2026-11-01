@@ -123,6 +123,16 @@ Not added from that page: Tenebra Extended (a licensed port, only from the autho
 ROM MEGAmodul, not emulated), Prince of Persia (a project without a file), Falcon Monitor (a tool for the PMD 85-2A),
 TINY BASIC 1.0 (an interpreter, `TINYBASIC.zip`), the programs for the SAPI-1 (another computer).
 
+### TINYBASIC
+
+TINY BASIC 1.0 (Li-Chen Wang 1976) ported by Libor L.A. (2018, <https://www.pmd85.cz/?page_id=716>, `TINYBASIC.zip`), integers
+only, the commands `LIST`, `LOAD n`, `NEW`, `RUN`, `SAVE`, `CLS`. The `.ptp` has 13 blocks: `TBASICV1` (the interpreter 1.01 for the
+PMD 85-1, `MGLD 01`), `TBASICV2` (1.02 for the PMD 85-2 and higher, `MGLD 02`) and 11 sample programs (type `B`, blocks 3
+to 13: SYNTAX, DIRECT, PRINT, FOR_NEXT, IF, GOSUB, ARR_SIZE, INPUT, RND, BOOLEAN, ERASTOTE) that the interpreter loads
+with `LOAD n` from the tape that follows it. The repo has two tapes, `TINYBASIC` (model 1) and `TINYBASIC-2` (model 2), each of
+the interpreter and the 11 samples, the 2 byte frames of the blocks cut off (the interpreter is an autorun block that has
+to be started with `JUMP 0000`), in the family `Programy/TINYBASIC`.
+
 ### DIKTATOR
 
 Text/economic game Diktátor (Don Priestley, DK'Tronics 1983, Czech translation František Fuka, FUXOFT) as a port of the ZX

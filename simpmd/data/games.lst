@@ -21,6 +21,7 @@
 #FAMILY GALAXIA
 #FAMILY MTRON
 #FAMILY MYTH
+#FAMILY Programy/TINYBASIC
 # Games offered by the list menu (Up or [E] in the menu), one per line: NAME;MODEL;NOTE[;REMAP[;PAD[;KEYS[;INPUT]]]]
 # KEYS is a free text with the controls, shown under the list for the selected game (no diacritics).
 # INPUT lists the devices besides the keyboard the game can be played with, shown as icons left of the name: P gamepad
@@ -133,6 +134,8 @@ TANKY;2;ROM basic2.rmm, FONT, TYPE LOAD 53, TYPE RUN;E=F2,Z=F1,Up=F2,Down=F1,Ret
 TAVA;2;ROM basic2.rmm, FONT, TYPE LOAD 5, TYPE RUN;;;text hra: F1 ano, F2 ne (instrukce), prikazy z klavesnice;;Textove adventury
 TENISS;2;MGLD 00, JUMP 7000;;1:1,2:2,3:3,P1 Q:q,P1 A:a,P1 Z:z,P1 X:x,P2 /:/,P2 .:.,P2 End:End,P2 5:Keypad 5,Esc:Escape;nejdriv 1/2/3, hrac1 Q A Z X, hrac2 / . End Num5;;2 hraci
 TETRIS;2;MGLD 03;;;;;
+TINYBASIC;1;MGLD 01, JUMP 0000;;;TINY BASIC 1.0 (Li-Chen Wang 1976, port Libor L.A. 2018, verze 1.01 pro PMD 85-1): cela cisla, prikazy LIST LOAD n NEW RUN SAVE CLS, LOAD 3 az 13 nacte ukazky z pasky (3 napoveda, 4 prime prikazy, 5 PRINT, 6 FOR NEXT, 7 IF, 8 GOSUB, 9 pole, 10 INPUT, 11 RND, 12 BOOLEAN, 13 Eratosthenes), Enter potvrzuje, Backspace nebo sipka vlevo maze;;Programy/TINYBASIC
+TINYBASIC-2;2;MGLD 02, JUMP 0000;;;TINY BASIC 1.0 (Li-Chen Wang 1976, port Libor L.A. 2018, verze 1.02 pro PMD 85-2 a vyssi): cela cisla, prikazy LIST LOAD n NEW RUN SAVE CLS, LOAD 3 az 13 nacte ukazky z pasky (3 napoveda, 4 prime prikazy, 5 PRINT, 6 FOR NEXT, 7 IF, 8 GOSUB, 9 pole, 10 INPUT, 11 RND, 12 BOOLEAN, 13 Eratosthenes), Enter potvrzuje, Backspace nebo sipka vlevo maze;;Programy/TINYBASIC
 VIDEOSTP;2;ROM basic2.rmm, FONT, TYPE LOAD 11, TYPE RUN;;;F1 (K0) zastavi kostky, Enter, jmeno z klavesnice;;
 VOTRELCI;2;ROM basic2.rmm, FONT, TYPE LOAD 0, TYPE RUN;E=F1,Z=F2,Up=F1,Down=F2,Left Shift=F9;Up:F1,Down:F2,Fire:F9,Space:Space,Esc:Escape;F1 zbran nahoru, F2 dolu, F9 vystrel, mezernik start, pri konci 1 nebo 0 (pad: D-pad, LB vystrel, A start);;
 WILLY;1;MGLD 00;;;;;WILLY
