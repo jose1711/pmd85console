@@ -821,6 +821,8 @@ static void GamesLoad ()
     }
     oGames.push_back (sGame);
   }
+  // Alphabetical order whatever the order of the lines in the file (new games are appended at its end).
+  std::stable_sort (oGames.begin (), oGames.end (), [] (const tGame & a, const tGame & b) { return a.sTape < b.sTape; });
 }
 
 

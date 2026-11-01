@@ -107,6 +107,7 @@ known yet.
 ## Format of `games.lst`
 
 One line per tape, columns separated by `;` (do not use `;` inside a column), `#` starts a comment.
+The games are listed alphabetically by `NAME` whatever the order of the lines.
 
 ```
 NAME;MODEL;NOTE[;REMAP[;PAD[;KEYS[;INPUT[;CATEGORY]]]]]
@@ -127,7 +128,7 @@ NAME;MODEL;NOTE[;REMAP[;PAD[;KEYS[;INPUT[;CATEGORY]]]]]
 
 The games list shows the categories first, as rows `[ Name ] (number of games)`, then the games without a category.
 [Enter] opens a category, its first row `(o uroven vys)` (or a held [Esc]) goes back to the main list. A category exists
-as soon as a game names it (the order is the order of the first game in `games.lst`); the name is shown as it is
+as soon as a game names it (the order is the order of the first game in the list); the name is shown as it is
 written, without diacritics. The columns before it must be there, empty if needed (`ZMRZLINY;2;MGLD 00;;;;;Pro nejmensi`).
 The order of the categories is the order of the first game of each, or fixed by lines `#CATEGORY Name` in the head of
 `games.lst`. The web remote control gets the same rows. Now: `Pro nejmensi` (DOMCEKY, POSTARIK, ROBOTIK, ZMRZLINY, SASKO), `Dema`
