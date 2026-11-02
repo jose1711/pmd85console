@@ -11,7 +11,7 @@ for k in range(6, 150, 3):
     def f5(m, k=k, cnt=cnt):
         cnt[0] += 1
         col = m.ports.get(0xF4, 0) & 15
-        return 0xEF if (2*k <= cnt[0] < 2*k + 6 and col == 0) else 0xFF
+        return 0xEF if (2*k <= cnt[0] < 2*k + 300 and col == 0) else 0xFF
     s.inport[0xF5] = f5
     s.pc = org; s.stop = {syms['main']}; s.run(5_000_000)
     times.append(s.tcycles)

@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.join(HERE, '..', 'mpy85')); sys.path.insert(0, HERE)
 import t_doom
 s, syms = t_doom.boot()
 t_doom.frame(s, syms)
-for i in range(9): s.m[0x5224 + 8 * i] = 0          # ziadne priserky
+for i in range(11): s.m[0x5224 + 8 * i] = 0          # ziadne priserky
 import gen
 fn = os.path.join(HERE, 'faces_local.bin') if os.path.exists(os.path.join(HERE, 'faces_local.bin')) else os.path.join(HERE, 'faces.bin')
 fb = open(fn, 'rb').read()

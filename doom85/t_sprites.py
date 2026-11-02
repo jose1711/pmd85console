@@ -16,14 +16,14 @@ for k in range(400):
     s.m[0x4F04] = random.randrange(64)
     for i in range(48): s.m[0x5190 + i] = 0xFF
     # objekty nahodne rozmiestni (aj blizko hraca)
-    for i in range(9):
+    for i in range(11):
         ox, oy = random.choice(free)
         o = 0x5220 + 8 * i
         s.m[o:o + 5] = bytes([random.randrange(256), ox, random.randrange(256), oy, 1 if i >= 4 else 2])
     s.m[0x4F1A] = 100
     t_doom.frame(s, syms)
     for i in range(s.m[0x4FC3]):
-        r = s.m[0x5270 + 2 * i] | s.m[0x5271 + 2 * i] << 8
+        r = s.m[0x5290 + 2 * i] | s.m[0x5291 + 2 * i] << 8
         b = s.m[r:r + 16]; recs += 1
         uacc = b[10] | b[11] << 8
         if not (b[2] <= b[3] <= 47) or (uacc >> 8) > 8:

@@ -76,9 +76,9 @@ LASTA   EQU 4F79H
 LASTK   EQU 4F7AH
 ENEM    EQU 5220H
 ZBUF    EQU 5120H
-NEN     EQU 4
+NEN     EQU 6
 NPK     EQU 5
-NOBJ    EQU 9
+NOBJ    EQU 11
 BHV     EQU 4FB8H
 PKP     EQU 4FB9H
 MUSI    EQU 4FBBH
@@ -92,7 +92,7 @@ FLIM    EQU 4FC2H
 SLN     EQU 4FC3H
 SLP     EQU 4FC4H
 SLP2    EQU 4FC6H
-SLIST   EQU 5270H
+SLIST   EQU 5290H
 PCELLV  EQU 4FE0H
 QH      EQU 4FE1H
 QT      EQU 4FE2H
@@ -117,6 +117,17 @@ LHP     EQU 4FF5H
 LKL     EQU 4FF6H
 FACEDST EQU 0C000H+194*64+20
 FIDLE   EQU 4FF7H
+DIFFSEL EQU 4F30H
+NACT    EQU 4F31H
+HPE     EQU 4F32H
+DMGV    EQU 4F33H
+SPDPV   EQU 4F34H
+SPDCV   EQU 4F35H
+RNGV    EQU 4F36H
+AMMO0   EQU 4F37H
+PACKV   EQU 4F38H
+TKH     EQU 4F39H
+TCUR    EQU 4F3AH
 IDLEV   EQU 4FF8H
 CIDX    EQU 4FC8H
 IX2     EQU 4FC9H
@@ -159,8 +170,10 @@ main:   call keys
         lda HEALTH
         ora a
         jz gameover
+        lda NACT
+        mov b,a
         lda KILLS
-        cpi NEN
+        cmp b
         jz victory
         jmp main
 
@@ -205,7 +218,7 @@ ig_ang: sta ANG
         sta MUSOFF
         mvi a,100
         sta HEALTH
-        mvi a,30
+        lda AMMO0
         sta AMMO
         mvi a,0FFH
         sta LASTH
@@ -247,7 +260,8 @@ ig2:    call rnd
         inx h
         mov m,d
         inx h
-        mvi m,2
+        lda HPE
+        mov m,a
         inx h
         mov m,c
         inx h
@@ -257,6 +271,26 @@ ig2:    call rnd
         inx h
         dcr b
         jnz ig1
+        lda NACT
+        mov c,a
+        mvi a,NEN
+        sub c
+        jz ig_nd
+        mov b,a
+        mov a,c
+        add a
+        add a
+        add a
+        mov e,a
+        mvi d,0
+        lxi h,ENEM+4
+        dad d
+ig_dl:  mvi m,0
+        lxi d,8
+        dad d
+        dcr b
+        jnz ig_dl
+ig_nd:  lxi h,ENEM+8*NEN
         mvi b,NPK
 ip1:    push h
 ip2:    call rnd
@@ -299,7 +333,12 @@ ip2:    call rnd
         ret
 
 ; ---------------------------------------------------------------- uvodna obrazovka a generator bludiska
-title:  mvi a,1CH
+title:  lda DIFFSEL
+        ora a
+        jnz ti_d
+        mvi a,3
+        sta DIFFSEL
+ti_d:   mvi a,1CH
         call PUTC
         lxi h,0D000H+12
         shld CURSOR
@@ -313,14 +352,81 @@ title:  mvi a,1CH
         shld CURSOR
         lxi h,S_T3
         call puts
-        lxi h,0DA00H+8
+        lxi h,0D800H+8
+        shld CURSOR
+        lxi h,S_T5
+        call puts
+        lxi h,0DC00H+22
+        shld TCUR
+        lxi h,S_LV
+        mvi b,5
+ti_l:   push h
+        lhld TCUR
+        shld CURSOR
+        lxi d,400H
+        dad d
+        shld TCUR
+        pop h
+        push b
+        call puts
+        pop b
+        inx h
+        dcr b
+        jnz ti_l
+        lxi h,0F400H+4
         shld CURSOR
         lxi h,S_T4
         call puts
+        call mark
 tt_w:   call note
         lhld SEED
         inx h
         shld SEED
+        ; sipky hore a dole menia uroven, cislice 1-5 ju zvolia a spustia hru
+        mvi a,13
+        out 0F4H
+        in 0F5H
+        mov b,a
+        ani 0AH
+        cpi 0AH
+        jz ti_nk
+        lda TKH
+        ora a
+        jnz ti_dg
+        mvi a,1
+        sta TKH
+        mov a,b
+        ani 2
+        jnz ti_dn
+        lda DIFFSEL
+        dcr a
+        jz ti_dg
+        sta DIFFSEL
+        call mark
+        jmp ti_dg
+ti_dn:  lda DIFFSEL
+        cpi 5
+        jnc ti_dg
+        inr a
+        sta DIFFSEL
+        call mark
+        jmp ti_dg
+ti_nk:  xra a
+        sta TKH
+ti_dg:  mvi c,0
+ti_c:   mov a,c
+        out 0F4H
+        in 0F5H
+        ani 2
+        jnz ti_cn
+        mov a,c
+        inr a
+        sta DIFFSEL
+        jmp tt_ok
+ti_cn:  inr c
+        mov a,c
+        cpi 5
+        jc ti_c
         mvi a,0
         out 0F4H
         in 0F5H
@@ -346,8 +452,79 @@ tt_r:   mvi a,0
         in 0F5H
         ani 10H
         jz tt_r
+        mvi c,0
+tt_rd:  mov a,c
+        out 0F4H
+        in 0F5H
+        ani 2
+        jz tt_r
+        inr c
+        mov a,c
+        cpi 5
+        jc tt_rd
+        ; parametre zvolenej urovne
+        lda DIFFSEL
+        dcr a
+        add a
+        add a
+        add a
+        mov e,a
+        mvi d,0
+        lxi h,DIFFT
+        dad d
+        mov a,m
+        sta NACT
+        inx h
+        mov a,m
+        sta HPE
+        inx h
+        mov a,m
+        sta DMGV
+        inx h
+        mov a,m
+        sta SPDPV
+        inx h
+        mov a,m
+        sta SPDCV
+        inx h
+        mov a,m
+        sta RNGV
+        inx h
+        mov a,m
+        sta AMMO0
+        inx h
+        mov a,m
+        sta PACKV
         mvi a,1CH
         jmp PUTC
+; mark: oznaci zvolenu uroven znakom > pred riadkom
+mark:   mvi c,1
+        lxi d,0DC00H+20
+mk_l:   xchg
+        shld CURSOR
+        xchg
+        lda DIFFSEL
+        cmp c
+        mvi a,' '
+        jnz mk_p
+        mvi a,'>'
+mk_p:   call PUTC
+        lxi h,400H
+        dad d
+        xchg
+        inr c
+        mov a,c
+        cpi 6
+        jc mk_l
+        ret
+; DIFFT: pocet priserok, zdravie, poskodenie, rychlost patrola, honby, dosah (bunky), naboje, naboje v balicku
+DIFFT:  DB 2,1,1,7,10,7,40,15
+        DB 3,2,1,8,12,9,35,12
+        DB 4,2,2,9,14,10,30,10
+        DB 6,3,3,10,15,12,25,8
+        DB 6,4,4,12,16,14,20,6
+S_LV:   DB "1 LAHKA",0,"2 STREDNA",0,"3 NORMALNA",0,"4 TAZKA",0,"5 NOCNA MORA",0
+S_T5:   DB "OBTIAZNOST:",0
 
 ; rnd: A = nahodne cislo (16 bit LFSR, 8 krokov); zachova B, C
 rnd:    lhld SEED
@@ -1250,7 +1427,7 @@ bf_l:   lda QH
         mov a,m
         inr a
         sta BD
-        cpi 16
+        cpi 24
         jnc bf_l
         mvi a,4
         sta KK
@@ -1380,9 +1557,9 @@ ai1:    push h
         mov a,m
         sta STV
         ani 4
-        mvi a,SPD_PAT
+        lda SPDPV
         jz ai_sp
-        mvi a,SPD_CH
+        lda SPDCV
 ai_sp:  sta SPDV
         lhld EXV
         xchg
@@ -1496,8 +1673,10 @@ ai_st:  lhld AIP
 ai_m1:  lxi d,192
         call cmp16
         rnc
+        lda DMGV
+        mov b,a
         lda HEALTH
-        sui 2
+        sub b
         jnc ai_h2
         xra a
 ai_h2:  sta HEALTH
@@ -1538,7 +1717,8 @@ choose: lda TYV
         ani 4
         jnz chs_in
         lda DCUR
-        cpi 10
+        lxi h,RNGV
+        cmp m
         jnc chs_pat
         lda STV
         ori 4
@@ -1546,8 +1726,11 @@ choose: lda TYV
         mvi a,1
         sta GROWL
         jmp chs_ch
-chs_in: lda DCUR
-        cpi 15
+chs_in: lda RNGV
+        adi 5
+        mov b,a
+        lda DCUR
+        cmp b
         jc chs_ch
         lda STV
         ani 0FBH
@@ -2108,8 +2291,10 @@ pk_l:   lhld PKP
         lda PY+1
         cmp b
         jnz pk_n
+        lda PACKV
+        mov b,a
         lda AMMO
-        adi 10
+        add b
         cpi 100
         jc pk_ok
         mvi a,99
@@ -2813,7 +2998,7 @@ S_BL:   DB "            ",0
 S_T1:   DB "DOOM85",0
 S_T2:   DB "SIPKY = POHYB, MEDZERNIK = STRELBA",0
 S_T3:   DB "ZNICI VSETKY PRISERY V BLUDISKU",0
-S_T4:   DB "STLAC MEDZERNIK",0
+S_T4:   DB "1-5 ALEBO SIPKY + MEDZERNIK",0
 S_HP:   DB "ZDRAVIE ",0
 S_AM:   DB " NABOJE ",0
 S_KL:   DB " ZABITYCH ",0

@@ -24,8 +24,8 @@ for f in range(260):
     d = bfs(py, px)
     if f % 13 == 0:
         for (y, x), v in d.items():
-            if s.m[0x5000 + y * 256 + 0xF0 + x] != (v if v <= 15 else 255): bad += 1
-    for i in range(4):
+            if s.m[0x5000 + y * 256 + 0xF0 + x] != (v if v <= 23 else 255): bad += 1
+    for i in range(6):
         o = E + 8 * i
         if s.m[o + 4] == 0: continue
         ex = s.m[o] | s.m[o + 1] << 8; ey = s.m[o + 2] | s.m[o + 3] << 8

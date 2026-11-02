@@ -52,3 +52,19 @@ Příšera chodí po buňkách. V patrole zvolí na křižovatce náhodný směr
 ## Tvář v HUD (jako v Doomu)
 Pod pohledem (řádky 194-241, sloupce 20-27) je tvář 48x48 bodů, kreslená po jednotlivých bodech s odstíny šedé: každý bajt (6 bodů vedle sebe) je bílý nebo ztlumený (bit 6 = šedá), v obou případech rozptýlený uspořádaným ditherem 4x4. Je jich 26 (`FACES`, 26 x 384 B): 15 klidných (3 výrazy na každou z 5 úrovní zdraví 100-81, 80-61, 60-41, 40-21, 20-0; výraz se mění náhodně po ~14 snímcích), 5 bolestí (při poklesu zdraví, 3 snímky), 5 úsměvů (po zabití příšery, 8 snímků) a 1 mrtvá (konec hry; při výhře úsměv). Kreslí se jen při změně. Text HUD je pod tváří.
 `faces.py` bitmapy vyrobí: bez argumentů nakreslenou tvář (výchozí, v repozitáři jako `faces.bin`); `python3 -I faces.py --sheet plansa.png` z desky obrázků 5 řádků zdraví x výrazy (rozloží ji podle pozadí, vyrobí `faces_local.bin` a `faces_local.png`); `faces.py foto.jpg` z jedné fotky (stavy se odvodí). `gen.py` použije `faces_local.bin`, pokud existuje (jinak `faces.bin`; `DOOM_FACES=default` vynutí výchozí), proto lokální tváře z cizích obrázků (např. sprity z Doomu) nejsou v gitu (`.gitignore`) a páska v repozitáři je s nakreslenou tváří. Pak `python3 -I gen.py && python3 -I build.py ../simpmd/data/tapes/games-pmd1/DOOM85`.
+
+## Obtížnost
+Na titulní obrazovce se volí 5 úrovní (číslice 1-5, nebo šipky nahoru a dolů a mezerník; výchozí je 3): `DIFFT` obsahuje počet příšer (nejvýš 6, `NEN`), jejich zdraví, poškození za snímek při doteku, rychlost v patrole a v honbě, dosah honby (v buňkách, vzdá se o 5 dál), náboje na začátku a náboje v balíčku.
+
+| úroveň | příšer | zdraví | poškození | rychlost | dosah | náboje | balíček |
+|---|---|---|---|---|---|---|---|
+| 1 lehká | 2 | 1 | 1 | 7 / 10 | 7 | 40 | 15 |
+| 2 střední | 3 | 2 | 1 | 8 / 12 | 9 | 35 | 12 |
+| 3 normální | 4 | 2 | 2 | 9 / 14 | 10 | 30 | 10 |
+| 4 těžká | 6 | 3 | 3 | 10 / 15 | 12 | 25 | 8 |
+| 5 noční můra | 6 | 4 | 4 | 12 / 16 | 14 | 20 | 6 |
+
+`t_diff.py` ověří, že se parametry zvolené úrovně dostanou do hry (počet živých příšer, zdraví, náboje). Hráč se pohybuje 16 jednotek na snímek, takže na úrovni 5 jsou příšery v honbě stejně rychlé jako on.
+
+## Paměť
+Kód 5,6 kB (včetně textů), tabulky 12,2 kB (z toho tváře 10 kB), celkem 17,9 kB od adresy 0100h do 46CFh. Datová oblast 4F00h-5FFFh (proměnné, mapa a pole), zásobník bludiště a fronta BFS 6000h-6163h, zásobník procesoru od 7E00h dolů.

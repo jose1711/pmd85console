@@ -205,4 +205,4 @@ SOLITER;1;MGLD 00;;;sipky = kurzor (mys), Space/Enter = klik, Informace a Zacit 
 ATOMIX;1;MGLD 00;;;menu: 1 start, 2 klavesy, 3 barvy, hra Q/A/O/P, Space = akce, EOL napoveda, R znovu, 0 konec;;
 TVARE;1;MGLD 00, TAPELOOP;;;menu: 1 klavesnice, 2 joystick, 3 barvy, pak 0 = start;;
 LEMMINGS;1;MGLD 00, TAPELOOP;;;menu: S start, N nastaveni, I informace, H heslo, hra: kurzor sipkami, F1-F12 (K0-K11) = volba cinnosti, Space, dalsi sektory se nahravaji z pasky;;
-DOOM85;1;MGLD 00, JUMP 0100;;Up:Up,Down:Down,Left:Left,Right:Right,Esc:Escape;Doom85 (raycaster v assembleru 8080, pohled z prvni osoby): sipky vlevo a vpravo otaceji, nahoru a dolu chodi (pad: D-pad);;
+DOOM85;1;MGLD 00, JUMP 0100;;Up:Up,Down:Down,Left:Left,Right:Right,Fire:Space,M music:m,Esc:Escape;Doom85 (raycaster v assembleru 8080, pohled z prvni osoby): na titulce zvolte obtiznost (1 az 5 nebo sipky nahoru a dolu a mezernik), sipky vlevo a vpravo otaceji, nahoru a dolu chodi, mezernik strili (pad: D-pad, A = strelba), M zapina hudbu, priserky chodi po chodbach a honi vas, v bludisku jsou balicky naboju;;
