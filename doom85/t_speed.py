@@ -19,7 +19,7 @@ def f5(m):
 s.inport[0xF5] = f5
 t_doom.frame(s, syms)
 tot = n = 0
-for keys, cnt in [({(13, 1)}, 14), ({(14, 2)}, 8), ({(13, 1)}, 14), ({(12, 2)}, 8), ({(13, 1)}, 12), (set(), 3)]:
+for keys, cnt in [({(2, 2)}, 14), ({(14, 2)}, 8), ({(2, 2)}, 14), ({(12, 2)}, 8), ({(2, 2)}, 12), (set(), 3)]:
     held.clear(); held.update(keys)
     for _ in range(cnt): tot += t_doom.frame(s, syms); n += 1
 print('priemerna snimka %.0f ms (%.1f snimky/s), polohy %s' % (tot / n / 2000, 2000000 / (tot / n), hex(s.m[0x4F00] | s.m[0x4F01] << 8)))

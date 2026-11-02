@@ -15,7 +15,7 @@ def f5(m):
     return base(m)
 s.inport[0xF5] = f5
 t_doom.frame(s, syms)
-held.add((13, 1))
+held.add((2, 2))
 for _ in range(10): t_doom.frame(s, syms)
 names = sorted((v, k) for k, v in syms.items() if not k.isupper())
 addrs = [v for v, k in names]

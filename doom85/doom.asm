@@ -443,21 +443,30 @@ tt_w:   call note
         lhld SEED
         inx h
         shld SEED
-        ; sipky hore a dole menia uroven, cislice 1-5 ju zvolia a spustia hru
-        mvi a,13
+        ; E (hore) a Y (dole) menia uroven, cislice 1-5 ju zvolia a spustia hru
+        mvi a,2
         out 0F4H
         in 0F5H
+        ani 4
         mov b,a
-        ani 0AH
-        cpi 0AH
-        jz ti_nk
-        lda TKH
+        mvi a,1
+        out 0F4H
+        in 0F5H
+        ani 10H
+        mov c,a
+        mov a,b
+        ora a
+        jz ti_pr
+        mov a,c
+        ora a
+        jnz ti_nk
+ti_pr:  lda TKH
         ora a
         jnz ti_dg
         mvi a,1
         sta TKH
         mov a,b
-        ani 2
+        ora a
         jnz ti_dn
         lda DIFFSEL
         dcr a
@@ -805,27 +814,18 @@ k_nl:   mvi a,14
         inr a
         ani 3FH
         sta ANG
-k_nr:   mvi a,13
-        out 0F4H
-        in 0F5H
-        sta KEYS
-        ani 2
-        jz k_f
-        mvi a,2
+k_nr:   mvi a,2
         out 0F4H
         in 0F5H
         ani 4
         jnz k_nu
-k_f:    call fwd
-k_nu:   lda KEYS
-        ani 8
-        jz k_b
-        mvi a,1
+        call fwd
+k_nu:   mvi a,1
         out 0F4H
         in 0F5H
         ani 10H
         jnz fire_key
-k_b:    call back
+        call back
         jmp fire_key
 wkey:   mvi a,0
         out 0F4H
@@ -3632,9 +3632,9 @@ S_KN:   DB " NOZ        ",0
 S_NOAM: DB " BEZ NABOJOV",0
 S_BL:   DB "            ",0
 S_T1:   DB "DOOM85",0
-S_T2:   DB "E / DEL DOPREDU   Y / END DOZADU   <- -> OTAC.",0
+S_T2:   DB "E DOPREDU   Y DOZADU   <- -> OTACANIE",0
 S_T3:   DB "ZLIKVIDUJ VSETKY PRISERY V BLUDISKU",0
-S_T4:   DB "1-5 ALEBO DEL / END + MEDZERNIK",0
+S_T4:   DB "1-5 ALEBO E / Y + MEDZERNIK",0
 S_HEALTH: DB "HEALTH ",0
 S_AMMO: DB "AMMO   ",0
 S_KILLS: DB "KILLS  ",0

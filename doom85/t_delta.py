@@ -4,7 +4,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', 'mpy85')); sys.path.insert(0, HERE)
 import t_doom, gen
 DIRTY = 0x51C0
-UP, DOWN, LEFT, RIGHT, FIRE = (13, 1), (13, 3), (12, 2), (14, 2), (0, 4)
+UP, DOWN, LEFT, RIGHT, FIRE = (2, 2), (1, 4), (12, 2), (14, 2), (0, 4)
 
 def mk(force):
     s, syms = t_doom.boot()
