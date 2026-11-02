@@ -48,3 +48,7 @@ Příšera chodí po buňkách. V patrole zvolí na křižovatce náhodný směr
 
 ## Výška pohledu (měření)
 `VH` (výška pohledu v řádcích) je parametr: `DOOM_VH=96 python3 gen.py && python3 build.py`. Průměrná snímka při skriptovaném pohybu (`t_speed.py`, simulátor, 2 MHz): 128 řádků 130 ms, 112 řádků 129 ms, 96 řádků 128 ms, 80 řádků 126 ms, 64 řádky 124 ms. Rozdílové kreslení stěn spotřebuje málo času na řádky, takže zmenšení pohledu skoro nepomáhá. Zbytek (paprsky, sprity, režie sloupců) závisí na počtu sloupců, ne řádků. BFS prodlouží jednu snímku o asi 35 ms při každé změně buňky hráče (~ každých 16 snímků).
+
+## Tvář v HUD (jako v Doomu)
+Pod pohledem (řádky 194-241, sloupce 20-27) je tvář 48x48 bodů (bitmapa po jednotlivých bodech, `FACES`, 8 stavů x 384 B). Stavy: zdraví 100-81, 80-61, 60-41, 40-21, 20-0 (čím méně zdraví, tím víc škrábanců, krve a zavřené oko), bolest (při poklesu zdraví, 3 snímky), spokojenost (po zabití příšery, 8 snímků), mrtvá (konec hry; při výhře úsměv). Kreslí se jen při změně stavu. Text HUD je pod tváří.
+`faces.py` bitmapy vyrobí: bez argumentů nakreslenou tvář (výchozí, v repozitáři jako `faces.bin`), s fotkou `python3 -I faces.py foto.jpg` z libovolného obrázku (čtvercový výřez ze středu, 48x48, usporádaný dither 4x4 se zvýšeným kontrastem, stavy se odvodí stmavením, krví a zavřeným okem), s více obrázky `faces.py a.png b.png ...` jeden na stav v pořadí `STATES`. Pak `python3 -I gen.py && python3 -I build.py ../simpmd/data/tapes/games-pmd1/DOOM85`. Pozor: `faces.bin` s cizí nebo vlastní tváří nedávat do veřejného repozitáře.

@@ -1,5 +1,6 @@
 """Generuje tables.inc (tabulky pre doom.asm) a model pre referencny renderer."""
-import math
+import math, sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 MAP = [
     "################",
@@ -123,6 +124,10 @@ def emit():
     gv = {'.': 0, 'X': 0x3F, 'G': 0x7F, 'D': 0x40}
     db('GUNT', [gv[gun[k][c]] for c in range(8) for k in range(10)], 10)
     db('FLT', [gv[flash[k][c]] for c in range(6) for k in range(3)], 3)
+    import faces
+    fb = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'faces.bin'), 'rb').read() if os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'faces.bin')) else b''.join(faces.build([]))
+    assert len(fb) == 3072
+    db('FACES', list(fb), 16)
     en = []
     for (cx, cy) in ENEMIES:
         en += [(cx * 256 + 128) & 255, (cx * 256 + 128) >> 8, (cy * 256 + 128) & 255, (cy * 256 + 128) >> 8, 2, 0, 0, 0]

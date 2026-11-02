@@ -57,7 +57,7 @@ CY      EQU 2FB3H
 NX      EQU 2FB4H
 NY      EQU 2FB5H
 STKP    EQU 2FB6H
-STK     EQU 2000H
+STK     EQU 4000H
 TEXP    EQU 2F76H
 RECP    EQU 2F7BH
 CURN    EQU 2F7DH
@@ -110,6 +110,12 @@ TYV     EQU 2FEDH
 STV     EQU 2FEEH
 SPDV    EQU 2FEFH
 AIP     EQU 2FF0H
+FACECUR EQU 2FF2H
+FACETM  EQU 2FF3H
+FACEOV  EQU 2FF4H
+LHP     EQU 2FF5H
+LKL     EQU 2FF6H
+FACEDST EQU 0C000H+194*64+20
 CIDX    EQU 2FC8H
 IX2     EQU 2FC9H
 IY2     EQU 2FCBH
@@ -146,6 +152,7 @@ main:   call keys
         call gunstep
         call sprhit
         call hud
+        call facepick
         call music
         lda HEALTH
         ora a
@@ -157,6 +164,12 @@ main:   call keys
 
 init_game: mvi a,0FFH
         sta PCELLV
+        sta FACECUR
+        mvi a,100
+        sta LHP
+        xra a
+        sta LKL
+        sta FACETM
         xra a
         sta GRC
         lxi h,PSIG
@@ -1157,7 +1170,7 @@ ud2:    pop psw
 ; Priserky chodia z bunky do bunky: v patrole nahodne (bez otocenia sa spat), ak je cesta k hracovi kratsia ako 10 buniek
 ; (pri 15 sa vzdaju), nasleduju najkratsiu cestu z mapy vzdialenosti (BFS od bunky hraca, pocita sa pri zmene bunky hraca).
 ; Zaznam (8 B): +0/1 x, +2/3 y (1/256 bunky), +4 hp, +5 cielova bunka x, +6 cielova bunka y, +7 smer (bity 0-1), bit 2 = naháňa
-QPAGE   EQU 21H
+QPAGE   EQU 41H
 SPD_PAT EQU 9
 SPD_CH  EQU 14
 OFFT:   DB 1,16,0FFH,0F0H
@@ -2453,7 +2466,7 @@ hd_go:  lda HEALTH
         sta LASTA
         lda KILLS
         sta LASTK
-        lxi h,0FB00H
+        lxi h,0FF00H
         shld CURSOR
         lxi h,S_HP
         call puts
@@ -2512,14 +2525,18 @@ pp2:    call PUTC
         adi '0'
         jmp PUTC
 
-gameover: lxi h,0FB00H
+gameover: mvi a,7
+        call facedraw
+        lxi h,0FF00H
         shld CURSOR
         lxi h,S_GO
         call puts
         call jingle_over
         call waitkey
         jmp start
-victory: lxi h,0FB00H
+victory: mvi a,6
+        call facedraw
+        lxi h,0FF00H
         shld CURSOR
         lxi h,S_WIN
         call puts
@@ -2672,6 +2689,92 @@ mkey:   mvi a,7
 mk_up:  xra a
         sta MHELD
         ret
+
+; ---------------------------------------------------------------- tvar (HUD)
+FACETAB: DW FACES,FACES+384,FACES+768,FACES+1152,FACES+1536,FACES+1920,FACES+2304,FACES+2688
+; facedraw: A = stav (0-4 zdravie, 5 bolest, 6 spokojnost, 7 mrtva) -> 48x48 bodov na obrazovku
+facedraw: sta FACECUR
+        mov e,a
+        mvi d,0
+        lxi h,FACETAB
+        dad d
+        dad d
+        mov e,m
+        inx h
+        mov d,m
+        xchg
+        lxi d,FACEDST
+        mvi c,48
+fd_r:   mvi b,8
+fd_b:   mov a,m
+        stax d
+        inx h
+        inx d
+        dcr b
+        jnz fd_b
+        push h
+        lxi h,56
+        dad d
+        xchg
+        pop h
+        dcr c
+        jnz fd_r
+        ret
+; facepick: vyber tvare podla zdravia, zranenia a zabitia
+facepick: lda HEALTH
+        mov b,a
+        lda LHP
+        cmp b
+        jc fp_k
+        jz fp_k
+        mvi a,3
+        sta FACETM
+        mvi a,5
+        sta FACEOV
+fp_k:   mov a,b
+        sta LHP
+        lda KILLS
+        mov c,a
+        lda LKL
+        cmp c
+        jnc fp_s
+        mvi a,8
+        sta FACETM
+        mvi a,6
+        sta FACEOV
+fp_s:   mov a,c
+        sta LKL
+        lda FACETM
+        ora a
+        jz fp_b
+        dcr a
+        sta FACETM
+        lda FACEOV
+        jmp fp_d
+fp_b:   mov a,b
+        cpi 81
+        jc fp_1
+        xra a
+        jmp fp_d
+fp_1:   cpi 61
+        jc fp_2
+        mvi a,1
+        jmp fp_d
+fp_2:   cpi 41
+        jc fp_3
+        mvi a,2
+        jmp fp_d
+fp_3:   cpi 21
+        jc fp_4
+        mvi a,3
+        jmp fp_d
+fp_4:   mvi a,4
+fp_d:   mov b,a
+        lda FACECUR
+        cmp b
+        rz
+        mov a,b
+        jmp facedraw
 
 S_NOAM: DB " BEZ NABOJOV",0
 S_BL:   DB "            ",0
