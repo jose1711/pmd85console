@@ -82,6 +82,17 @@ MUSI    EQU 2FBBH
 MUSOFF  EQU 2FBCH
 SFXF    EQU 2FBDH
 MHELD   EQU 2FBEH
+SIG     EQU 2FBFH
+OLDW    EQU 2FC0H
+NP      EQU 2FC1H
+FLIM    EQU 2FC2H
+SLN     EQU 2FC3H
+SLP     EQU 2FC4H
+SLP2    EQU 2FC6H
+SLIST   EQU 3270H
+PWP     EQU 3160H
+PSIG    EQU 3190H
+DIRTY   EQU 31C0H
 CURSOR  EQU 0C03EH
 FLOOR1  EQU 48H
 FLOOR2  EQU 40H
@@ -113,7 +124,19 @@ main:   call keys
         jz victory
         jmp main
 
-init_game: lxi h,0180H
+init_game: lxi h,PSIG
+        lxi d,DIRTY
+        mvi b,48
+        mvi a,0FFH
+ig0:    mov m,a
+        inx h
+        xra a
+        stax d
+        inx d
+        mvi a,0FFH
+        dcr b
+        jnz ig0
+        lxi h,0180H
         shld PX
         shld PY
         lda MAPHI*256+256+2
@@ -665,11 +688,12 @@ my2:    aci 0
         shld ZP
         pop psw
         sta CURN
-        call drawcol
         lda COLN
         cma
         adi 49
         sta COLIDX
+        lda CURN
+        call drawcol
         call sprcol
         call guncol
         lhld COLP
@@ -688,11 +712,6 @@ drawcol: mov e,a
         dad d
         mov a,m
         sta WP
-        ora a
-        rar
-        cma
-        adi 33
-        sta CP
         mov a,e
         rrc
         rrc
@@ -708,6 +727,7 @@ drawcol: mov e,a
         add a
         add c
         add a
+        sta SIG
         mov c,a
         mvi b,0
         lxi h,PATTAB
@@ -717,9 +737,91 @@ drawcol: mov e,a
         inx h
         mov a,m
         sta P2
+        lda COLIDX
+        mov e,a
+        mvi d,0
+        lxi h,DIRTY
+        dad d
+        mov a,m
+        ora a
+        jnz dc_full
+        lxi h,PSIG
+        dad d
+        lda SIG
+        cmp m
+        jnz dc_full
+        lxi h,PWP
+        dad d
+        mov c,m
+        lda WP
+        cmp c
+        rz
+        mov b,a
+        mov a,c
+        sta OLDW
+        mov a,b
+        cmp c
+        jc dc_shrink
+        mov a,b
+        sub c
+        ora a
+        rar
+        sta NP
+        mvi a,64
+        sub b
+        call rowaddr
+        lda NP
+        mov e,a
+        lda P2
+        mov d,a
+        lxi b,0040H
+        lda P1
+        call fill2
+        lda OLDW
+        adi 64
+        call rowaddr
+        lda NP
+        mov e,a
+        lda P2
+        mov d,a
+        lxi b,0040H
+        lda P1
+        call fill2
+        jmp dc_done
+dc_shrink: mov a,c
+        sub b
+        ora a
+        rar
+        sta NP
+        mvi a,64
+        sub c
+        call rowaddr
+        lda NP
+        mov e,a
+        xra a
+        mov d,a
+        lxi b,0040H
+        call fill2
+        lda WP
+        adi 64
+        sta FROW
+        call rowaddr
+        shld VP
+        lda OLDW
+        adi 64
+        sta FLIM
+        call floor_rows
+        jmp dc_done
+dc_full: lxi h,DIRTY
+        dad d
+        mvi m,0
         lhld COLP
         lxi b,0040H
-        lda CP
+        lda WP
+        ora a
+        rar
+        cma
+        adi 33
         mov e,a
         xra a
         mov d,a
@@ -734,7 +836,39 @@ drawcol: mov e,a
         lda WP
         adi 64
         sta FROW
-        lxi h,FBANDS
+        mvi a,128
+        sta FLIM
+        call floor_rows
+dc_done: lda COLIDX
+        mov e,a
+        mvi d,0
+        lxi h,PWP
+        dad d
+        lda WP
+        mov m,a
+        lxi h,PSIG
+        dad d
+        lda SIG
+        mov m,a
+        ret
+; rowaddr: A = riadok pohladu (0-127) -> HL = adresa v stlpci COLIDX
+rowaddr: mov l,a
+        mvi h,0
+        dad h
+        dad h
+        dad h
+        dad h
+        dad h
+        dad h
+        lxi d,VIDEO
+        dad d
+        lda COLIDX
+        mov e,a
+        mvi d,0
+        dad d
+        ret
+; floor_rows: podlaha od riadku FROW po FLIM (vyssi), VP = adresa zaciatku
+floor_rows: lxi h,FBANDS
         shld FBP
 fl:     lhld FBP
         mov a,m
@@ -749,16 +883,23 @@ fl:     lhld FBP
         sta FP2
         inx h
         shld FBP
+        lda FLIM
+        mov b,a
+        lda FEND
+        cmp b
+        jc fl_1
+        mov a,b
+fl_1:   mov b,a
         lda FROW
         mov c,a
-        lda FEND
+        mov a,b
         sub c
-        jc fl
-        jz fl
+        jc fl_nx
+        jz fl_nx
         ora a
         rar
         mov e,a
-        lda FEND
+        mov a,b
         sta FROW
         lda FP2
         mov d,a
@@ -767,6 +908,11 @@ fl:     lhld FBP
         lda FP1
         call fill2
         shld VP
+fl_nx:  lda FLIM
+        mov b,a
+        lda FROW
+        cmp b
+        rnc
         jmp fl
 ; fill2: E dvojic riadkov so vzormi A, D (HL = adresa, BC = 64)
 fill2:  mov m,a
@@ -1204,7 +1350,11 @@ pj_no:  ora a
 ; ---------------------------------------------------------------- spritey po stlpcoch (bez blikania)
 ; zaznam prisery (16 B) na ESPR: +0 platny, +1 SN, +2 CS, +3 CE, +4 BH, +5 HW, +6/7 BASE, +8/9 USTEP,
 ; +10/11 UACC, +12/13 stred stlpca (so znamienkom), +15 poradie
-sprprep: lxi h,ENEM
+sprprep: lxi h,SLIST
+        shld SLP2
+        xra a
+        sta SLN
+        lxi h,ENEM
         shld EPTR
         lxi h,ESPR
         shld RECP
@@ -1227,6 +1377,17 @@ sp_e:   lhld RECP
         jnc sp_en
         call pk_adj
         lhld RECP
+        xchg
+        lhld SLP2
+        mov m,e
+        inx h
+        mov m,d
+        inx h
+        shld SLP2
+        lda SLN
+        inr a
+        sta SLN
+        xchg
         mvi m,1
         inx h
         lda SN
@@ -1308,9 +1469,12 @@ sp_ce1: pop h
         inr a
         mov e,a
         mvi d,0
-        lxi h,2048
-        call udiv
-        xchg
+        lxi h,USTEPTAB
+        dad d
+        dad d
+        mov e,m
+        inx h
+        mov d,m
         pop h
         mov m,e
         inx h
@@ -1465,13 +1629,20 @@ pk_n:   lhld PKP
         ret
 
 ; sprcol: dokresli rezy prisier pre stlpec COLIDX (stena v tom stlpci je vo vzdialenosti CURN)
-sprcol: lxi h,ESPR
-        mvi a,NOBJ
-        sta SCN
-scl:    shld RECP
-        mov a,m
+sprcol: lda SLN
         ora a
-        jz scn
+        rz
+        sta SCN
+        lxi h,SLIST
+        shld SLP
+scl:    lhld SLP
+        mov e,m
+        inx h
+        mov d,m
+        inx h
+        shld SLP
+        xchg
+        shld RECP
         lda COLIDX
         mov e,a
         lhld RECP
@@ -1506,17 +1677,20 @@ sc_adv: lhld RECP
         mov a,m
         adc d
         mov m,a
-scn:    lhld RECP
-        lxi d,16
-        dad d
-        lda SCN
+scn:    lda SCN
         dcr a
         sta SCN
         jnz scl
         ret
 
 ; slice: jeden stlpec prisery (zaznam v RECP)
-slice:  lhld RECP
+slice:  lda COLIDX
+        mov e,a
+        mvi d,0
+        lxi h,DIRTY
+        dad d
+        mvi m,1
+        lhld RECP
         lxi d,11
         dad d
         mov a,m
@@ -1581,6 +1755,11 @@ guncol: lda COLIDX
         rc
         cpi 26
         rnc
+        mov e,a
+        mvi d,0
+        lxi h,DIRTY
+        dad d
+        mvi m,1
         sui 22
         mov c,a
         lda COLIDX

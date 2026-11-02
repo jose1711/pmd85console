@@ -106,9 +106,14 @@ def emit():
         f = 440.0 * 2 ** ((names[n] + 12 * (o + 1) - 69) / 12.0)
         h = 1000000.0 / f
         b = max(1, min(255, round((h - 40) / 30)))
-        c = max(2, round(0.018 * f))
+        c = max(2, round(0.012 * f))
         mus += [b, c]
     db('MUSTAB', mus, 8)
+    ust = []
+    for w in range(0, 123):
+        v = 2048 // w if w else 0
+        ust += [v & 255, v >> 8]
+    db('USTEPTAB', ust, 16)
     en = []
     for (cx, cy) in ENEMIES:
         en += [(cx * 256 + 128) & 255, (cx * 256 + 128) >> 8, (cy * 256 + 128) & 255, (cy * 256 + 128) >> 8, 2, 0, 0, 0]

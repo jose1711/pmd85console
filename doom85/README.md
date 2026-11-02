@@ -13,7 +13,10 @@ Pohled z první osoby v assembleru 8080 (`doom.asm` + tabulky z `gen.py`, ~1,8 k
 - klávesnice se čte přímo z matice (`out F4` = sloupec, `in F5` = řádky, 0 = stisknuto): šipky vlevo/vpravo otáčí,
   nahoru/dolů chodí
 
-## Rychlost
+## Rychlost (po optimalizaci)
+Stěny se kreslí rozdílově: pro každý sloupec se pamatuje výška a vzor z minulé snímky (`PWP`, `PSIG`) a překreslí se jen rozdíl (pásy nahoře a dole, kde se změnila hranice stěny, stropu a podlahy). Sloupce, kam minule sahaly příšery nebo zbraň (`DIRTY`), se kreslí celé. `t_delta.py` ověří, že rozdílové kreslení dá po každé snímce stejný obraz jako plné překreslení (87 snímků, 0 rozdílů). Viditelné příšery jsou v krátkém seznamu `SLIST`, `ustep` je z tabulky a nota hudby trvá 12 ms. Snímka za pohybu: asi 170 ms (z 227 ms), tj. 5,8 snímku za sekundu.
+
+## Rychlost (původní měření)
 Sloupec = cca 3 100 T cyklů kreslení + paprsek (130 T cyklů na krok). Snímka v simulátoru: 200 až 340 tisíc T cyklů,
 tj. 100 až 170 ms při 2 MHz (6 až 10 snímků za sekundu). Kreslí se přímo do viditelné videopaměti, proto je vidět
 postupné vykreslování zleva doprava.
