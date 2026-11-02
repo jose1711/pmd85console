@@ -119,6 +119,14 @@ def emit():
         v = 2048 // w if w else 0
         ust += [v & 255, v >> 8]
     db('USTEPTAB', ust, 16)
+    tex3 = ["..GGGG..", ".GXXXXG.", "GXXXXXXG", "GXXXXXXG", "GXXXXXXG", "GXXXXXXG", ".GXXXXG.", "..GGGG.."]
+    tex4 = ["..XXXX..", ".XGGGGX.", ".GXGGXG.", ".XGGGGX.", "XGGXXGGX", "X.GXXG.X", "..GGGG..", "..XXXX.."]
+    cv2 = {'.': 0, 'X': 0x3F, 'G': 0x7F}
+    db('TEX3', [cv2[tex3[k][u]] for u in range(8) for k in range(8)], 8)
+    db('TEX4', [cv2[tex4[k][u]] for u in range(8) for k in range(8)], 8)
+    knife = ["...DD...", "..DXXD..", "..DXXD..", "..DXXD..", "..DXXD..", "..DGGD..", ".DDXXDD.", "..DGGD..", "..DGGD..", "..DDDD.."]
+    kv = {'.': 0, 'X': 0x3F, 'G': 0x7F, 'D': 0x40}
+    db('KNT', [kv[knife[k][c]] for c in range(8) for k in range(10)], 10)
     gun = ["..DGGD..", "..DXXD..", "..DXXD..", ".DGXXGD.", ".DGXXGD.", "DGXXXXGD", "DGXGGXGD", "DXXXXXXD", ".DGXXGD.", "..DDDD.."]
     flash = ["X.GG.X", ".XXXX.", "XGXXGX"]
     gv = {'.': 0, 'X': 0x3F, 'G': 0x7F, 'D': 0x40}

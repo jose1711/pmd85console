@@ -16,7 +16,7 @@ for k in range(400):
     s.m[0x4F04] = random.randrange(64)
     for i in range(48): s.m[0x5190 + i] = 0xFF
     # objekty nahodne rozmiestni (aj blizko hraca)
-    for i in range(11):
+    for i in range(14):
         ox, oy = random.choice(free)
         o = 0x5220 + 8 * i
         s.m[o:o + 5] = bytes([random.randrange(256), ox, random.randrange(256), oy, 1 if i >= 4 else 2])

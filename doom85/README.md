@@ -68,3 +68,8 @@ Na titulní obrazovce se volí 5 úrovní (číslice 1-5, nebo šipky nahoru a d
 
 ## Paměť
 Kód 5,6 kB (včetně textů), tabulky 12,2 kB (z toho tváře 10 kB), celkem 17,9 kB od adresy 0100h do 46CFh. Datová oblast 4F00h-5FFFh (proměnné, mapa a pole), zásobník bludiště a fronta BFS 6000h-6163h, zásobník procesoru od 7E00h dolů.
+
+## Nůž a střelci
+- **Nůž:** klávesa 2 (1 = pistole). Bez nábojů, dosah do 10 kroků paprsku (~1,25 buňky), zasáhne jen polovina úderů (náhodně), hlava 1 zásah; úder se kreslí jako bitmapa `KNT` s odskokem a zvukem (`sfx_stab` zásah, `sfx_swish` vedle).
+- **Střelci:** příšery s příznakem v bitu 3 bytu směru (poslední `NSHOT` z aktivních, podle úrovně 0, 1, 2, 3, 4 a poškození střely 0, 3, 3, 4, 5, tabulka `DIFFS`). Mají-li přímou čáru k hráči (stejný řádek nebo sloupec, do 8 buněk, mezi nimi volné buňky: `losck`), stojí a každých 16 snímků vystřelí ohnivou kouli (`fireprj`, 3 sloty `NPR`, nejvýš 3 současně): střela letí po přímce 24 jednotek na snímek (`prjstep`), mizí o stěnu, zasáhne hráče, když je do ~0,4 buňky (poškození `PDMG`). Střelec a koule mají vlastní textury `TEX4` a `TEX3` (koule jsou poloviční jako balíčky).
+- `t_weapons.py` ověří: střelec s přímou čarou zasáhne hráče (zdraví klesne o `PDMG`), zeď v čáře střelbu zastaví, nůž zabije blízkou příšeru bez spotřeby nábojů a vzdálená nedostane zásah.

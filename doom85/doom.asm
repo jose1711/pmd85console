@@ -78,7 +78,8 @@ ENEM    EQU 5220H
 ZBUF    EQU 5120H
 NEN     EQU 6
 NPK     EQU 5
-NOBJ    EQU 11
+NOBJ    EQU 14
+NPR     EQU 3
 BHV     EQU 4FB8H
 PKP     EQU 4FB9H
 MUSI    EQU 4FBBH
@@ -128,6 +129,14 @@ AMMO0   EQU 4F37H
 PACKV   EQU 4F38H
 TKH     EQU 4F39H
 TCUR    EQU 4F3AH
+WPN     EQU 4F3CH
+NSHOT   EQU 4F3DH
+PDMG    EQU 4F3EH
+LASTW   EQU 4F3FH
+LOSD    EQU 4F40H
+LOSN    EQU 4F41H
+PRJP    EQU 4F42H
+KRANGE  EQU 10
 IDLEV   EQU 4FF8H
 CIDX    EQU 4FC8H
 IX2     EQU 4FC9H
@@ -156,8 +165,10 @@ start:  lxi sp,STACKTOP
         call PUTC
 main:   call keys
         call mkey
+        call wkey
         call pickups
         call ai
+        call prjstep
         call setup
         call sprprep
         call gunprep
@@ -290,7 +301,29 @@ ig_dl:  mvi m,0
         dad d
         dcr b
         jnz ig_dl
-ig_nd:  lxi h,ENEM+8*NEN
+ig_nd:  lda NSHOT
+        ora a
+        jz ig_ns
+        mov b,a
+        lda NACT
+        sub b
+        add a
+        add a
+        add a
+        mov e,a
+        mvi d,0
+        lxi h,ENEM+7
+        dad d
+ig_sh:  mov a,m
+        ori 8
+        mov m,a
+        lxi d,8
+        dad d
+        dcr b
+        jnz ig_sh
+ig_ns:  xra a
+        sta WPN
+        lxi h,ENEM+8*NEN
         mvi b,NPK
 ip1:    push h
 ip2:    call rnd
@@ -330,6 +363,14 @@ ip2:    call rnd
         inx h
         dcr b
         jnz ip1
+        mvi b,NPR
+ip_z:   lxi d,4
+        dad d
+        mvi m,0
+        lxi d,4
+        dad d
+        dcr b
+        jnz ip_z
         ret
 
 ; ---------------------------------------------------------------- uvodna obrazovka a generator bludiska
@@ -373,6 +414,10 @@ ti_l:   push h
         inx h
         dcr b
         jnz ti_l
+        lxi h,0F000H+4
+        shld CURSOR
+        lxi h,S_T6
+        call puts
         lxi h,0F400H+4
         shld CURSOR
         lxi h,S_T4
@@ -495,6 +540,18 @@ tt_rd:  mov a,c
         inx h
         mov a,m
         sta PACKV
+        lda DIFFSEL
+        dcr a
+        add a
+        mov e,a
+        mvi d,0
+        lxi h,DIFFS
+        dad d
+        mov a,m
+        sta NSHOT
+        inx h
+        mov a,m
+        sta PDMG
         mvi a,1CH
         jmp PUTC
 ; mark: oznaci zvolenu uroven znakom > pred riadkom
@@ -523,8 +580,10 @@ DIFFT:  DB 2,1,1,7,10,7,40,15
         DB 4,2,2,9,14,10,30,10
         DB 6,3,3,10,15,12,25,8
         DB 6,4,4,12,16,14,20,6
+DIFFS:  DB 0,0,1,3,2,3,3,4,4,5
 S_LV:   DB "1 LAHKA",0,"2 STREDNA",0,"3 NORMALNA",0,"4 TAZKA",0,"5 NOCNA MORA",0
 S_T5:   DB "OBTIAZNOST:",0
+S_T6:   DB "1 PISTOL   2 NOZ   M HUDBA",0
 
 ; rnd: A = nahodne cislo (16 bit LFSR, 8 krokov); zachova B, C
 rnd:    lhld SEED
@@ -741,6 +800,22 @@ k_nu:   lda KEYS
         ani 8
         jnz fire_key
         call back
+wkey:   mvi a,0
+        out 0F4H
+        in 0F5H
+        ani 2
+        jnz wk1
+        xra a
+        sta WPN
+        ret
+wk1:    mvi a,1
+        out 0F4H
+        in 0F5H
+        ani 2
+        rnz
+        mvi a,1
+        sta WPN
+        ret
 fire_key: mvi a,0
         out 0F4H
         in 0F5H
@@ -751,10 +826,13 @@ fire_key: mvi a,0
         rnz
         mvi a,1
         sta FHELD
+        lda WPN
+        ora a
+        jnz fk_kn
         lda AMMO
         ora a
         jz sfx_click
-        mvi a,1
+fk_kn:  mvi a,1
         sta FIREF
         ret
 fk_up:  xra a
@@ -1561,6 +1639,24 @@ ai1:    push h
         jz ai_sp
         lda SPDCV
 ai_sp:  sta SPDV
+        lda STV
+        ani 8
+        jz ai_ns
+        call losck
+        jnc ai_ns
+        lda STV
+        ani 0F0H
+        jnz ai_cd
+        call fireprj
+        lda STV
+        ori 0F0H
+        sta STV
+        jmp ai_st
+ai_cd:  lda STV
+        sui 10H
+        sta STV
+        jmp ai_st
+ai_ns:
         lhld EXV
         xchg
         lda TXV
@@ -2187,9 +2283,22 @@ sp_u0:  pop h
         inx h
         lda NIDX+1
         cpi NEN
-        mvi a,0
-        jc sp_t0
+        jc sp_te
+        cpi NEN+NPK
         mvi a,1
+        jc sp_t0
+        mvi a,2
+        jmp sp_t0
+sp_te:  push h
+        lhld EPTR
+        lxi d,7
+        dad d
+        mov a,m
+        pop h
+        ani 8
+        mvi a,0
+        jz sp_t0
+        mvi a,3
 sp_t0:  mov m,a
         inx h
         lda NIDX+1
@@ -2390,11 +2499,16 @@ slice:  lda COLIDX
         lxi d,14
         dad d
         mov a,m
-        ora a
-        lxi h,TEX
-        jz sl_t1
-        lxi h,TEX2
-sl_t1:  pop d
+        add a
+        mov e,a
+        mvi d,0
+        lxi h,TEXTT
+        dad d
+        mov e,m
+        inx h
+        mov d,m
+        xchg
+        pop d
         dad d
         shld TEXP
         lhld RECP
@@ -2448,7 +2562,12 @@ gunprep: lda RECOIL
         cma
         adi VH-39
         sta GTOP
+        lda WPN
+        add a
+        add a
+        mov b,a
         lda RECOIL
+        add b
         lxi h,PRECOIL
         cmp m
         rz
@@ -2475,13 +2594,20 @@ guncol: lda COLIDX
         dad d
         dad h
         lxi d,GUNT
-        dad d
+        lda WPN
+        ora a
+        jz gc_t
+        lxi d,KNT
+gc_t:   dad d
         shld GPTR
         lda GTOP
         call rowaddr
         lxi b,0040H
         mvi d,10
         call gcells
+        lda WPN
+        ora a
+        rnz
         lda RECOIL
         cpi 3
         rnz
@@ -2582,6 +2708,13 @@ sh_l:   shld RECP
 sh_hit: lhld RECP
         inx h
         mov b,m
+        lda WPN
+        ora a
+        jz sh_np
+        mov a,b
+        cpi KRANGE+1
+        jnc sh_n
+sh_np:
         lda ZBUF+24
         cmp b
         jc sh_n
@@ -2611,6 +2744,9 @@ sh_n:   lhld RECP
         dcr a
         sta SCN
         jnz sh_l
+        lda WPN
+        ora a
+        jnz sh_kn
         lda AMMO
         dcr a
         sta AMMO
@@ -2631,6 +2767,27 @@ sh_n:   lhld RECP
         inr a
         sta KILLS
         jmp sfx_kill
+; noz: nizka ucinnost (zasiahne len polovica uderov), len na blizko
+sh_kn:  mvi a,3
+        sta RECOIL
+        xra a
+        sta FIREF
+        lhld BESTP
+        mov a,h
+        ora l
+        jz sfx_swish
+        call rnd
+        ani 1
+        jz sfx_swish
+        lhld BESTP
+        lxi d,4
+        dad d
+        dcr m
+        jnz sfx_stab
+        lda KILLS
+        inr a
+        sta KILLS
+        jmp sfx_kill
 
 hud:    lda HEALTH
         mov b,a
@@ -2646,8 +2803,15 @@ hud:    lda HEALTH
         mov b,a
         lda LASTK
         cmp b
+        jnz hd_go
+        lda WPN
+        mov b,a
+        lda LASTW
+        cmp b
         rz
-hd_go:  lda HEALTH
+hd_go:  lda WPN
+        sta LASTW
+  lda HEALTH
         sta LASTH
         lda AMMO
         sta LASTA
@@ -2668,6 +2832,10 @@ hd_go:  lda HEALTH
         lda KILLS
         adi '0'
         call PUTC
+        lda WPN
+        ora a
+        lxi h,S_KN
+        jnz puts
         lda AMMO
         ora a
         lxi h,S_NOAM
@@ -2993,6 +3161,240 @@ fp_d:   mov b,a
         mov a,b
         jmp facedraw
 
+; losck: strelec (EXV, EYV) vidi hraca v rovnakom riadku alebo stlpci do 8 buniek cez volne bunky -> CY, LOSD = smer
+losck:  lda EXV+1
+        mov d,a
+        lda EYV+1
+        mov e,a
+        lda PX+1
+        mov b,a
+        lda PY+1
+        mov c,a
+        mov a,e
+        cmp c
+        jnz lo_c
+        mov a,d
+        cmp b
+        jz lo_no
+        jc lo_r0
+        mvi a,2
+        sta LOSD
+        mov a,d
+        sub b
+        jmp lo_n
+lo_r0:  xra a
+        sta LOSD
+        mov a,b
+        sub d
+        jmp lo_n
+lo_c:   mov a,d
+        cmp b
+        jnz lo_no
+        mov a,e
+        cmp c
+        jc lo_c0
+        mvi a,3
+        sta LOSD
+        mov a,e
+        sub c
+        jmp lo_n
+lo_c0:  mvi a,1
+        sta LOSD
+        mov a,c
+        sub e
+lo_n:   sta LOSN
+        cpi 9
+        jnc lo_no
+        mov a,e
+        add a
+        add a
+        add a
+        add a
+        add d
+        sta CC
+        lda LOSN
+        dcr a
+        jz lo_yes
+        mov b,a
+lo_s:   lda LOSD
+        call nbr
+        sta CC
+        call maddr
+        mov a,m
+        ora a
+        jnz lo_no
+        dcr b
+        jnz lo_s
+lo_yes: stc
+        ret
+lo_no:  ora a
+        ret
+; fireprj: strela z pozicie strelca v smere LOSD (prvy volny slot)
+fireprj: lxi h,ENEM+8*(NEN+NPK)
+        mvi b,NPR
+fp_l:   push h
+        lxi d,4
+        dad d
+        mov a,m
+        pop h
+        ora a
+        jz fp_f
+        lxi d,8
+        dad d
+        dcr b
+        jnz fp_l
+        ret
+fp_f:   lda EXV
+        mov m,a
+        inx h
+        lda EXV+1
+        mov m,a
+        inx h
+        lda EYV
+        mov m,a
+        inx h
+        lda EYV+1
+        mov m,a
+        inx h
+        mvi m,1
+        inx h
+        lda LOSD
+        mov m,a
+        jmp sfx_efire
+; prjstep: pohyb striel (24 jednotiek na snimku), zasah steny alebo hraca
+PDXT:   DW 24,0,0FFE8H,0
+PDYT:   DW 0,24,0,0FFE8H
+prjstep: lxi h,ENEM+8*(NEN+NPK)
+        mvi a,NPR
+        sta NIDX
+ps_l:   shld PRJP
+        push h
+        lxi d,4
+        dad d
+        mov a,m
+        ora a
+        pop h
+        jz ps_n
+        mov e,m
+        inx h
+        mov d,m
+        inx h
+        mov a,e
+        sta EXV
+        mov a,d
+        sta EXV+1
+        mov e,m
+        inx h
+        mov d,m
+        inx h
+        mov a,e
+        sta EYV
+        mov a,d
+        sta EYV+1
+        inx h
+        mov e,m
+        mvi d,0
+        lxi h,PDXT
+        dad d
+        dad d
+        mov c,m
+        inx h
+        mov b,m
+        lhld EXV
+        dad b
+        shld EXV
+        lxi h,PDYT
+        dad d
+        dad d
+        mov c,m
+        inx h
+        mov b,m
+        lhld EYV
+        dad b
+        shld EYV
+        lda EYV+1
+        add a
+        add a
+        add a
+        add a
+        mov b,a
+        lda EXV+1
+        add b
+        call maddr
+        mov a,m
+        ora a
+        jnz ps_kill
+        lhld PX
+        xchg
+        lhld EXV
+        mov a,l
+        sub e
+        mov l,a
+        mov a,h
+        sbb d
+        mov h,a
+        call absHL
+        lxi d,96
+        call cmp16
+        jnc ps_st
+        lhld PY
+        xchg
+        lhld EYV
+        mov a,l
+        sub e
+        mov l,a
+        mov a,h
+        sbb d
+        mov h,a
+        call absHL
+        lxi d,96
+        call cmp16
+        jnc ps_st
+        lda PDMG
+        mov b,a
+        lda HEALTH
+        sub b
+        jnc ps_h
+        xra a
+ps_h:   sta HEALTH
+        call sfx_hurt
+ps_kill: lhld PRJP
+        lxi d,4
+        dad d
+        mvi m,0
+        jmp ps_n
+ps_st:  lhld PRJP
+        lda EXV
+        mov m,a
+        inx h
+        lda EXV+1
+        mov m,a
+        inx h
+        lda EYV
+        mov m,a
+        inx h
+        lda EYV+1
+        mov m,a
+ps_n:   lhld PRJP
+        lxi d,8
+        dad d
+        lda NIDX
+        dcr a
+        sta NIDX
+        jnz ps_l
+        ret
+sfx_efire: mvi b,36
+        mvi c,12
+        mvi e,3
+        jmp snd
+sfx_stab: mvi b,16
+        mvi c,10
+        mvi e,2
+        jmp snd
+sfx_swish: mvi c,10
+        jmp noise
+TEXTT:  DW TEX,TEX2,TEX3,TEX4
+S_KN:   DB " NOZ        ",0
 S_NOAM: DB " BEZ NABOJOV",0
 S_BL:   DB "            ",0
 S_T1:   DB "DOOM85",0
