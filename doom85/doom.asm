@@ -71,9 +71,13 @@ ESPR    EQU 3010H
 LASTH   EQU 2F78H
 LASTA   EQU 2F79H
 LASTK   EQU 2F7AH
-ENEM    EQU 2F90H
-ZBUF    EQU 2FC0H
+ENEM    EQU 3220H
+ZBUF    EQU 3120H
 NEN     EQU 4
+NPK     EQU 5
+NOBJ    EQU 9
+BHV     EQU 2FB8H
+PKP     EQU 2FB9H
 CURSOR  EQU 0C03EH
 FLOOR1  EQU 48H
 FLOOR2  EQU 40H
@@ -87,6 +91,7 @@ start:  lxi sp,STACKTOP
         mvi a,1CH
         call PUTC
 main:   call keys
+        call pickups
         call ai
         call setup
         call sprprep
@@ -170,6 +175,45 @@ ig2:    call rnd
         inx h
         dcr b
         jnz ig1
+        mvi b,NPK
+ip1:    push h
+ip2:    call rnd
+        ani 15
+        mov c,a
+        call rnd
+        ani 15
+        mov d,a
+        mov a,c
+        ani 1
+        jz ip2
+        mov a,d
+        ani 1
+        jz ip2
+        mov a,c
+        cpi 14
+        jnc ip2
+        mov a,d
+        cpi 14
+        jnc ip2
+        pop h
+        mvi m,128
+        inx h
+        mov m,c
+        inx h
+        mvi m,128
+        inx h
+        mov m,d
+        inx h
+        mvi m,1
+        inx h
+        mvi m,0
+        inx h
+        mvi m,0
+        inx h
+        mvi m,0
+        inx h
+        dcr b
+        jnz ip1
         ret
 
 ; ---------------------------------------------------------------- uvodna obrazovka a generator bludiska
@@ -1156,7 +1200,7 @@ sprprep: lxi h,ENEM
         shld EPTR
         lxi h,ESPR
         shld RECP
-        mvi a,NEN
+        mvi a,NOBJ
         sta NIDX
         xra a
         sta NIDX+1
@@ -1173,6 +1217,7 @@ sp_e:   lhld RECP
         jz sp_en
         call proj
         jnc sp_en
+        call pk_adj
         lhld RECP
         mvi m,1
         inx h
@@ -1207,14 +1252,7 @@ sp_ce_hi: mvi a,47
 sp_ce1: pop h
         mov m,a
         inx h
-        lda SN
-        mov e,a
-        mvi d,0
-        push h
-        lxi h,BHTAB
-        dad d
-        mov a,m
-        pop h
+        lda BHV
         mov m,a
         inx h
         lda HWV
@@ -1225,9 +1263,8 @@ sp_ce1: pop h
         mov e,a
         mvi d,0
         push d
-        lxi h,BHTAB
-        dad d
-        mov c,m
+        lda BHV
+        mov c,a
         lxi h,WPTAB
         pop d
         dad d
@@ -1315,6 +1352,12 @@ sp_u0:  pop h
         inx h
         mov m,d
         inx h
+        lda NIDX+1
+        cpi NEN
+        mvi a,0
+        jc sp_t0
+        mvi a,1
+sp_t0:  mov m,a
         inx h
         lda NIDX+1
         mov m,a
@@ -1335,9 +1378,86 @@ sp_en:  lhld EPTR
         jnz sp_e
         ret
 
+; pk_adj: po proj: pre baliky (index >= NEN) zmensi sirku a vysku; vypocita BHV
+pk_adj: lda SN
+        mov e,a
+        mvi d,0
+        lxi h,BHTAB
+        dad d
+        mov b,m
+        lda NIDX+1
+        cpi NEN
+        jc pa_e
+        lda HWV
+        mov c,a
+        inr a
+        ora a
+        rar
+        mov d,a
+        mov a,c
+        sub d
+        mov e,a
+        mov a,d
+        sta HWV
+        mvi d,0
+        lhld C0V
+        dad d
+        shld C0V
+        mov a,b
+        inr a
+        ora a
+        rar
+        mov b,a
+pa_e:   mov a,b
+        sta BHV
+        ret
+
+; pickups: zber balickov nabojov (bunka hraca = bunka balicka)
+pickups: lxi h,ENEM+8*NEN
+        shld PKP
+        mvi a,NPK
+        sta NIDX
+pk_l:   lhld PKP
+        lxi d,4
+        dad d
+        mov a,m
+        ora a
+        jz pk_n
+        lhld PKP
+        inx h
+        mov b,m
+        lda PX+1
+        cmp b
+        jnz pk_n
+        inx h
+        inx h
+        mov b,m
+        lda PY+1
+        cmp b
+        jnz pk_n
+        lda AMMO
+        adi 10
+        cpi 100
+        jc pk_ok
+        mvi a,99
+pk_ok:  sta AMMO
+        lhld PKP
+        lxi d,4
+        dad d
+        mvi m,0
+pk_n:   lhld PKP
+        lxi d,8
+        dad d
+        shld PKP
+        lda NIDX
+        dcr a
+        sta NIDX
+        jnz pk_l
+        ret
+
 ; sprcol: dokresli rezy prisier pre stlpec COLIDX (stena v tom stlpci je vo vzdialenosti CURN)
 sprcol: lxi h,ESPR
-        mvi a,NEN
+        mvi a,NOBJ
         sta SCN
 scl:    shld RECP
         mov a,m
@@ -1396,7 +1516,16 @@ slice:  lhld RECP
         add a
         mov e,a
         mvi d,0
+        push d
+        lhld RECP
+        lxi d,14
+        dad d
+        mov a,m
+        ora a
         lxi h,TEX
+        jz sl_t1
+        lxi h,TEX2
+sl_t1:  pop d
         dad d
         shld TEXP
         lhld RECP
@@ -1508,6 +1637,12 @@ sh_l:   shld RECP
         ora a
         jz sh_n
         lhld RECP
+        lxi d,15
+        dad d
+        mov a,m
+        cpi NEN
+        jnc sh_n
+        lhld RECP
         lxi d,12
         dad d
         mov e,m
@@ -1618,7 +1753,13 @@ hd_go:  lda HEALTH
         call puts
         lda KILLS
         adi '0'
-        jmp PUTC
+        call PUTC
+        lda AMMO
+        ora a
+        lxi h,S_NOAM
+        jz puts
+        lxi h,S_BL
+        jmp puts
 puts:   mov a,m
         ora a
         rz
@@ -1676,12 +1817,14 @@ waitkey: mvi a,14
         jnz waitkey
         ret
 
+S_NOAM: DB " BEZ NABOJOV",0
+S_BL:   DB "            ",0
 S_T1:   DB "DOOM85",0
-S_T2:   DB "SIPKY = POHYB, MEZERNIK = STRELBA",0
-S_T3:   DB "ZABIJ VSECHNY PRISERY V BLUDISTI",0
-S_T4:   DB "STISKNI MEZERNIK",0
+S_T2:   DB "SIPKY = POHYB, MEDZERNIK = STRELBA",0
+S_T3:   DB "ZNICI VSETKY PRISERY V BLUDISKU",0
+S_T4:   DB "STLAC MEDZERNIK",0
 S_HP:   DB "ZDRAVIE ",0
 S_AM:   DB " NABOJE ",0
-S_KL:   DB " ZABITO ",0
-S_GO:   DB "KONEC HRY - ENTER = ZNOVU           ",0
-S_WIN:  DB "VITEZSTVI! - ENTER = ZNOVU          ",0
+S_KL:   DB " ZABITYCH ",0
+S_GO:   DB "KONIEC HRY - ENTER = ZNOVA           ",0
+S_WIN:  DB "VITAZSTVO! - ENTER = ZNOVA          ",0

@@ -23,3 +23,6 @@ postupné vykreslování zleva doprava.
 renderérem v Pythonu (`ref`), rozdíl musí být 0. Klávesy se simulují přes `Sim.inport[0xF5]`.
 
 `t_maze.py` ověří 48 vygenerovaných bludišť (okraj, bez diagonálních mezer, souvislost, umístění příšer); generování trvá cca 170 ms.
+
+## Náboje
+Hráč má 30 nábojů. V bludišti leží 5 balíčků (malá bedna na podlaze, 10 nábojů, nejvýš 99): sebere je, když vstoupí do buňky balíčku. Když náboje dojdou, HUD ukáže BEZ NABOJOV a střelba se ignoruje. Balíčky jsou v poli objektů za příšerami (index >= 4, vlastní textura `TEX2` a poloviční velikost).

@@ -61,7 +61,7 @@ if __name__ == '__main__':
     ang = int(sys.argv[1]) if len(sys.argv) > 1 else 0
     frame(s, syms)
     s.m[0x2F04] = ang
-    for i in range(4): s.m[0x2F94 + 8 * i] = 0
+    for i in range(9): s.m[0x3224 + 8 * i] = 0
     tc = frame(s, syms)
     print('T-cykly na snimku:', tc, '=> %.0f ms pri 2 MHz' % (tc / 2000))
     px = s.m[0x2F00] | s.m[0x2F01] << 8; py = s.m[0x2F02] | s.m[0x2F03] << 8

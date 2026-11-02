@@ -34,7 +34,7 @@ for k in range(6, 150, 3):
             if p in free and p not in seen: seen.add(p); st.append(p)
     if seen != free: ok = False
     for i in range(4):
-        ex = s.m[0x2F91 + 8*i]; ey = s.m[0x2F93 + 8*i]
+        ex = s.m[0x3221 + 8*i]; ey = s.m[0x3223 + 8*i]
         if (ex, ey) not in free or ((ex-1) + (ey-1)) < 8: ok = False
     if not ok: bad += 1
 print('behov', len(times), 'zle', bad, 'rozne mapy', len(seeds), 'T-cykly gen+init max', max(times), '= %.0f ms' % (max(times)/2000))

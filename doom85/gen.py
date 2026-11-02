@@ -95,6 +95,8 @@ def emit():
     tex = ["·X····X·", "·XGGGGX·", "·GXGGXG·", "XGGGGGGX", "X·GXXG·X", "X·GGGG·X", "··G··G··", "·XX··XX·"]
     cv = {'·': 0, 'X': 0x3F, 'G': 0x7F}
     db('TEX', [cv[tex[k][u]] for u in range(8) for k in range(8)], 8)
+    tex2 = ["XXXXXXXX", "XGGGGGGX", "XGXXXXGX", "XGXGGXGX", "XGXGGXGX", "XGXXXXGX", "XGGGGGGX", "XXXXXXXX"]
+    db('TEX2', [cv[tex2[k][u].replace('X', 'X').replace('.', '·')] for u in range(8) for k in range(8)], 8)
     en = []
     for (cx, cy) in ENEMIES:
         en += [(cx * 256 + 128) & 255, (cx * 256 + 128) >> 8, (cy * 256 + 128) & 255, (cy * 256 + 128) >> 8, 2, 0, 0, 0]
