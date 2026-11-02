@@ -42,7 +42,11 @@ def ref(px, py, ang):
         w = wp[n & 255]
         c = 32 - (w >> 1)
         p1, p2 = pat[((cell - 1) * 16 + ((n >> 4) & 15)) * 2: ((cell - 1) * 16 + ((n >> 4) & 15)) * 2 + 2]
-        rows = [0, 0] * c + [p1, p2] * w + [gen.FLOOR[0], gen.FLOOR[1]] * c
+        rows = [0, 0] * c + [p1, p2] * w
+        for r in range(len(rows), 128):
+            for end, q1, q2 in gen.FBANDS:
+                if r < end:
+                    rows.append(q1 if r % 2 == 0 else q2); break
         for r, b in enumerate(rows): vram[(r, col)] = b
     return vram
 

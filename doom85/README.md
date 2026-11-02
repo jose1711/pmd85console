@@ -7,7 +7,7 @@ Pohled z první osoby v assembleru 8080 (`doom.asm` + tabulky z `gen.py`, ~1,8 k
 - paprsek se posouvá po kroku 1/8 buňky; směr vychází z roviny kamery (`dir ± plane`), takže vzdálenost je rovnou kolmá
   (bez rybího oka) a počet kroků `n` je přímo index do tabulky výšky zdi. Krok se po `adi/aci` opravuje samomodifikací
   kódu (`mx1`, `mx2`, `my1`, `my2`) a počet kroků se počítá v SP (`dcx sp`, přerušení vypnuta)
-- stínování podle vzdálenosti: 6 úrovní (bílá, šedá = atribut jasu bit 6, šachovnice bílá a šedá, řídká šedá), strop černý, podlaha tečkovaná
+- stínování podle vzdálenosti: 6 úrovní (bílá, šedá = atribut jasu bit 6, šachovnice bílá a šedá, řídká šedá), strop černý, podlaha má 4 pásy jasu podle řádku (tma u obzoru, světlejší blíž)
 - klávesnice se čte přímo z matice (`out F4` = sloupec, `in F5` = řádky, 0 = stisknuto): šipky vlevo/vpravo otáčí,
   nahoru/dolů chodí
 

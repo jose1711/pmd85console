@@ -54,6 +54,12 @@ CURN    EQU 2F7DH
 COLIDX  EQU 2F7EH
 SCN     EQU 2F7FH
 TMPU    EQU 2F80H
+VP      EQU 2F84H
+FROW    EQU 2F86H
+FBP     EQU 2F87H
+FEND    EQU 2F89H
+FP1     EQU 2F8AH
+FP2     EQU 2F8BH
 ESPR    EQU 3010H
 LASTH   EQU 2F78H
 LASTA   EQU 2F79H
@@ -402,10 +408,44 @@ drawcol: mov e,a
         mov e,a
         lda P1
         call fill2
-        lda CP
+        shld VP
+        lda WP
+        adi 64
+        sta FROW
+        lxi h,FBANDS
+        shld FBP
+fl:     lhld FBP
+        mov a,m
+        ora a
+        rz
+        sta FEND
+        inx h
+        mov a,m
+        sta FP1
+        inx h
+        mov a,m
+        sta FP2
+        inx h
+        shld FBP
+        lda FROW
+        mov c,a
+        lda FEND
+        sub c
+        jc fl
+        jz fl
+        ora a
+        rar
         mov e,a
-        mvi a,FLOOR1
-        mvi d,FLOOR2
+        lda FEND
+        sta FROW
+        lda FP2
+        mov d,a
+        lhld VP
+        lxi b,0040H
+        lda FP1
+        call fill2
+        shld VP
+        jmp fl
 ; fill2: E dvojic riadkov so vzormi A, D (HL = adresa, BC = 64)
 fill2:  mov m,a
         dad b

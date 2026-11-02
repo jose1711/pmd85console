@@ -27,6 +27,8 @@ MASK = [0x7F, 0x7B, 0x77, 0x6D]
 LEVELS = [(0x3F, 0x3F), (0x7F, 0x7F), (0x2A, 0x15), (0x6A, 0x55), (0x61, 0x4C), (0x48, 0x41)]
 BANDS = [0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 5, 5, 5, 5]
 FLOOR = (0x48, 0x40)
+# podlaha: pasy podle radku pohledu (konec pasu, vzor sudy radek, vzor lichy radek); tma u obzoru, svetlejsi bliz
+FBANDS = [(80, 0x00, 0x00), (96, 0x48, 0x41), (112, 0x6A, 0x55), (128, 0x7F, 0x7F)]
 ENEMIES = [(13, 1), (14, 5), (10, 9), (14, 13)]
 
 
@@ -87,6 +89,7 @@ def emit():
     db('WPTAB', wp)
     db('PATTAB', pat)
     db('MAPSRC', mp)
+    db('FBANDS', [v for b in FBANDS for v in b] + [0])
     db('DIRTAB', dirt)
     db('HWTAB', hw)
     db('BHTAB', bh)
