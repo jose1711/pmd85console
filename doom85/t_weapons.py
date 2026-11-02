@@ -76,4 +76,13 @@ for f in range(40):
 held.clear()
 ok = s.m[E + 4] == 0 and s.m[KILLS] >= 1 and s.m[AMMO] == 30 and s.m[E + 8 + 4] == 1
 print('noz: blizka priserka zabita po', f + 1, 'snimkach, naboje', s.m[AMMO], 'vzdialena hp', s.m[E + 8 + 4], 'OK' if ok else 'CHYBA'); bad += not ok
+# klavesy: 1 = noz, 2 = pistol
+s, syms = mk()
+for key, exp in (((0, 1), 1), ((1, 1), 0)):
+    s.m[WPN] = 1 - exp
+    held.clear(); held.add(key)
+    for _ in range(3): t_doom.frame(s, syms)
+    held.clear()
+    ok = s.m[WPN] == exp; bad += not ok
+    print('klaves', 'cislica %d' % (key[0] + 1), '-> zbran', 'noz' if s.m[WPN] else 'pistol', 'OK' if ok else 'CHYBA')
 print('chyby', bad)

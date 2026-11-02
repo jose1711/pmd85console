@@ -389,15 +389,15 @@ ti_d:   mvi a,1CH
         shld CURSOR
         lxi h,S_T2
         call puts
-        lxi h,0D600H+4
+        lxi h,0D800H+4
         shld CURSOR
         lxi h,S_T3
         call puts
-        lxi h,0D800H+8
+        lxi h,0DC00H+8
         shld CURSOR
         lxi h,S_T5
         call puts
-        lxi h,0DC00H+22
+        lxi h,0E000H+22
         shld TCUR
         lxi h,S_LV
         mvi b,5
@@ -414,11 +414,11 @@ ti_l:   push h
         inx h
         dcr b
         jnz ti_l
-        lxi h,0F000H+4
+        lxi h,0F400H+4
         shld CURSOR
         lxi h,S_T6
         call puts
-        lxi h,0F400H+4
+        lxi h,0F800H+4
         shld CURSOR
         lxi h,S_T4
         call puts
@@ -556,7 +556,7 @@ tt_rd:  mov a,c
         jmp PUTC
 ; mark: oznaci zvolenu uroven znakom > pred riadkom
 mark:   mvi c,1
-        lxi d,0DC00H+20
+        lxi d,0E000H+20
 mk_l:   xchg
         shld CURSOR
         xchg
@@ -583,7 +583,7 @@ DIFFT:  DB 2,1,1,7,10,7,40,15
 DIFFS:  DB 0,0,1,3,2,3,3,4,4,5
 S_LV:   DB "1 LAHKA",0,"2 STREDNA",0,"3 NORMALNA",0,"4 TAZKA",0,"5 NOCNA MORA",0
 S_T5:   DB "OBTIAZNOST:",0
-S_T6:   DB "1 PISTOL   2 NOZ   M HUDBA",0
+S_T6:   DB "1 NOZ   2 PISTOL   M HUDBA",0
 
 ; rnd: A = nahodne cislo (16 bit LFSR, 8 krokov); zachova B, C
 rnd:    lhld SEED
@@ -805,7 +805,7 @@ wkey:   mvi a,0
         in 0F5H
         ani 2
         jnz wk1
-        xra a
+        mvi a,1
         sta WPN
         ret
 wk1:    mvi a,1
@@ -813,7 +813,7 @@ wk1:    mvi a,1
         in 0F5H
         ani 2
         rnz
-        mvi a,1
+        xra a
         sta WPN
         ret
 fire_key: mvi a,0
@@ -3399,7 +3399,7 @@ S_NOAM: DB " BEZ NABOJOV",0
 S_BL:   DB "            ",0
 S_T1:   DB "DOOM85",0
 S_T2:   DB "SIPKY = POHYB, MEDZERNIK = STRELBA",0
-S_T3:   DB "ZNICI VSETKY PRISERY V BLUDISKU",0
+S_T3:   DB "ZLIKVIDUJ VSETKY PRISERY V BLUDISKU",0
 S_T4:   DB "1-5 ALEBO SIPKY + MEDZERNIK",0
 S_HP:   DB "ZDRAVIE ",0
 S_AM:   DB " NABOJE ",0
