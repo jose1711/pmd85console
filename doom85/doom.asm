@@ -1476,6 +1476,8 @@ sp_e:   lhld RECP
         call proj
         jnc sp_en
         call pk_adj
+        call vis_chk
+        jnc sp_en
         lhld RECP
         xchg
         lhld SLP2
@@ -1648,6 +1650,29 @@ sp_en:  lhld EPTR
         dcr a
         sta NIDX
         jnz sp_e
+        ret
+
+; vis_chk: po pk_adj znovu overi, ci sprite (C0V, HWV) zasahuje do stlpcov 0-47; CY = viditelny
+vis_chk: lda HWV
+        add a
+        mov e,a
+        mvi d,0
+        lhld C0V
+        dad d
+        mov a,h
+        ora a
+        jm vc_no
+        lhld C0V
+        mov a,h
+        ora a
+        jm vc_yes
+        jnz vc_no
+        mov a,l
+        cpi 48
+        jnc vc_no
+vc_yes: stc
+        ret
+vc_no:  ora a
         ret
 
 ; pk_adj: po proj: pre baliky (index >= NEN) zmensi sirku a vysku; vypocita BHV
