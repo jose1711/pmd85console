@@ -90,8 +90,8 @@ def emit():
     db('DIRTAB', dirt)
     db('HWTAB', hw)
     db('BHTAB', bh)
-    tex = ["..XXXX..", ".XXXXXX.", ".XEXXEX.", "XXXXXXXX", "XXEEEEXX", "XXXXXXXX", ".XX..XX.", ".XX..XX."]
-    cv = {'.': 0, 'X': 0x3F, 'E': 0x40}
+    tex = ["·X····X·", "·XGGGGX·", "·GXGGXG·", "XGGGGGGX", "X·GXXG·X", "X·GGGG·X", "··G··G··", "·XX··XX·"]
+    cv = {'·': 0, 'X': 0x3F, 'G': 0x7F}
     db('TEX', [cv[tex[k][u]] for u in range(8) for k in range(8)], 8)
     en = []
     for (cx, cy) in ENEMIES:
