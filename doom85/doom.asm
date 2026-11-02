@@ -19,6 +19,7 @@ P2      EQU 4F14H
 KEYS    EQU 4F15H
 SAVESP  EQU 4F16H
 TYPT    EQU 4F2AH
+GDRW    EQU 4F2BH
 ZP      EQU 4F18H
 HEALTH  EQU 4F1AH
 AMMO    EQU 4F1BH
@@ -1117,6 +1118,8 @@ emit:   push psw
         sta COLIDX
         inr a
         sta CIDX
+        xra a
+        sta GDRW
         lda CURN
         call drawcol
         call sprcol
@@ -1348,7 +1351,9 @@ dc_full: lxi h,DIRTY
         mvi a,VH
         sta FLIM
         call floor_rows
-dc_done: lda COLIDX
+dc_done: mvi a,1
+        sta GDRW
+        lda COLIDX
         mov e,a
         mvi d,0
         lxi h,PWP
@@ -2592,7 +2597,9 @@ scn:    lda SCN
         ret
 
 ; slice: jeden stlpec prisery (zaznam v RECP)
-slice:  lda COLIDX
+slice:  mvi a,1
+        sta GDRW
+        lda COLIDX
         mov e,a
         mvi d,0
         lxi h,DIRTY
@@ -2692,7 +2699,10 @@ gp1:    mvi m,1
         dcr b
         jnz gp1
         ret
-guncol: lda COLIDX
+guncol: lda GDRW
+        ora a
+        rz
+        lda COLIDX
         cpi GCOL0
         rc
         cpi GCOL0+8
