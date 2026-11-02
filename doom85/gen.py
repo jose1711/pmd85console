@@ -88,7 +88,6 @@ def emit():
     db('MOVTAB', [v for m in mov for v in m], 16)
     db('WPTAB', wp)
     db('PATTAB', pat)
-    db('MAPSRC', mp)
     db('FBANDS', [v for b in FBANDS for v in b] + [0])
     db('DIRTAB', dirt)
     db('HWTAB', hw)
@@ -99,7 +98,6 @@ def emit():
     en = []
     for (cx, cy) in ENEMIES:
         en += [(cx * 256 + 128) & 255, (cx * 256 + 128) >> 8, (cy * 256 + 128) & 255, (cy * 256 + 128) >> 8, 2, 0, 0, 0]
-    db('ENEMINIT', en, 8)
     return '\n'.join(out) + '\n'
 
 

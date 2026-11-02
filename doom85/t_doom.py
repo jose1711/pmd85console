@@ -8,6 +8,12 @@ def boot():
     s = sim8080.Sim()
     s.m[org:org+len(code)] = code
     s.hooks[0x8500] = lambda m: None
+    cnt = [0]
+    def f5(m):
+        cnt[0] += 1
+        col = m.ports.get(0xF4, 0) & 15
+        return 0xEF if (40 <= cnt[0] < 46 and col == 0) else 0xFF
+    s.inport[0xF5] = f5
     s.pc = org
     return s, syms
 
@@ -23,8 +29,8 @@ def frame(s, syms, keys=None):
     s.run(50_000_000)
     return s.tcycles - t0
 
-def ref(px, py, ang):
-    ang_t, mov, wp, pat, mp = gen.tables()[:5]
+def ref(px, py, ang, mp):
+    ang_t, mov, wp, pat = gen.tables()[:4]
     r0x, r0y, ix, iy = ang_t[ang]
     sg = lambda v: v - 65536 if v & 0x8000 else v
     rx, ry = r0x, r0y
@@ -59,7 +65,8 @@ if __name__ == '__main__':
     tc = frame(s, syms)
     print('T-cykly na snimku:', tc, '=> %.0f ms pri 2 MHz' % (tc / 2000))
     px = s.m[0x2F00] | s.m[0x2F01] << 8; py = s.m[0x2F02] | s.m[0x2F03] << 8
-    rv = ref(px, py, s.m[0x2F04])
+    mp = [s.m[0x3000 + y * 256 + x] for y in range(16) for x in range(16)]
+    rv = ref(px, py, s.m[0x2F04], mp)
     bad = 0
     for (r, c), b in rv.items():
         if (22 <= c <= 25 and r >= 90): continue

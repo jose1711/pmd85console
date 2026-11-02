@@ -3,7 +3,9 @@
 Pohled z první osoby v assembleru 8080 (`doom.asm` + tabulky z `gen.py`, ~1,8 kB), pásku `DOOM85` sestaví `build.py`.
 
 - pohled 48 sloupců (jeden bajt = 6 bodů) × 128 řádků, 1 paprsek na sloupec, střed obrazovky je videopaměť od řádku 64 (`D000h`)
-- mapa 16×16 (`gen.py`, typy zdí 1–4 mají různé vzory), 64 úhlů otáčení, pohyb s kolizemi a klouzáním po zdi
+- mapa 16×16 se generuje při každé hře na PMD 85 (úvodní obrazovka, semínko z doby čekání na mezerník, LFSR): bludiště 7×7 buněk
+  (prohledávání do hloubky, `gen_maze`), 30 pokusů o proražení zdi, typy zdí 1–4 podle oblasti; zdi jsou celé buňky, takže nevzniknou diagonální
+  mezery a vše je spojené (`t_maze.py` to ověří pro 48 semínek); příšery na náhodných buňkách daleko od startu, 64 úhlů otáčení, pohyb s kolizemi a klouzáním po zdi
 - paprsek se posouvá po kroku 1/8 buňky; směr vychází z roviny kamery (`dir ± plane`), takže vzdálenost je rovnou kolmá
   (bez rybího oka) a počet kroků `n` je přímo index do tabulky výšky zdi. Krok se po `adi/aci` opravuje samomodifikací
   kódu (`mx1`, `mx2`, `my1`, `my2`) a počet kroků se počítá v SP (`dcx sp`, přerušení vypnuta)
@@ -19,3 +21,5 @@ postupné vykreslování zleva doprava.
 ## Testy
 `t_doom.py` spustí jednu snímku v simulátoru (`../mpy85/sim8080.py`) a porovná všech 6144 bajtů pohledu s referenčním
 renderérem v Pythonu (`ref`), rozdíl musí být 0. Klávesy se simulují přes `Sim.inport[0xF5]`.
+
+`t_maze.py` ověří 48 vygenerovaných bludišť (okraj, bez diagonálních mezer, souvislost, umístění příšer); generování trvá cca 170 ms.

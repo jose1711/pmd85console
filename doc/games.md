@@ -160,7 +160,7 @@ text, so it is slow (`fib(15)` is about 7 million instructions). Details, memory
 ### DOOM85
 
 A raycaster (a first person view like Wolfenstein 3D) written for this repo in 8080 assembly (`doom85/`, 1.8 kB), the tape `DOOM85`, `MGLD 00`, `JUMP 0100`
-for the PMD 85-1. 48 columns by 128 rows, 16x16 map with four wall types, shading by distance, collisions. Arrow left and right turn, up and down walk
+for the PMD 85-1. 48 columns by 128 rows, a 16x16 maze generated on the PMD 85 at the start of every game (the seed comes from the waiting on the title screen), four wall types, shading by distance, collisions. Arrow left and right turn, up and down walk
 (the pad: D-pad). It runs at about 6 to 10 frames per second (measured by cycle count in the simulator, not on the Pi) and draws straight into the
 visible video memory, so the picture is built from left to right. Details: [doom85/README.md](../doom85/README.md).
 

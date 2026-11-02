@@ -48,6 +48,13 @@ EYV     EQU 2F70H
 BESTN   EQU 2F72H
 BESTP   EQU 2F73H
 SGN     EQU 2F75H
+SEED    EQU 2FB0H
+CX      EQU 2FB2H
+CY      EQU 2FB3H
+NX      EQU 2FB4H
+NY      EQU 2FB5H
+STKP    EQU 2FB6H
+STK     EQU 2000H
 TEXP    EQU 2F76H
 RECP    EQU 2F7BH
 CURN    EQU 2F7DH
@@ -74,7 +81,8 @@ FLOOR2  EQU 40H
         ORG 0100H
 start:  lxi sp,STACKTOP
         di
-        call init_map
+        call title
+        call gen_maze
         call init_game
         mvi a,1CH
         call PUTC
@@ -97,8 +105,13 @@ main:   call keys
 init_game: lxi h,0180H
         shld PX
         shld PY
+        lda MAPHI*256+256+2
+        ora a
+        mvi a,0
+        jz ig_ang
+        mvi a,16
+ig_ang: sta ANG
         xra a
-        sta ANG
         sta KILLS
         sta FIREF
         sta FLASH
@@ -109,32 +122,290 @@ init_game: lxi h,0180H
         sta AMMO
         mvi a,0FFH
         sta LASTH
-        lxi h,ENEMINIT
-        lxi d,ENEM
-        mvi b,32
-ig1:    mov a,m
-        stax d
+        lxi h,ENEM
+        mvi b,NEN
+ig1:    push h
+ig2:    call rnd
+        ani 15
+        mov c,a
+        call rnd
+        ani 15
+        mov d,a
+        mov a,c
+        ani 1
+        jz ig2
+        mov a,d
+        ani 1
+        jz ig2
+        mov a,c
+        cpi 14
+        jnc ig2
+        mov a,d
+        cpi 14
+        jnc ig2
+        mov a,c
+        sui 1
+        mov e,a
+        mov a,d
+        sui 1
+        add e
+        cpi 8
+        jc ig2
+        pop h
+        mvi m,128
         inx h
-        inx d
+        mov m,c
+        inx h
+        mvi m,128
+        inx h
+        mov m,d
+        inx h
+        mvi m,2
+        inx h
+        mvi m,0
+        inx h
+        mvi m,0
+        inx h
+        mvi m,0
+        inx h
         dcr b
         jnz ig1
         ret
 
-init_map: lxi h,MAPSRC
-        mvi d,MAPHI
-im1:    mvi e,0
-        mvi b,16
-im2:    mov a,m
-        stax d
+; ---------------------------------------------------------------- uvodna obrazovka a generator bludiska
+title:  mvi a,1CH
+        call PUTC
+        lxi h,0D000H+12
+        shld CURSOR
+        lxi h,S_T1
+        call puts
+        lxi h,0D400H+4
+        shld CURSOR
+        lxi h,S_T2
+        call puts
+        lxi h,0D600H+4
+        shld CURSOR
+        lxi h,S_T3
+        call puts
+        lxi h,0DA00H+8
+        shld CURSOR
+        lxi h,S_T4
+        call puts
+tt_w:   lhld SEED
         inx h
+        shld SEED
+        mvi a,0
+        out 0F4H
+        in 0F5H
+        ani 10H
+        jz tt_ok
+        mvi a,14
+        out 0F4H
+        in 0F5H
+        ani 10H
+        jnz tt_w
+tt_ok:  lhld SEED
+        mov a,l
+        ori 1
+        mov l,a
+        shld SEED
+tt_r:   mvi a,0
+        out 0F4H
+        in 0F5H
+        ani 10H
+        jz tt_r
+        mvi a,14
+        out 0F4H
+        in 0F5H
+        ani 10H
+        jz tt_r
+        mvi a,1CH
+        jmp PUTC
+
+; rnd: A = nahodne cislo (16 bit LFSR, 8 krokov); zachova B, C
+rnd:    lhld SEED
+        mvi d,8
+rn1:    mov a,h
+        ora a
+        rar
+        mov h,a
+        mov a,l
+        rar
+        mov l,a
+        jnc rn2
+        mov a,h
+        xri 0B4H
+        mov h,a
+rn2:    dcr d
+        jnz rn1
+        shld SEED
+        mov a,l
+        ret
+
+; gen_maze: bludisko 7x7 buniek (DFS), steny typu 1-4, par prerazenych stien
+gen_maze: mvi d,MAPHI
+gm1:    mvi e,0
+        mvi b,16
+gm2:    mvi a,1
+        stax d
         inx d
         dcr b
-        jnz im2
+        jnz gm2
         inr d
         mov a,d
         cpi MAPHI+16
-        jnz im1
+        jnz gm1
+        mvi a,1
+        sta CX
+        sta CY
+        lxi h,MAPHI*256+1+256
+        mvi m,0
+        lxi h,STK
+        shld STKP
+        mvi m,1
+        inx h
+        mvi m,1
+        inx h
+        shld STKP
+gm_loop: lhld STKP
+        lxi d,STK
+        call cmp16
+        jz gm_done
+        dcx h
+        mov a,m
+        sta CY
+        dcx h
+        mov a,m
+        sta CX
+        call rnd
+        ani 3
+        mov c,a
+        mvi b,4
+gm_try: mov a,c
+        ani 3
+        mov e,a
+        mvi d,0
+        lxi h,DXT
+        dad d
+        lda CX
+        add m
+        sta NX
+        lxi h,DYT
+        dad d
+        lda CY
+        add m
+        sta NY
+        lda NX
+        cpi 1
+        jc gm_next
+        cpi 14
+        jnc gm_next
+        lda NY
+        cpi 1
+        jc gm_next
+        cpi 14
+        jnc gm_next
+        adi MAPHI
+        mov h,a
+        lda NX
+        mov l,a
+        mov a,m
+        ora a
+        jz gm_next
+        mvi m,0
+        lda CX
+        mov d,a
+        lda NX
+        add d
+        ora a
+        rar
+        mov l,a
+        lda CY
+        mov d,a
+        lda NY
+        add d
+        ora a
+        rar
+        adi MAPHI
+        mov h,a
+        mvi m,0
+        lhld STKP
+        lda NX
+        mov m,a
+        inx h
+        lda NY
+        mov m,a
+        inx h
+        shld STKP
+        jmp gm_loop
+gm_next: inr c
+        dcr b
+        jnz gm_try
+        lhld STKP
+        dcx h
+        dcx h
+        shld STKP
+        jmp gm_loop
+gm_done: mvi b,30
+gm_door: push b
+        call rnd
+        ani 15
+        mov c,a
+        call rnd
+        ani 15
+        mov b,a
+        mov a,c
+        cpi 1
+        jc gm_dn
+        cpi 14
+        jnc gm_dn
+        mov a,b
+        cpi 1
+        jc gm_dn
+        cpi 14
+        jnc gm_dn
+        mov a,b
+        xra c
+        ani 1
+        jz gm_dn
+        mov a,b
+        adi MAPHI
+        mov h,a
+        mov l,c
+        mvi m,0
+gm_dn:  pop b
+        dcr b
+        jnz gm_door
+        mvi d,MAPHI
+gm_ty1: mvi e,0
+gm_ty2: ldax d
+        ora a
+        jz gm_ty3
+        mov a,e
+        rrc
+        rrc
+        ani 3
+        mov b,a
+        mov a,d
+        sui MAPHI
+        rrc
+        rrc
+        ani 3
+        add b
+        ani 3
+        inr a
+        stax d
+gm_ty3: inr e
+        mov a,e
+        cpi 16
+        jnz gm_ty2
+        inr d
+        mov a,d
+        cpi MAPHI+16
+        jnz gm_ty1
         ret
+DXT:    DB 2,0,0FEH,0
+DYT:    DB 0,2,0,0FEH
 
 ; klavesnica: stlpec do F4, riadky z F5 (0 = stlacene)
 keys:   mvi a,12
@@ -1405,6 +1676,10 @@ waitkey: mvi a,14
         jnz waitkey
         ret
 
+S_T1:   DB "DOOM85",0
+S_T2:   DB "SIPKY = POHYB, MEZERNIK = STRELBA",0
+S_T3:   DB "ZABIJ VSECHNY PRISERY V BLUDISTI",0
+S_T4:   DB "STISKNI MEZERNIK",0
 S_HP:   DB "ZDRAVIE ",0
 S_AM:   DB " NABOJE ",0
 S_KL:   DB " ZABITO ",0
