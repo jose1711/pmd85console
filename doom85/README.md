@@ -26,3 +26,6 @@ renderérem v Pythonu (`ref`), rozdíl musí být 0. Klávesy se simulují přes
 
 ## Náboje
 Hráč má 30 nábojů. V bludišti leží 5 balíčků (malá bedna na podlaze, 10 nábojů, nejvýš 99): sebere je, když vstoupí do buňky balíčku. Když náboje dojdou, HUD ukáže BEZ NABOJOV a střelba se ignoruje. Balíčky jsou v poli objektů za příšerami (index >= 4, vlastní textura `TEX2` a poloviční velikost).
+
+## Zvuk
+Reproduktor je bit 2 portu C (`out F6`), program ho přepíná sám (čtvercová vlna, doba půlperiody = smyčky `dcr/jnz`). Efekty: výstřel (šum a pád tónu), zásah, smrt příšery (klesající tón), sebrání balíčku (dva vzestupné tóny), zranění, cvaknutí bez nábojů; úvodní obrazovka hraje melodii (32 not, `MUSTAB` z `gen.py`) a stejná melodie hraje ve hře po jedné notě (18 ms) na snímek, jen když neznělo něco jiného; klávesa M hudbu vypíná a zapíná. Znělky při prohře a výhře jsou v `JOVER` a `JWIN`.

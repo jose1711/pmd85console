@@ -47,6 +47,7 @@ class Sim:
         self.tcycles = 0
         self.inport = {}
         self.ports = {}
+        self.outhook = None
         self.stop = set()
 
     # helpers
@@ -225,6 +226,7 @@ class Sim:
         elif op == 0xD3:
             port = self.fetch()
             self.ports[port] = self.a
+            if self.outhook: self.outhook(port, self.a, self.tcycles)
         elif op == 0xDB:
             port = self.fetch()
             f = self.inport.get(port)

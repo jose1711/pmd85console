@@ -97,6 +97,18 @@ def emit():
     db('TEX', [cv[tex[k][u]] for u in range(8) for k in range(8)], 8)
     tex2 = ["XXXXXXXX", "XGGGGGGX", "XGXXXXGX", "XGXGGXGX", "XGXGGXGX", "XGXXXXGX", "XGGGGGGX", "XXXXXXXX"]
     db('TEX2', [cv[tex2[k][u].replace('X', 'X').replace('.', '·')] for u in range(8) for k in range(8)], 8)
+    notes = ['A3','C4','E4','C4','A3','C4','E4','A4','G3','B3','D4','B3','G3','B3','D4','G4',
+             'F3','A3','C4','A3','F3','A3','C4','F4','E3','G#3','B3','G#3','E3','G#3','B3','E4']
+    names = {'C': 0, 'C#': 1, 'D': 2, 'D#': 3, 'E': 4, 'F': 5, 'F#': 6, 'G': 7, 'G#': 8, 'A': 9, 'A#': 10, 'B': 11}
+    mus = []
+    for nt in notes:
+        n, o = nt[:-1], int(nt[-1])
+        f = 440.0 * 2 ** ((names[n] + 12 * (o + 1) - 69) / 12.0)
+        h = 1000000.0 / f
+        b = max(1, min(255, round((h - 40) / 30)))
+        c = max(2, round(0.018 * f))
+        mus += [b, c]
+    db('MUSTAB', mus, 8)
     en = []
     for (cx, cy) in ENEMIES:
         en += [(cx * 256 + 128) & 255, (cx * 256 + 128) >> 8, (cy * 256 + 128) & 255, (cy * 256 + 128) >> 8, 2, 0, 0, 0]

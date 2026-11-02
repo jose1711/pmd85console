@@ -78,6 +78,10 @@ NPK     EQU 5
 NOBJ    EQU 9
 BHV     EQU 2FB8H
 PKP     EQU 2FB9H
+MUSI    EQU 2FBBH
+MUSOFF  EQU 2FBCH
+SFXF    EQU 2FBDH
+MHELD   EQU 2FBEH
 CURSOR  EQU 0C03EH
 FLOOR1  EQU 48H
 FLOOR2  EQU 40H
@@ -91,6 +95,7 @@ start:  lxi sp,STACKTOP
         mvi a,1CH
         call PUTC
 main:   call keys
+        call mkey
         call pickups
         call ai
         call setup
@@ -99,6 +104,7 @@ main:   call keys
         call sprhit
         call gunstep
         call hud
+        call music
         lda HEALTH
         ora a
         jz gameover
@@ -235,7 +241,8 @@ title:  mvi a,1CH
         shld CURSOR
         lxi h,S_T4
         call puts
-tt_w:   lhld SEED
+tt_w:   call note
+        lhld SEED
         inx h
         shld SEED
         mvi a,0
@@ -493,7 +500,7 @@ fire_key: mvi a,0
         sta FHELD
         lda AMMO
         ora a
-        rz
+        jz sfx_click
         mvi a,1
         sta FIREF
         ret
@@ -986,6 +993,7 @@ ai_hit: lda HEALTH
         jnc ai_h2
         xra a
 ai_h2:  sta HEALTH
+        call sfx_hurt
 ai_done: pop h
         ret
 sgn10:  mov a,h
@@ -1445,6 +1453,7 @@ pk_ok:  sta AMMO
         lxi d,4
         dad d
         mvi m,0
+        call sfx_pick
 pk_n:   lhld PKP
         lxi d,8
         dad d
@@ -1705,6 +1714,7 @@ sh_n:   lhld RECP
         sta FLASH
         xra a
         sta FIREF
+        call sfx_shot
         lhld BESTP
         mov a,h
         ora l
@@ -1712,11 +1722,11 @@ sh_n:   lhld RECP
         lxi d,4
         dad d
         dcr m
-        rnz
+        jnz sfx_hit
         lda KILLS
         inr a
         sta KILLS
-        ret
+        jmp sfx_kill
 
 hud:    lda HEALTH
         mov b,a
@@ -1802,12 +1812,14 @@ gameover: lxi h,0FB00H
         shld CURSOR
         lxi h,S_GO
         call puts
+        call jingle_over
         call waitkey
         jmp start
 victory: lxi h,0FB00H
         shld CURSOR
         lxi h,S_WIN
         call puts
+        call jingle_win
         call waitkey
         jmp start
 waitkey: mvi a,14
@@ -1815,6 +1827,146 @@ waitkey: mvi a,14
         in 0F5H
         ani 10H
         jnz waitkey
+        ret
+
+; ---------------------------------------------------------------- zvuk (bit 2 portu C = reproduktor)
+; snd: B = oneskorenie (nesmie byt 0), C = pocet polperiod, E = krok oneskorenia (so znamienkom)
+snd:    mvi a,1
+        sta SFXF
+snd0:   mvi a,4
+        out 0F6H
+        mov d,b
+sn2:    dcr d
+        jnz sn2
+        mov d,b
+sn3:    dcr d
+        jnz sn3
+        xra a
+        out 0F6H
+        mov d,b
+sn4:    dcr d
+        jnz sn4
+        mov d,b
+sn5:    dcr d
+        jnz sn5
+        mov a,b
+        add e
+        mov b,a
+        dcr c
+        jnz snd0
+        xra a
+        out 0F6H
+        ret
+; noise: C = pocet polperiod
+noise:  mvi a,1
+        sta SFXF
+nz1:    call rnd
+        ani 3FH
+        adi 4
+        mov b,a
+        mvi a,4
+        out 0F6H
+        mov d,b
+nz2:    dcr d
+        jnz nz2
+        xra a
+        out 0F6H
+        mov d,b
+nz3:    dcr d
+        jnz nz3
+        dcr c
+        jnz nz1
+        ret
+sfx_shot: mvi c,40
+        call noise
+        mvi b,70
+        mvi c,10
+        mvi e,6
+        jmp snd
+sfx_hit: mvi b,55
+        mvi c,30
+        mvi e,2
+        jmp snd
+sfx_kill: mvi b,22
+        mvi c,110
+        mvi e,1
+        jmp snd
+sfx_hurt: mvi b,110
+        mvi c,10
+        mvi e,0
+        jmp snd
+sfx_click: mvi b,6
+        mvi c,6
+        mvi e,0
+        jmp snd
+sfx_pick: mvi b,48
+        mvi c,18
+        mvi e,0FEH
+        call snd
+        mvi b,30
+        mvi c,24
+        mvi e,0FFH
+        jmp snd
+jingle_over: lxi h,JOVER
+        jmp jingle
+jingle_win: lxi h,JWIN
+jingle: mov b,m
+        mov a,b
+        ora a
+        rz
+        inx h
+        mov c,m
+        inx h
+        push h
+        mvi e,0
+        call snd
+        pop h
+        jmp jingle
+JOVER:  DB 70,45,90,40,120,35,180,60,0
+JWIN:   DB 110,30,85,35,65,40,45,60,0
+; note: zahra dalsiu notu melodie (22 ms)
+note:   lda MUSI
+        mov e,a
+        mvi d,0
+        inr a
+        ani 31
+        sta MUSI
+        lxi h,MUSTAB
+        dad d
+        dad d
+        mov b,m
+        inx h
+        mov c,m
+        mvi e,0
+        jmp snd0
+; music: jedna nota za snimku, ak nezneli efekt a hudba nie je vypnuta
+music:  lda SFXF
+        ora a
+        jnz mu_clr
+        lda MUSOFF
+        ora a
+        rnz
+        jmp note
+mu_clr: xra a
+        sta SFXF
+        ret
+; mkey: kláves M prepina hudbu (stlpec 7, bit 4)
+mkey:   mvi a,7
+        out 0F4H
+        in 0F5H
+        ani 10H
+        jnz mk_up
+        lda MHELD
+        ora a
+        rnz
+        mvi a,1
+        sta MHELD
+        lda MUSOFF
+        xri 1
+        sta MUSOFF
+        ret
+mk_up:  xra a
+        sta MHELD
         ret
 
 S_NOAM: DB " BEZ NABOJOV",0
