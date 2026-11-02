@@ -164,6 +164,17 @@ for the PMD 85-1. 48 columns by 128 rows, 16x16 map with four wall types, shadin
 (the pad: D-pad). It runs at about 6 to 10 frames per second (measured by cycle count in the simulator, not on the Pi) and draws straight into the
 visible video memory, so the picture is built from left to right. Details: [doom85/README.md](../doom85/README.md).
 
+### Programs from the upstream simpmd, pmd85.uk and schotek.cz
+
+The old upstream repository (`ceresek/simpmd`, tapes of 2009 to 2012) has the tape directories `editors`, `languages`, `utilities` and `data` that this repo did not carry.
+Added (all started in the emulator and checked on the screen, the keys come from the menus of the programs): the editors `TEXTEDIT`, `IPOWORD`, `FLARE+`, `KARTOTEK`, `DAT-PMD`, the graphic
+editors `GREDIT`, `GRED`, `GREP`, `GRAFIKA`, `VEGRAP3X`, `VGRAPF` (the last three also from `pmd85.uk/pmd85_dos`, the DOS emulator of P. Chrenko), `ELEKTRO`, `MUSICA` and, in the
+category `Programovani`, the assemblers and debuggers `DDT`, `MRS`, `SYSTEL`, `DAM+2`, `DAM+9000`, `VMON`, `VMON9000` and the BASIC program `TESTLOG`.
+Not added: the copy utilities (`COPY`, `COPPY`, `COPYPLUS`, `OPTIMAX`, `TRANSFER`, `WELL+2`: they are for real tapes), the pictures and melodies of `data` (they need
+GR or MUSICA to be loaded), `KASWORD` (the header says autorun at `FFFF`, the program does not start), the source files of `DAM+2.*` and the other copies of the games
+(`pmd85.uk`, `pmd85.topindex.sk` = firmware of a hardware clone, `schotek.cz`: the same tapes; schotek has four other copies with the loader names `FRED +5`, `FLAPPY+S`,
+`BOULD +S` and `PENETR.S`, they run the same games on the models 1, 2 and 2A).
+
 ### DIKTATOR
 
 Text/economic game Diktátor (Don Priestley, DK'Tronics 1983, Czech translation František Fuka, FUXOFT) as a port of the ZX

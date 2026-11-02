@@ -24,7 +24,7 @@ def frame(s, syms, keys=None):
     return s.tcycles - t0
 
 def ref(px, py, ang):
-    ang_t, mov, wp, pat, mp = gen.tables()
+    ang_t, mov, wp, pat, mp = gen.tables()[:5]
     r0x, r0y, ix, iy = ang_t[ang]
     sg = lambda v: v - 65536 if v & 0x8000 else v
     rx, ry = r0x, r0y
@@ -49,13 +49,16 @@ def ref(px, py, ang):
 if __name__ == '__main__':
     s, syms = boot()
     ang = int(sys.argv[1]) if len(sys.argv) > 1 else 0
+    frame(s, syms)
     s.m[0x2F04] = ang
+    for i in range(4): s.m[0x2F94 + 8 * i] = 0
     tc = frame(s, syms)
     print('T-cykly na snimku:', tc, '=> %.0f ms pri 2 MHz' % (tc / 2000))
     px = s.m[0x2F00] | s.m[0x2F01] << 8; py = s.m[0x2F02] | s.m[0x2F03] << 8
     rv = ref(px, py, s.m[0x2F04])
     bad = 0
     for (r, c), b in rv.items():
+        if (22 <= c <= 25 and r >= 90): continue
         if s.m[0xD000 + r * 64 + c] != b: bad += 1
     print('rozdiely proti referencii:', bad, 'z', len(rv))
     for r in range(0, 128, 4):

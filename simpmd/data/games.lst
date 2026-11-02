@@ -78,6 +78,27 @@ KAREL3D2;1;MGLD 00, JUMP 0000;;;3D Karel v2.0 (M. Vittek): prikazy z klavesnice;
 KON;2;ROM basic2.rmm, FONT, TYPE LOAD 4, TYPE RUN;;;souradnice tahu z klavesnice, odpoved ANO nebo NE;;Deskove hry
 KRES;2;ROM basic2.rmm, FONT, TYPE LOAD 1, TYPE RUN;;;kresleni: F1-F12 (K0-K11) posouvaji pero (F2 nahoru, F8 dolu, F4 vlevo, F6 vpravo, F1 F3 F7 F9 sikmo, F5 F10 F11 F12 rychle);;Programy
 MPY85;1;MGLD 00, JUMP 0100;;;MPY85 = podmnozina Pythonu v assembleru 8080 (REPL): print, if/elif/else, while, for x in range, def/return vcetne rekurze, retezce, input, len, str, int, chr, ord, abs, peek, poke, and/or/not, += atd, cela cisla 16 bit a / je celociselne deleni, pismena se prevadeji na velka, Enter potvrzuje, Backspace nebo sipka vlevo maze, viceradkovy blok (za dvojteckou) ukoncete prazdnym radkem, Shift+8 a Shift+9 jsou zavorky, Shift+0 minus, Shift+strednik plus, Shift+apostrof hvezdicka, Shift+podtrzitko rovna se;;Programovani
+VEGRAP3X;1;MGLD 00, JUMP 0000;;;graficky editor (verze VEGRAP3X): v hornim radku je nabidka MENU 1 (PEN, PLOT, LUPA, WIND, CLS, RCL) odpovidajici funkcnim klavesam F1 az F12 (K0-K11);;Programy
+VGRAPF;1;MGLD 00, JUMP 0000;;;graficky editor (verze VGRAPF): v hornim radku je nabidka MENU 1 (PEN, PLOT, LUPA, WIND, CLS, RCL) odpovidajici funkcnim klavesam F1 az F12 (K0-K11);;Programy
+GRAFIKA;1;MGLD 00;;;GRAFIKA: kresleni (DEL nahoru, END dolu, sipky vlevo a vpravo, CLR a INS sikmo), M mazani, J jemny posun, G vymazani obrazovky, L nahrani obrazku z pasky, Z zapis, I napoveda;;Programy
+TESTLOG;2;ROM basic2.rmm, FONT, TYPE LOAD 0, TYPE RUN;;;test logickeho mysleni (BASIC-G): asi 20 otazek, odpovedi z klavesnice;;Programy
+GREDIT;1;MGLD 00, JUMP 0000;;;graficky editor GREDIT, ovladani podle nabidky na obrazovce;;Programy
+IPOWORD;1;MGLD 00;;;textovy procesor IPOWORD (IPOSOFT), ovladani podle nabidky na obrazovce;;Programy
+TEXTEDIT;1;MGLD 00, JUMP 0000;;;textovy editor TEXTEDIT, ovladani podle nabidky na obrazovce;;Programy
+DDT;1;MGLD 00, JUMP 6000;;;DDT: ladici program (monitor a disassembler) od adresy 6000, ovladani podle nabidky na obrazovce;;Programovani
+MRS;1;MGLD 00, JUMP 6000;;;MRS: assembler, monitor a debugger (menu ASSEMBLER-MONITOR-DEBUGGER-QUIT), ovladani podle nabidky na obrazovce;;Programovani
+SYSTEL;1;MGLD 00;;;SYSTEL (Elsoft, Kosice): system pro strojovy kod procesoru 8080, ovladani podle nabidky na obrazovce;;Programovani
+DAT-PMD;2;MGLD 00, JUMP 0000;;;databanka programu Dat PMD pro PMD 85-2, ovladani podle nabidky na obrazovce;;Programy
+ELEKTRO;2;MGLD 00, JUMP 0000;;;ELEKTRO (Ceres Soft): program s obrazky a vykladem, ovladani podle nabidky na obrazovce;;Programy
+FLARE+;2;MGLD 00, JUMP 5000;;;textovy editor Flare+, ovladani podle nabidky na obrazovce;;Programy
+GRED;2;MGLD 00;;;graficky editor GRED pro PMD 85-2 a 2A (S. Kneifl a K. Suhajda), ovladani podle nabidky na obrazovce;;Programy
+GREP;2;MGLD 00;;;graficky editor GREP2 (K. Suhajda), ovladani podle nabidky na obrazovce;;Programy
+KARTOTEK;2;MGLD 00, JUMP 0030;;;kartoteka KARTOTEKA, ovladani podle nabidky na obrazovce;;Programy
+MUSICA;2;MGLD 00, JUMP 7077;;;hudebni editor MUSICA (K. Suhajda, verze pro PMD 85-2, Ceres Soft 1988): I = instrukce, S = spusteni programu, ovladani podle nabidky na obrazovce;;Programy
+DAM+2;2;MGLD 00;;;DAM+2: univerzalni monitor a assembler (K. Suhajda, 1988), ovladani podle nabidky na obrazovce;;Programovani
+DAM+9000;2;MGLD 00, JUMP 9000;;;DAM+2 pro adresu 9000, ovladani podle nabidky na obrazovce;;Programovani
+VMON;2;MGLD 00, JUMP E900;;;VMON 2.1: monitor a debugger (Ceres Soft), ovladani podle nabidky na obrazovce;;Programovani
+VMON9000;2;MGLD 00, JUMP 9000;;;VMON 2.2 od adresy 9000 (Ceres Soft), ovladani podle nabidky na obrazovce;;Programovani
 KURA;1;MGLD 00, JUMP 0000;Space=F1,Return=F2,H=F8,I=F9,Left Shift=F12;Down left:F1,Down right:F2,Up left:F8,Up right:F9,New game:F12,Esc:Escape;F1 vlevo dole, F2 vpravo dole, F8 vlevo nahoru, F9 vpravo nahoru, F12 nova hra (pad: A, B, X, Y, LB);P;
 LAVICKA;2;ROM basic2.rmm, FONT, TYPE LOAD 0, TYPE RUN;;;F1 vlevo nahoru, F2 vlevo dolu, F9 vpravo dolu, F10 vpravo nahoru, odpovedi ANO/NIE z klavesnice;;
 LISSAJ;2;ROM basic2.rmm, FONT, TYPE LOAD 9, TYPE RUN;;;ukazka: bezi sama;;Dema
