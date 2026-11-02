@@ -434,7 +434,11 @@ ti_l:   push h
         shld CURSOR
         lxi h,S_T6
         call puts
-        lxi h,0F800H+4
+        lxi h,0F600H+4
+        shld CURSOR
+        lxi h,S_T7
+        call puts
+        lxi h,0FA00H+4
         shld CURSOR
         lxi h,S_T4
         call puts
@@ -609,6 +613,7 @@ DIFFS:  DB 0,0,1,3,2,3,3,4,4,5
 S_LV:   DB "1 LAHKA",0,"2 STREDNA",0,"3 NORMALNA",0,"4 TAZKA",0,"5 NOCNA MORA",0
 S_T5:   DB "OBTIAZNOST:",0
 S_T6:   DB "MEDZERNIK STRELBA  1 NOZ  2 PISTOL  M HUDBA",0
+S_T7:   DB ", . = UKROK VLAVO / VPRAVO",0
 
 ; rnd: A = nahodne cislo (16 bit LFSR, 8 krokov); zachova B, C
 rnd:    lhld SEED
@@ -824,9 +829,40 @@ k_nu:   mvi a,1
         out 0F4H
         in 0F5H
         ani 10H
-        jnz fire_key
+        jnz k_s
         call back
+k_s:    mvi a,8
+        out 0F4H
+        in 0F5H
+        ani 10H
+        jnz k_s2
+        call strafe_l
+k_s2:   mvi a,9
+        out 0F4H
+        in 0F5H
+        ani 10H
+        jnz fire_key
+        call strafe_r
         jmp fire_key
+; ukrok: krok kolmo na smer pohladu (uhol +-16 z 64), kolizia a klzanie ako pri chodzi
+strafe_l: lda ANG
+        push psw
+        sui 16
+        ani 3FH
+        sta ANG
+        call fwd
+        pop psw
+        sta ANG
+        ret
+strafe_r: lda ANG
+        push psw
+        adi 16
+        ani 3FH
+        sta ANG
+        call fwd
+        pop psw
+        sta ANG
+        ret
 wkey:   mvi a,0
         out 0F4H
         in 0F5H

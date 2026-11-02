@@ -75,9 +75,11 @@ Kód 5,6 kB (včetně textů), tabulky 12,2 kB (z toho tváře 10 kB), celkem 17
 - `t_weapons.py` ověří: střelec s přímou čarou zasáhne hráče (zdraví klesne o `PDMG`), zeď v čáře střelbu zastaví, nůž zabije blízkou příšeru bez spotřeby nábojů a vzdálená nedostane zásah.
 
 ## Ovládání na PMD 85
-Dopředu E, dozadu Y (podle zvyku her na PMD 85; na PC klávese Z), otáčení ← →, střelba mezerník, 1 nůž, 2 pistole, M hudba. Na titulce E a Y vybírají obtížnost, nebo číslice 1-5, mezerník potvrdí. Hra čte klávesnicovou matici přímo (`keys`: sloupec 2 bit 2 = E, sloupec 1 bit 4 = Y, 12 = ←, 14 = →). V `games.lst` je `REMAP` `Up=E,Down=Z`, takže šipky a D-pad ovladače dávají E a Y.
+Dopředu E, dozadu Y (podle zvyku her na PMD 85; na PC klávese Z), otáčení ← →, úkrok `,` (vlevo) a `.` (vpravo), střelba mezerník, 1 nůž, 2 pistole, M hudba. Na titulce E a Y vybírají obtížnost, nebo číslice 1-5, mezerník potvrdí. Hra čte klávesnicovou matici přímo (`keys`: sloupec 2 bit 2 = E, sloupec 1 bit 4 = Y, 12 = ←, 14 = →). V `games.lst` je `REMAP` `Up=E,Down=Z`, takže šipky a D-pad ovladače dávají E a Y.
 
 ## Mapka
 Vpravo dole (sloupce 40-47, řádky 196-243) je mapka bludiště 48x48 bodů, každá buňka 3x3 body (zdi šedé, bez příšer). `mapinit` ji při startu postaví do `MAPBM` (8 B x 48 řádků, bajt = 2 buňky) z mapy zdí, `maptick` ji při změně buňky hráče nebo směru pohledu (4 směry) překreslí a `mapdraw` přidá bílou značku hráče 3x3 a bod ve směru pohledu. `t_map.py` ověří bity mapky pro 8 náhodných poloh a směrů.
 
 Cena mapky: priemerná snímka při skriptovaném pohybu 120,4 ms s mapkou a 119,5 ms bez ní (0,7 %); `mapdraw` se zavolá jen při změně buňky nebo směru (4x za 59 snímků). `t_vars.py` hlídá, aby se proměnné v `4F00h-4FFFh` nepřekrývaly (dřív se `LASTMC` překrýval s `PRJP`, mapka se pak překreslovala každou snímku a stála 11,5 ms).
+
+Úkrok (`strafe_l`, `strafe_r`) je krok o ±16 z 64 uhlů od směru pohledu (kolmo), volá se stejná `fwd` (kolize po osách a klouzání po zdi), úhel pohledu se nemění; lze ho kombinovat s E a Y (diagonála je o ~41 % rychlejší). Klávesy: `,` = sloupec 8 bit 4, `.` = sloupec 9 bit 4. `t_weapons.py` ověří posun kolmo na pohled a nezměněný úhel.

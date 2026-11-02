@@ -107,3 +107,27 @@ held.clear()
 ok = s.m[AMMO] == 29; bad += not ok
 print('strelba pocas pohybu dozadu: naboje', s.m[AMMO], 'OK' if ok else 'CHYBA')
 print('chyby', bad)
+
+# ukrok: , vlavo a . vpravo - posun kolmo na smer pohladu (ANG 0 = +x, vpravo je +y), uhol sa nemeni
+for name, key, sgn in (('.', (9, 4), 1), (',', (8, 4), -1)):
+    s, syms = mk(); y, x = run_cell(s)
+    # kolmy pohyb potrebuje volnu bunku po stranach: pouzi stlpec (zvisly rad) cez hladanie
+    col = None
+    for cx in range(1, 15):
+        run = 0
+        for cy in range(1, 15):
+            run = run + 1 if s.m[0x5000 + cy * 256 + cx] == 0 else 0
+            if run >= 5: col = (cx, cy - 4); break
+        if col: break
+    cx, cy = col
+    clear(s)
+    s.m[PX:PX + 4] = bytes([128, cx, 128, cy + 1]); s.m[ANG] = 0                # pohlad +x, vpravo = +y
+    py0 = s.m[PY] | s.m[PY + 1] << 8; px0 = s.m[PX] | s.m[PX + 1] << 8
+    held.clear(); held.add(key)
+    for _ in range(4): t_doom.frame(s, syms)
+    held.clear()
+    py1 = s.m[PY] | s.m[PY + 1] << 8; px1 = s.m[PX] | s.m[PX + 1] << 8
+    ok = (py1 - py0) * sgn > 0 and px1 == px0 and s.m[ANG] == 0
+    bad += not ok
+    print('ukrok', name, 'dy', py1 - py0, 'dx', px1 - px0, 'uhol', s.m[ANG], 'OK' if ok else 'CHYBA')
+print('chyby', bad)
