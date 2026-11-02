@@ -86,3 +86,6 @@ Cena mapky: priemerná snímka při skriptovaném pohybu 120,4 ms s mapkou a 119
 
 ## Výška pohledu 192 řádků (větev `exp-vh192`)
 Pohled je 192 řádků (celá horní část obrazovky, spodek v řádku 192, pod ním HUD), `VH` je parametr (`DOOM_VH`), `VIDEO` se počítá z `192-VH`. Snímka při pohybu 126 ms oproti 122 ms při 128 řádcích (+3 %), protože rozdílové kreslení je na řádcích skoro nezávislé; plné překreslení (zdi s novým vzorem, začátek hry) je pomalejší (260 ms proti 222 ms).
+
+## STOP
+Klávesa STOP (bit 6 portu `F5`, aktivní v nule při čtení libovolného sloupce; na PC je to Ctrl) v hře i na obrazovce konce hry ukončí level a vrátí na titulku s výběrem obtížnosti (`jmp start`). Titulka ji nepoužívá. `t_stop.py` ověří oba případy.

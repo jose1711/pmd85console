@@ -613,7 +613,7 @@ DIFFS:  DB 0,0,1,3,2,3,3,4,4,5
 S_LV:   DB "1 LAHKA",0,"2 STREDNA",0,"3 NORMALNA",0,"4 TAZKA",0,"5 NOCNA MORA",0
 S_T5:   DB "OBTIAZNOST:",0
 S_T6:   DB "MEDZERNIK STRELBA  1 NOZ  2 PISTOL  M HUDBA",0
-S_T7:   DB ", . = UKROK VLAVO / VPRAVO",0
+S_T7:   DB ", . = UKROK    STOP = KONIEC LEVELU",0
 
 ; rnd: A = nahodne cislo (16 bit LFSR, 8 krokov); zachova B, C
 rnd:    lhld SEED
@@ -804,6 +804,10 @@ DYT:    DB 0,2,0,0FEH
 keys:   mvi a,12
         out 0F4H
         in 0F5H
+        mov b,a
+        ani 40H
+        jz start
+        mov a,b
         ani 4
         jnz k_nl
         lda ANG
@@ -2963,6 +2967,10 @@ victory: call faclev
 waitkey: mvi a,14
         out 0F4H
         in 0F5H
+        mov b,a
+        ani 40H
+        jz start
+        mov a,b
         ani 10H
         jnz waitkey
         ret
