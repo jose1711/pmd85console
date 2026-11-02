@@ -794,12 +794,23 @@ k_nr:   mvi a,13
         in 0F5H
         sta KEYS
         ani 2
+        jz k_f
+        mvi a,2
+        out 0F4H
+        in 0F5H
+        ani 4
         jnz k_nu
-        call fwd
+k_f:    call fwd
 k_nu:   lda KEYS
         ani 8
+        jz k_b
+        mvi a,1
+        out 0F4H
+        in 0F5H
+        ani 10H
         jnz fire_key
-        call back
+k_b:    call back
+        jmp fire_key
 wkey:   mvi a,0
         out 0F4H
         in 0F5H
@@ -3398,7 +3409,7 @@ S_KN:   DB " NOZ        ",0
 S_NOAM: DB " BEZ NABOJOV",0
 S_BL:   DB "            ",0
 S_T1:   DB "DOOM85",0
-S_T2:   DB "DEL / END = DOPREDU / DOZADU   <- -> = OTAC.",0
+S_T2:   DB "E / DEL DOPREDU   Y / END DOZADU   <- -> OTAC.",0
 S_T3:   DB "ZLIKVIDUJ VSETKY PRISERY V BLUDISKU",0
 S_T4:   DB "1-5 ALEBO DEL / END + MEDZERNIK",0
 S_HP:   DB "ZDRAVIE ",0

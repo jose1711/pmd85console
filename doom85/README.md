@@ -75,4 +75,4 @@ Kód 5,6 kB (včetně textů), tabulky 12,2 kB (z toho tváře 10 kB), celkem 17
 - `t_weapons.py` ověří: střelec s přímou čarou zasáhne hráče (zdraví klesne o `PDMG`), zeď v čáře střelbu zastaví, nůž zabije blízkou příšeru bez spotřeby nábojů a vzdálená nedostane zásah.
 
 ## Ovládání na PMD 85
-PMD 85 nemá samostatné šipky nahoru a dolů: pravý blok klávesnice má ← a → a nad a pod HOME klávesy DEL a END, které se v emulátorech mapují na šipky nahoru a dolů. Dopředu = DEL, dozadu = END, otáčení ← →, střelba mezerník, 1 nůž, 2 pistole, M hudba. Hra čte klávesnicovou matici přímo (`keys`: sloupec 12 = ←, 13 = DEL a END, 14 = →).
+PMD 85 nemá samostatné šipky nahoru a dolů: pravý blok klávesnice má ← a → a nad a pod HOME klávesy DEL a END, které se v emulátorech mapují na šipky nahoru a dolů. Dopředu = E (nebo DEL), dozadu = Y (nebo END), podle zvyku PMD 85 (E nahoru, Y dolů), otáčení ← →, střelba mezerník, 1 nůž, 2 pistole, M hudba. Hra čte klávesnicovou matici přímo (`keys`: sloupec 12 = ←, 13 = DEL a END, 14 = →, 2 = E, 1 = Y).

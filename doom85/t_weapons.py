@@ -85,4 +85,25 @@ for key, exp in (((0, 1), 1), ((1, 1), 0)):
     held.clear()
     ok = s.m[WPN] == exp; bad += not ok
     print('klaves', 'cislica %d' % (key[0] + 1), '-> zbran', 'noz' if s.m[WPN] else 'pistol', 'OK' if ok else 'CHYBA')
+# E dopredu, Y dozadu (a DEL, END): poloha hraca sa mení v smere pohľadu
+for name, key, sgn in (('E', (2, 2), 1), ('Y', (1, 4), -1), ('DEL', (13, 1), 1), ('END', (13, 3), -1)):
+    s, syms = mk(); y, x = run_cell(s)
+    clear(s)
+    s.m[PX:PX + 4] = bytes([128, x + 3, 128, y]); s.m[ANG] = 0
+    px0 = s.m[PX] | s.m[PX + 1] << 8
+    held.clear(); held.add(key)
+    for _ in range(5): t_doom.frame(s, syms)
+    held.clear()
+    px1 = s.m[PX] | s.m[PX + 1] << 8
+    ok = (px1 - px0) * sgn > 0 and s.m[PY + 1] == y
+    bad += not ok
+    print('kláves', name, 'posun x', px1 - px0, 'OK' if ok else 'CHYBA')
+# strelba pocas chodze dozadu (drzi sa END a medzernik naraz)
+s, syms = mk(); y, x = run_cell(s)
+clear(s); s.m[PX:PX + 4] = bytes([128, x + 3, 128, y]); s.m[ANG] = 0; s.m[WPN] = 0; s.m[AMMO] = 30
+held.clear(); held.add((13, 3)); held.add((0, 4))
+for _ in range(2): t_doom.frame(s, syms)
+held.clear()
+ok = s.m[AMMO] == 29; bad += not ok
+print('strelba pocas pohybu dozadu: naboje', s.m[AMMO], 'OK' if ok else 'CHYBA')
 print('chyby', bad)
