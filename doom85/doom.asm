@@ -18,6 +18,7 @@ P1      EQU 4F13H
 P2      EQU 4F14H
 KEYS    EQU 4F15H
 SAVESP  EQU 4F16H
+TYPT    EQU 4F2AH
 ZP      EQU 4F18H
 HEALTH  EQU 4F1AH
 AMMO    EQU 4F1BH
@@ -1130,15 +1131,37 @@ cast:   lxi h,0
         dad sp
         shld SAVESP
         lda CRX+1
-        sta mx1+1
+        mov c,a
         add a
+        sta mx1+1
         sbb a
         sta mx1+2
-        lda CRY+1
-        sta my1+1
+        mov a,c
         add a
         sbb a
+        mov b,a
+        xra a
+        sub c
+        sta rx1+1
+        mvi a,0
+        sbb b
+        sta rx1+2
+        lda CRY+1
+        mov c,a
+        add a
+        sta my1+1
+        sbb a
         sta my1+2
+        mov a,c
+        add a
+        sbb a
+        mov b,a
+        xra a
+        sub c
+        sta ry1+1
+        mvi a,0
+        sbb b
+        sta ry1+2
         lhld PY
         lxi d,MAPHI*256
         dad d
@@ -1158,14 +1181,37 @@ my1:    lxi b,0
         ldax b
         ora a
         jz mloop
-        mov b,a
+        sta TYPT
+rx1:    lxi b,0
+        dad b
+        xchg
+ry1:    lxi b,0
+        dad b
+        xchg
+        mov c,h
+        mov b,d
+        ldax b
+        ora a
+        jz rf_ev
+        sta TYPT
         lxi h,0
         dad sp
-        xchg
+        xra a
+        sub l
+        add a
+        dcr a
+        jmp rf_end
+rf_ev:  lxi h,0
+        dad sp
+        xra a
+        sub l
+        add a
+rf_end: mov c,a
         lhld SAVESP
         sphl
-        xra a
-        sub e
+        lda TYPT
+        mov b,a
+        mov a,c
         ret
 
 ; drawcol: A=n (vzdialenost), B=typ steny
