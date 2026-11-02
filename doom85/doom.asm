@@ -1503,43 +1503,48 @@ sm5:    mov a,c
         ora a
         rz
         jmp neg_hl
-; udiv: HL/DE bez znamienka -> HL podiel, DE zvysok
+; udiv: HL/DE bez znamienka -> HL podiel (len 6 bitov: podiel < 64, DE < 1024)
 udiv:   mov b,h
         mov c,l
-        lxi h,0
-        mvi a,16
-ud1:    push psw
-        mov a,c
-        add a
-        mov c,a
-        mov a,b
-        ral
-        mov b,a
-        mov a,l
-        ral
-        mov l,a
-        mov a,h
-        ral
-        mov h,a
-        mov a,l
-        sub e
-        mov a,h
-        sbb d
-        jc ud2
-        mov a,l
-        sub e
-        mov l,a
-        mov a,h
-        sbb d
-        mov h,a
-        inr c
-ud2:    pop psw
-        dcr a
-        jnz ud1
-        mov d,h
-        mov e,l
+        xchg
+        dad h
+        dad h
+        dad h
+        dad h
+        dad h
+        xchg
         mov h,b
         mov l,c
+        mvi b,6
+        mvi c,0
+ud1:    mov a,l
+        sub e
+        mov a,h
+        sbb d
+        jc ud0
+        mov a,l
+        sub e
+        mov l,a
+        mov a,h
+        sbb d
+        mov h,a
+        stc
+        jmp ud2
+ud0:    ora a
+ud2:    mov a,c
+        ral
+        mov c,a
+        mov a,d
+        ora a
+        rar
+        mov d,a
+        mov a,e
+        rar
+        mov e,a
+        dcr b
+        jnz ud1
+        mov l,c
+        mvi h,0
         ret
 
 ; ---------------------------------------------------------------- AI nepriatelov
