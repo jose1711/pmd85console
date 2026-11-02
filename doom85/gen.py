@@ -21,9 +21,9 @@ MAP = [
     "################",
 ]
 import os
-VH = int(os.environ.get('DOOM_VH', '128'))      # vyska pohladu v riadkoch (nasobok 8)
+VH = int(os.environ.get('DOOM_VH', '192'))      # vyska pohladu v riadkoch (nasobok 8)
 CEN = VH // 2
-VIDEO = 0xD000 + ((128 - VH) // 2) * 64
+VIDEO = 0xC000 + (192 - VH) * 64
 NANG = 64
 STEP = 32                 # dlzka kroku luca (v 1/256 bunky)
 PLANE = 0.66

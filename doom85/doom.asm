@@ -1,6 +1,6 @@
 ; doom85 - raycaster (Wolfenstein styl) pre PMD 85-1, i8080
 PUTC    EQU 8500H
-VIDEO   EQU 0D000H+((128-VH)/2)*64   ; pohlad 48 stlpcov x VH riadkov, vycentrovany v pasme 128 riadkov od riadku 64
+VIDEO   EQU 0C000H+(192-VH)*64   ; pohlad 48 stlpcov x VH riadkov, spodok pohladu je vzdy v riadku 192 (pod nim HUD)
 MAPHI   EQU 50H               ; mapa: 16 stranok po 16 bajtov (stranka = riadok y)
 STACKTOP EQU 7E00H
 PX      EQU 4F00H

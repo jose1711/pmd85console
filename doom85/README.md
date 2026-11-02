@@ -83,3 +83,6 @@ Vpravo dole (sloupce 40-47, řádky 196-243) je mapka bludiště 48x48 bodů, ka
 Cena mapky: priemerná snímka při skriptovaném pohybu 120,4 ms s mapkou a 119,5 ms bez ní (0,7 %); `mapdraw` se zavolá jen při změně buňky nebo směru (4x za 59 snímků). `t_vars.py` hlídá, aby se proměnné v `4F00h-4FFFh` nepřekrývaly (dřív se `LASTMC` překrýval s `PRJP`, mapka se pak překreslovala každou snímku a stála 11,5 ms).
 
 Úkrok (`strafe_l`, `strafe_r`) je krok o ±16 z 64 uhlů od směru pohledu (kolmo), volá se stejná `fwd` (kolize po osách a klouzání po zdi), úhel pohledu se nemění; lze ho kombinovat s E a Y (diagonála je o ~41 % rychlejší). Klávesy: `,` = sloupec 8 bit 4, `.` = sloupec 9 bit 4. `t_weapons.py` ověří posun kolmo na pohled a nezměněný úhel.
+
+## Výška pohledu 192 řádků (větev `exp-vh192`)
+Pohled je 192 řádků (celá horní část obrazovky, spodek v řádku 192, pod ním HUD), `VH` je parametr (`DOOM_VH`), `VIDEO` se počítá z `192-VH`. Snímka při pohybu 126 ms oproti 122 ms při 128 řádcích (+3 %), protože rozdílové kreslení je na řádcích skoro nezávislé; plné překreslení (zdi s novým vzorem, začátek hry) je pomalejší (260 ms proti 222 ms).
