@@ -142,5 +142,5 @@ def emit():
 
 
 if __name__ == '__main__':
-    open('tables.inc', 'w').write(emit())
+    open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tables.inc'), 'w').write(emit())
     print('ok')
