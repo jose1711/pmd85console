@@ -20,6 +20,7 @@ KEYS    EQU 4F15H
 SAVESP  EQU 4F16H
 TYPT    EQU 4F2AH
 GDRW    EQU 4F2BH
+COLHAS  EQU 5310H
 ZP      EQU 4F18H
 HEALTH  EQU 4F1AH
 AMMO    EQU 4F1BH
@@ -2223,7 +2224,13 @@ pj_no:  ora a
 ; ---------------------------------------------------------------- spritey po stlpcoch (bez blikania)
 ; zaznam prisery (16 B) na ESPR: +0 platny, +1 SN, +2 CS, +3 CE, +4 BH, +5 HW, +6/7 BASE, +8/9 USTEP,
 ; +10/11 UACC, +12/13 stred stlpca (so znamienkom), +15 poradie
-sprprep: lxi h,SLIST
+sprprep: lxi h,COLHAS
+        mvi b,48
+sp_cl:  mvi m,0
+        inx h
+        dcr b
+        jnz sp_cl
+        lxi h,SLIST
         shld SLP2
         xra a
         sta SLN
@@ -2421,6 +2428,23 @@ sp_t0:  mov m,a
         inx h
         lda NIDX+1
         mov m,a
+        lhld RECP
+        inx h
+        inx h
+        mov e,m
+        inx h
+        mov a,m
+        sub e
+        jc sp_en
+        inr a
+        mov c,a
+        mvi d,0
+        lxi h,COLHAS
+        dad d
+sp_cm:  mvi m,1
+        inx h
+        dcr c
+        jnz sp_cm
 sp_en:  lhld EPTR
         lxi d,8
         dad d
@@ -2542,9 +2566,15 @@ pk_n:   lhld PKP
         ret
 
 ; sprcol: dokresli rezy prisier pre stlpec COLIDX (stena v tom stlpci je vo vzdialenosti CURN)
-sprcol: lda SLN
+sprcol: lda COLIDX
+        mov e,a
+        mvi d,0
+        lxi h,COLHAS
+        dad d
+        mov a,m
         ora a
         rz
+        lda SLN
         sta SCN
         lxi h,SLIST
         shld SLP
