@@ -13,7 +13,8 @@ def tape(code, addr, name):
     return b'\xff' * 16 + b'\x00' * 16 + b'\x55' * 16 + h + code + bytes([sum(code) & 255])
 
 def source():
-    return open(os.path.join(HERE, 'doom.asm')).read() + gen.emit() + '        END start\n'
+    head = 'VH      EQU %d\nCEN     EQU VH/2\n' % gen.VH
+    return head + open(os.path.join(HERE, 'doom.asm')).read() + gen.emit() + '        END start\n'
 
 if __name__ == '__main__':
     org, code, syms = asm8080.assemble(source())

@@ -1,6 +1,6 @@
 ; doom85 - raycaster (Wolfenstein styl) pre PMD 85-1, i8080
 PUTC    EQU 8500H
-VIDEO   EQU 0D000H            ; riadok 64 videopamate, pohlad 48 stlpcov x 128 riadkov
+VIDEO   EQU 0D000H+((128-VH)/2)*64   ; pohlad 48 stlpcov x VH riadkov, vycentrovany v pasme 128 riadkov od riadku 64
 MAPHI   EQU 30H               ; mapa: 16 stranok po 16 bajtov (stranka = riadok y)
 STACKTOP EQU 7E00H
 PX      EQU 2F00H
@@ -23,7 +23,10 @@ HEALTH  EQU 2F1AH
 AMMO    EQU 2F1BH
 KILLS   EQU 2F1CH
 FIREF   EQU 2F1DH
-FLASH   EQU 2F1EH
+RECOIL  EQU 2F1EH
+PRECOIL EQU 2FD6H
+GTOP    EQU 2FD7H
+GPTR    EQU 2FD8H
 FHELD   EQU 2F1FH
 DXV     EQU 2F50H
 DYV     EQU 2F52H
@@ -90,6 +93,23 @@ SLN     EQU 2FC3H
 SLP     EQU 2FC4H
 SLP2    EQU 2FC6H
 SLIST   EQU 3270H
+PCELLV  EQU 2FE0H
+QH      EQU 2FE1H
+QT      EQU 2FE2H
+GRC     EQU 2FE3H
+GROWL   EQU 2FE4H
+CC      EQU 2FE5H
+NN      EQU 2FE6H
+BD      EQU 2FE7H
+KK      EQU 2FE8H
+K0      EQU 2FE9H
+PASS    EQU 2FEAH
+DCUR    EQU 2FEBH
+TXV     EQU 2FECH
+TYV     EQU 2FEDH
+STV     EQU 2FEEH
+SPDV    EQU 2FEFH
+AIP     EQU 2FF0H
 CIDX    EQU 2FC8H
 IX2     EQU 2FC9H
 IY2     EQU 2FCBH
@@ -121,9 +141,10 @@ main:   call keys
         call ai
         call setup
         call sprprep
+        call gunprep
         call render
-        call sprhit
         call gunstep
+        call sprhit
         call hud
         call music
         lda HEALTH
@@ -134,7 +155,11 @@ main:   call keys
         jz victory
         jmp main
 
-init_game: lxi h,PSIG
+init_game: mvi a,0FFH
+        sta PCELLV
+        xra a
+        sta GRC
+        lxi h,PSIG
         lxi d,DIRTY
         mvi b,48
         mvi a,0FFH
@@ -158,7 +183,8 @@ ig_ang: sta ANG
         xra a
         sta KILLS
         sta FIREF
-        sta FLASH
+        sta RECOIL
+        sta PRECOIL
         sta FHELD
         mvi a,1
         sta MUSOFF
@@ -208,9 +234,9 @@ ig2:    call rnd
         inx h
         mvi m,2
         inx h
-        mvi m,0
+        mov m,c
         inx h
-        mvi m,0
+        mov m,d
         inx h
         mvi m,0
         inx h
@@ -867,7 +893,7 @@ drawcol: mov e,a
         ora a
         rar
         sta NP
-        mvi a,64
+        mvi a,CEN
         sub b
         call rowaddr
         lda NP
@@ -878,7 +904,7 @@ drawcol: mov e,a
         lda P1
         call fill2
         lda OLDW
-        adi 64
+        adi CEN
         call rowaddr
         lda NP
         mov e,a
@@ -893,7 +919,7 @@ dc_shrink: mov a,c
         ora a
         rar
         sta NP
-        mvi a,64
+        mvi a,CEN
         sub c
         call rowaddr
         lda NP
@@ -903,12 +929,12 @@ dc_shrink: mov a,c
         lxi b,0040H
         call fill2
         lda WP
-        adi 64
+        adi CEN
         sta FROW
         call rowaddr
         shld VP
         lda OLDW
-        adi 64
+        adi CEN
         sta FLIM
         call floor_rows
         jmp dc_done
@@ -921,7 +947,7 @@ dc_full: lxi h,DIRTY
         ora a
         rar
         cma
-        adi 33
+        adi VH/4+1
         mov e,a
         xra a
         mov d,a
@@ -934,9 +960,9 @@ dc_full: lxi h,DIRTY
         call fill2
         shld VP
         lda WP
-        adi 64
+        adi CEN
         sta FROW
-        mvi a,128
+        mvi a,VH
         sta FLIM
         call floor_rows
 dc_done: lda COLIDX
@@ -1128,7 +1154,141 @@ ud2:    pop psw
         ret
 
 ; ---------------------------------------------------------------- AI nepriatelov
-ai:     lxi h,ENEM
+; Priserky chodia z bunky do bunky: v patrole nahodne (bez otocenia sa spat), ak je cesta k hracovi kratsia ako 10 buniek
+; (pri 15 sa vzdaju), nasleduju najkratsiu cestu z mapy vzdialenosti (BFS od bunky hraca, pocita sa pri zmene bunky hraca).
+; Zaznam (8 B): +0/1 x, +2/3 y (1/256 bunky), +4 hp, +5 cielova bunka x, +6 cielova bunka y, +7 smer (bity 0-1), bit 2 = naháňa
+QPAGE   EQU 21H
+SPD_PAT EQU 9
+SPD_CH  EQU 14
+OFFT:   DB 1,16,0FFH,0F0H
+DX1T:   DB 1,0,0FFH,0
+DY1T:   DB 0,1,0,0FFH
+; maddr: A = bunka (y*16+x) -> HL = adresa v mape;  dmaddr: -> HL = adresa v mape vzdialenosti (offset F0)
+maddr:  mov e,a
+        ani 0FH
+        mov l,a
+        mov a,e
+        rrc
+        rrc
+        rrc
+        rrc
+        ani 0FH
+        adi MAPHI
+        mov h,a
+        ret
+dmaddr: mov e,a
+        ani 0FH
+        adi 0F0H
+        mov l,a
+        mov a,e
+        rrc
+        rrc
+        rrc
+        rrc
+        ani 0FH
+        adi MAPHI
+        mov h,a
+        ret
+; nbr: A = smer 0-3 -> A = cislo susednej bunky od CC
+nbr:    mov e,a
+        mvi d,0
+        lxi h,OFFT
+        dad d
+        lda CC
+        add m
+        ret
+; bfs: vzdialenosti od bunky hraca (PCELLV), nezistene = FF
+bfs:    mvi d,MAPHI
+bf1:    mvi e,0F0H
+        mvi b,16
+bf2:    mvi a,0FFH
+        stax d
+        inx d
+        dcr b
+        jnz bf2
+        mov a,d
+        cpi MAPHI+16
+        jnz bf1
+        lda PCELLV
+        mov c,a
+        call dmaddr
+        mvi m,0
+        lxi h,QPAGE*256
+        mov m,c
+        xra a
+        sta QH
+        mvi a,1
+        sta QT
+bf_l:   lda QH
+        mov e,a
+        lda QT
+        cmp e
+        rz
+        mvi d,QPAGE
+        ldax d
+        sta CC
+        mov a,e
+        inr a
+        sta QH
+        lda CC
+        call dmaddr
+        mov a,m
+        inr a
+        sta BD
+        cpi 16
+        jnc bf_l
+        mvi a,4
+        sta KK
+bf_n:   lda KK
+        dcr a
+        call nbr
+        sta NN
+        call maddr
+        mov a,m
+        ora a
+        jnz bf_s
+        mov a,l
+        ori 0F0H
+        mov l,a
+        mov a,m
+        inr a
+        jnz bf_s
+        lda BD
+        mov m,a
+        lda QT
+        mov e,a
+        mvi d,QPAGE
+        lda NN
+        stax d
+        inr e
+        mov a,e
+        sta QT
+bf_s:   lxi h,KK
+        dcr m
+        jnz bf_n
+        jmp bf_l
+; ai: jedno kolo pohybu vsetkych priserok
+ai:     lda PY+1
+        add a
+        add a
+        add a
+        add a
+        mov b,a
+        lda PX+1
+        add b
+        lxi h,PCELLV
+        cmp m
+        jz ai_nb
+        mov m,a
+        call bfs
+ai_nb:  xra a
+        sta GROWL
+        lda GRC
+        ora a
+        jz ai_g0
+        dcr a
+        sta GRC
+ai_g0:  lxi h,ENEM
         mvi a,NEN
         sta NIDX
 ai_l:   push h
@@ -1140,7 +1300,41 @@ ai_l:   push h
         dcr a
         sta NIDX
         jnz ai_l
+        lda GROWL
+        ora a
+        rz
+        lda GRC
+        ora a
+        rnz
+        mvi a,14
+        sta GRC
+        jmp sfx_growl
+; clampv: HL (so znamienkom) -> HL orezane na +-SPDV
+clampv: lda SPDV
+        mov c,a
+        mov a,h
+        ora a
+        jm cl_n
+        jnz cl_p
+        mov a,l
+        cmp c
+        rc
+        rz
+cl_p:   mov l,c
+        mvi h,0
         ret
+cl_n:   cpi 0FFH
+        jnz cl_m
+        mov a,l
+        add c
+        rc
+cl_m:   mov a,c
+        cma
+        inr a
+        mov l,a
+        mvi h,0FFH
+        ret
+; ai1: HL = zaznam priserky
 ai1:    push h
         lxi d,4
         dad d
@@ -1148,22 +1342,38 @@ ai1:    push h
         pop h
         ora a
         rz
-        push h
-        mov e,m
+        shld AIP
+        mov a,m
+        sta EXV
         inx h
-        mov d,m
+        mov a,m
+        sta EXV+1
         inx h
-        mov c,m
+        mov a,m
+        sta EYV
         inx h
-        mov b,m
-        xchg
-        shld EXV
-        mov h,b
-        mov l,c
-        shld EYV
+        mov a,m
+        sta EYV+1
+        inx h
+        inx h
+        mov a,m
+        sta TXV
+        inx h
+        mov a,m
+        sta TYV
+        inx h
+        mov a,m
+        sta STV
+        ani 4
+        mvi a,SPD_PAT
+        jz ai_sp
+        mvi a,SPD_CH
+ai_sp:  sta SPDV
         lhld EXV
         xchg
-        lhld PX
+        lda TXV
+        mov h,a
+        mvi l,128
         mov a,l
         sub e
         mov l,a
@@ -1173,7 +1383,9 @@ ai1:    push h
         shld ADX
         lhld EYV
         xchg
-        lhld PY
+        lda TYV
+        mov h,a
+        mvi l,128
         mov a,l
         sub e
         mov l,a
@@ -1183,45 +1395,42 @@ ai1:    push h
         shld ADY
         lhld ADX
         call absHL
-        push h
+        mov a,h
+        ora a
+        jnz ai_mv
+        lda SPDV
+        cmp l
+        jc ai_mv
         lhld ADY
         call absHL
-        xchg
-        pop h
-        call cmp16
-        jnc ai_m1
-        xchg
-ai_m1:  lxi d,192
-        call cmp16
-        jc ai_hit
-        lxi d,3072
-        call cmp16
-        jnc ai_done
-        lhld ADX
-        call sgn10
+        mov a,h
+        ora a
+        jnz ai_mv
+        lda SPDV
+        cmp l
+        jc ai_mv
+        lda TXV
+        sta EXV+1
+        lda TYV
+        sta EYV+1
+        mvi a,128
+        sta EXV
+        sta EYV
+        call choose
+        jmp ai_st
+ai_mv:  lhld ADX
+        call clampv
         xchg
         lhld EXV
         dad d
-        push h
-        lhld EYV
-        xchg
-        pop h
-        call cellfree
-        jnz ai_y
         shld EXV
-ai_y:   lhld ADY
-        call sgn10
+        lhld ADY
+        call clampv
         xchg
         lhld EYV
         dad d
-        xchg
-        push d
-        lhld EXV
-        call cellfree
-        pop h
-        jnz ai_st
         shld EYV
-ai_st:  pop h
+ai_st:  lhld AIP
         lda EXV
         mov m,a
         inx h
@@ -1233,33 +1442,185 @@ ai_st:  pop h
         inx h
         lda EYV+1
         mov m,a
-        ret
-ai_hit: lda HEALTH
+        inx h
+        inx h
+        lda TXV
+        mov m,a
+        inx h
+        lda TYV
+        mov m,a
+        inx h
+        lda STV
+        mov m,a
+        lhld PX
+        xchg
+        lhld EXV
+        mov a,l
+        sub e
+        mov l,a
+        mov a,h
+        sbb d
+        mov h,a
+        call absHL
+        push h
+        lhld PY
+        xchg
+        lhld EYV
+        mov a,l
+        sub e
+        mov l,a
+        mov a,h
+        sbb d
+        mov h,a
+        call absHL
+        xchg
+        pop h
+        call cmp16
+        jnc ai_m1
+        xchg
+ai_m1:  lxi d,192
+        call cmp16
+        rnc
+        lda HEALTH
         sui 2
         jnc ai_h2
         xra a
 ai_h2:  sta HEALTH
-        call sfx_hurt
-ai_done: pop h
+        jmp sfx_hurt
+; settarget: A = smer -> TXV, TYV, STV
+settarget: mov c,a
+        mov e,a
+        mvi d,0
+        lxi h,DX1T
+        dad d
+        lda TXV
+        add m
+        sta TXV
+        lxi h,DY1T
+        dad d
+        lda TYV
+        add m
+        sta TYV
+        lda STV
+        ani 0FCH
+        ora c
+        sta STV
         ret
-sgn10:  mov a,h
+; choose: vyber dalsej cielovej bunky pre priserku v bunke (TXV, TYV)
+choose: lda TYV
+        add a
+        add a
+        add a
+        add a
+        mov b,a
+        lda TXV
+        add b
+        sta CC
+        call dmaddr
+        mov a,m
+        sta DCUR
+        lda STV
+        ani 4
+        jnz chs_in
+        lda DCUR
+        cpi 10
+        jnc chs_pat
+        lda STV
+        ori 4
+        sta STV
+        mvi a,1
+        sta GROWL
+        jmp chs_ch
+chs_in: lda DCUR
+        cpi 15
+        jc chs_ch
+        lda STV
+        ani 0FBH
+        sta STV
+        jmp chs_pat
+chs_ch: lda DCUR
         ora a
-        jm sg_n
-        jnz sg_p
-        mov a,l
-        cpi 16
-        jc sg_0
-sg_p:   lxi h,14
-        ret
-sg_n:   cpi 0FFH
-        jnz sg_m
-        mov a,l
-        cpi 0F0H
-        jnc sg_0
-sg_m:   lxi h,-14
-        ret
-sg_0:   lxi h,0
-        ret
+        rz
+        cpi 6
+        jnc chs_c1
+        mvi a,1
+        sta GROWL
+chs_c1: call rnd
+        ani 3
+        sta K0
+        mvi a,4
+        sta KK
+chs_c2: lda K0
+        ani 3
+        call nbr
+        sta NN
+        call maddr
+        mov a,m
+        ora a
+        jnz chs_cn
+        lda NN
+        call dmaddr
+        mov b,m
+        lda DCUR
+        cmp b
+        jc chs_cn
+        jz chs_cn
+        lda K0
+        ani 3
+        jmp settarget
+chs_cn: lda K0
+        inr a
+        sta K0
+        lxi h,KK
+        dcr m
+        jnz chs_c2
+chs_pat: call rnd
+        ani 3
+        sta K0
+        mvi a,4
+        sta KK
+        xra a
+        sta PASS
+chs_p1: lda K0
+        ani 3
+        mov b,a
+        lda PASS
+        ora a
+        jnz chs_p2
+        lda STV
+        ani 3
+        adi 2
+        ani 3
+        cmp b
+        jz chs_pn
+chs_p2: mov a,b
+        call nbr
+        sta NN
+        call maddr
+        mov a,m
+        ora a
+        jnz chs_pn
+        lda K0
+        ani 3
+        jmp settarget
+chs_pn: lda K0
+        inr a
+        sta K0
+        lxi h,KK
+        dcr m
+        jnz chs_p1
+        lda PASS
+        ora a
+        rnz
+        mvi a,1
+        sta PASS
+        mvi a,4
+        sta KK
+        jmp chs_p1
+sfx_growl: mvi b,170
+        mvi c,14
+        mvi e,2
+        jmp snd
 
 ; ---------------------------------------------------------------- spritey
 ; proj: HL = nepriatel -> CY ak je viditelny; SN, C0V, HWV
@@ -1540,7 +1901,7 @@ sp_ce1: pop h
         pop d
         dad d
         mov a,m
-        adi 64
+        adi CEN
         mov b,a
         mov a,c
         add a
@@ -1875,63 +2236,102 @@ sb_n:   dcr d
         ret
 
 ; zbran: stlpce 22..25
-guncol: lda COLIDX
-        cpi 22
-        rc
-        cpi 26
-        rnc
+; zbran: stlpce GCOL0..GCOL0+7 (bitmapa 8x10 buniek po 4 riadky, 0 = priehladne), pri vystrele odskok a zablesk
+GCOL0   EQU 20
+; gunprep: pred snimkou - poloha zbrane podla RECOIL; ak sa zmenila, prekresli jej stlpce cele
+gunprep: lda RECOIL
         mov e,a
         mvi d,0
-        lxi h,DIRTY
+        lxi h,GOFFT
         dad d
-        mvi m,1
-        sui 22
-        mov c,a
-        lda COLIDX
-        mov e,a
-        mvi d,0
-        lxi h,VIDEO+104*64
-        dad d
-        mov a,c
-        cpi 1
-        jz g_barrel
-        cpi 2
-        jz g_barrel
-        jmp g_flash
-g_barrel: lxi b,0040H
-        mvi e,12
-        mvi a,3FH
-        mov d,a
-        call fill2
-g_flash: lda FLASH
-        ora a
+        mov a,m
+        cma
+        adi VH-39
+        sta GTOP
+        lda RECOIL
+        lxi h,PRECOIL
+        cmp m
         rz
-        lda COLIDX
+        mov m,a
+        lxi h,DIRTY+GCOL0
+        mvi b,8
+gp1:    mvi m,1
+        inx h
+        dcr b
+        jnz gp1
+        ret
+guncol: lda COLIDX
+        cpi GCOL0
+        rc
+        cpi GCOL0+8
+        rnc
+        sui GCOL0
+        mov l,a
+        mvi h,0
+        mov d,h
         mov e,a
-        mvi d,0
-        lxi h,VIDEO+92*64
+        dad h
+        dad h
         dad d
+        dad h
+        lxi d,GUNT
+        dad d
+        shld GPTR
+        lda GTOP
+        call rowaddr
         lxi b,0040H
-        mvi e,6
+        mvi d,10
+        call gcells
+        lda RECOIL
+        cpi 3
+        rnz
         lda COLIDX
-        cpi 22
-        jz gf_a
-        cpi 25
-        jz gf_b
-        mvi a,3FH
-        mov d,a
-        jmp fill2
-gf_a:   mvi a,2AH
-        mvi d,15H
-        jmp fill2
-gf_b:   mvi a,15H
-        mvi d,2AH
-        jmp fill2
-gunstep: lda FLASH
+        cpi GCOL0+1
+        rc
+        cpi GCOL0+7
+        rnc
+        sui GCOL0+1
+        mov l,a
+        mvi h,0
+        mov e,a
+        mov d,h
+        dad h
+        dad d
+        lxi d,FLT
+        dad d
+        shld GPTR
+        lda GTOP
+        sui 12
+        call rowaddr
+        lxi b,0040H
+        mvi d,3
+gcells: push h
+        lhld GPTR
+        mov a,m
+        inx h
+        shld GPTR
+        pop h
+        ora a
+        jz gc_skip
+        mov m,a
+        dad b
+        mov m,a
+        dad b
+        mov m,a
+        dad b
+        mov m,a
+        dad b
+        jmp gc_n
+gc_skip: inr h
+gc_n:   dcr d
+        jnz gcells
+        ret
+GOFFT:  DB 0,1,3,6
+gunstep: lda RECOIL
         ora a
         rz
         dcr a
-        sta FLASH
+        sta RECOIL
         ret
 
 ; po vykresleni: zasah (strelba) a uberanie nabojov
@@ -2014,8 +2414,8 @@ sh_n:   lhld RECP
         lda AMMO
         dcr a
         sta AMMO
-        mvi a,2
-        sta FLASH
+        mvi a,3
+        sta RECOIL
         xra a
         sta FIREF
         call sfx_shot

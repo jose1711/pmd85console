@@ -19,6 +19,10 @@ MAP = [
     "#....44........#",
     "################",
 ]
+import os
+VH = int(os.environ.get('DOOM_VH', '128'))      # vyska pohladu v riadkoch (nasobok 8)
+CEN = VH // 2
+VIDEO = 0xD000 + ((128 - VH) // 2) * 64
 NANG = 64
 STEP = 32                 # dlzka kroku luca (v 1/256 bunky)
 PLANE = 0.66
@@ -28,7 +32,7 @@ LEVELS = [(0x3F, 0x3F), (0x7F, 0x7F), (0x2A, 0x15), (0x6A, 0x55), (0x61, 0x4C), 
 BANDS = [0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 5, 5, 5, 5]
 FLOOR = (0x48, 0x40)
 # podlaha: pasy podle radku pohledu (konec pasu, vzor sudy radek, vzor lichy radek); tma u obzoru, svetlejsi bliz
-FBANDS = [(80, 0x00, 0x00), (96, 0x48, 0x41), (112, 0x6A, 0x55), (128, 0x7F, 0x7F)]
+FBANDS = [(CEN + CEN // 4 * k, p, q) for k, (p, q) in enumerate([(0x00, 0x00), (0x48, 0x41), (0x6A, 0x55), (0x7F, 0x7F)], 1)]
 ENEMIES = [(13, 1), (14, 5), (10, 9), (14, 13)]
 
 
@@ -49,7 +53,7 @@ def tables():
         mov.append((int(round(math.cos(t) * 16)) & 255, int(round(math.sin(t) * 16)) & 255))
     wp = []
     for n in range(256):
-        h = 124 if n == 0 else min(124, max(4, 4 * round(1024 / n / 4)))
+        h = VH - 4 if n == 0 else min(VH - 4, max(4, 4 * round(VH * 8 / n / 4)))
         wp.append(h // 2)
     pat = []
     for ty in range(4):
@@ -64,7 +68,7 @@ def tables():
     bh = [0] * 256
     for n in range(256):
         hw[n] = 60 if n < 2 else min(60, max(1, round(87 / n)))
-        h = 124 if n == 0 else min(124, max(4, 4 * round(1024 / n / 4)))
+        h = VH - 4 if n == 0 else min(VH - 4, max(4, 4 * round(VH * 8 / n / 4)))
         bh[n] = max(1, round(0.75 * h / 8))
     mp = []
     for row in MAP:
@@ -114,6 +118,11 @@ def emit():
         v = 2048 // w if w else 0
         ust += [v & 255, v >> 8]
     db('USTEPTAB', ust, 16)
+    gun = ["..DGGD..", "..DXXD..", "..DXXD..", ".DGXXGD.", ".DGXXGD.", "DGXXXXGD", "DGXGGXGD", "DXXXXXXD", ".DGXXGD.", "..DDDD.."]
+    flash = ["X.GG.X", ".XXXX.", "XGXXGX"]
+    gv = {'.': 0, 'X': 0x3F, 'G': 0x7F, 'D': 0x40}
+    db('GUNT', [gv[gun[k][c]] for c in range(8) for k in range(10)], 10)
+    db('FLT', [gv[flash[k][c]] for c in range(6) for k in range(3)], 3)
     en = []
     for (cx, cy) in ENEMIES:
         en += [(cx * 256 + 128) & 255, (cx * 256 + 128) >> 8, (cy * 256 + 128) & 255, (cy * 256 + 128) >> 8, 2, 0, 0, 0]

@@ -39,3 +39,12 @@ Hráč má 30 nábojů. V bludišti leží 5 balíčků (malá bedna na podlaze,
 
 ## Zvuk
 Reproduktor je bit 2 portu C (`out F6`), program ho přepíná sám (čtvercová vlna, doba půlperiody = smyčky `dcr/jnz`). Efekty: výstřel (šum a pád tónu), zásah, smrt příšery (klesající tón), sebrání balíčku (dva vzestupné tóny), zranění, cvaknutí bez nábojů; úvodní obrazovka hraje melodii (32 not, `MUSTAB` z `gen.py`) a stejná melodie hraje ve hře po jedné notě (18 ms) na snímek, jen když neznělo něco jiného; klávesa M hudbu vypíná a zapíná. Znělky při prohře a výhře jsou v `JOVER` a `JWIN`.
+
+## Zbraň
+Pistole je bitmapa 8x10 buněk po 4 řádcích (`GUNT`, 0 = průhledné, `D` černý obrys, `G` šedá, `X` bílá) kreslená po sloupcích 20-27 hned za stěnou. Při výstřelu odskočí nahoru (`RECOIL` 3, 2, 1, 0 = 6, 3, 1, 0 řádků, `GOFFT`) a nad hlavní se na jednu snímku objeví záblesk (`FLT`). Sloupce zbraně se překreslují celé jen v snímku, kdy se její poloha změní (`gunprep`), jinak stačí zbraň překreslit přes rozdílově kreslenou stěnu.
+
+## Příšery: AI
+Příšera chodí po buňkách. V patrole zvolí na křižovatce náhodný směr (nevrací se, jen ve slepé uličce). Když je cesta k hráči kratší než 10 buněk, začne ho honit (vzdá to při 15) a v každé buňce zvolí souseda s menší vzdáleností z mapy `DMAP` (BFS od buňky hráče, `bfs`, počítá se jen při změně buňky hráče a jen do vzdálenosti 15, offset `F0` v řádcích mapy). Rychlost 9 (patrola) a 14 (honba) jednotek na snímek. Blízká honba ve vzdálenosti do 5 buněk vrčí (`sfx_growl`, nejvýš jednou za 14 snímků). `t_ai.py` ověří mapu vzdáleností proti BFS v Pythonu (0 chyb) a že příšery zůstávají v otevřených buňkách a chodí jen po sousedních.
+
+## Výška pohledu (měření)
+`VH` (výška pohledu v řádcích) je parametr: `DOOM_VH=96 python3 gen.py && python3 build.py`. Průměrná snímka při skriptovaném pohybu (`t_speed.py`, simulátor, 2 MHz): 128 řádků 130 ms, 112 řádků 129 ms, 96 řádků 128 ms, 80 řádků 126 ms, 64 řádky 124 ms. Rozdílové kreslení stěn spotřebuje málo času na řádky, takže zmenšení pohledu skoro nepomáhá. Zbytek (paprsky, sprity, režie sloupců) závisí na počtu sloupců, ne řádků. BFS prodlouží jednu snímku o asi 35 ms při každé změně buňky hráče (~ každých 16 snímků).

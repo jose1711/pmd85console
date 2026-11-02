@@ -2,7 +2,7 @@
 import sys, os
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', 'mpy85')); sys.path.insert(0, HERE)
-import t_doom
+import t_doom, gen
 DIRTY = 0x31C0
 UP, DOWN, LEFT, RIGHT, FIRE = (13, 1), (13, 3), (12, 2), (14, 2), (0, 4)
 
@@ -32,9 +32,9 @@ for keys, cnt in script:
         for i in range(48): B.m[DIRTY + i] = 1
         ta += t_doom.frame(A, symsA); tb += t_doom.frame(B, symsB)
         n += 1
-        if A.m[0xD000:0xD000 + 8192] != B.m[0xD000:0xD000 + 8192]:
+        if A.m[gen.VIDEO:gen.VIDEO + 8192] != B.m[gen.VIDEO:gen.VIDEO + 8192]:
             bad += 1
-            d = [i for i in range(8192) if A.m[0xD000 + i] != B.m[0xD000 + i]]
+            d = [i for i in range(8192) if A.m[gen.VIDEO + i] != B.m[gen.VIDEO + i]]
             print('rozdiel v snimke', n, 'pocet', len(d), 'prvy (riadok, stlpec)', divmod(d[0], 64))
 print('snimok', n, 'rozdielnych', bad, '| priemer T-cyklov delta %.0f plne %.0f (%.0f ms vs %.0f ms)' % (ta / n, tb / n, ta / n / 2000, tb / n / 2000))
 print('stav: zdravie', A.m[0x2F1A], 'naboje', A.m[0x2F1B], 'zabitych', A.m[0x2F1C], 'poloha', hex(A.m[0x2F00] | A.m[0x2F01] << 8), hex(A.m[0x2F02] | A.m[0x2F03] << 8))

@@ -54,10 +54,10 @@ def ref(px, py, ang, mp):
     vram = {}
     for col, (n, cell) in enumerate(cols):
         w = wp[n]
-        c = 32 - (w >> 1)
+        c = gen.VH // 4 - (w >> 1)
         p1, p2 = pat[((cell - 1) * 16 + ((n >> 4) & 15)) * 2: ((cell - 1) * 16 + ((n >> 4) & 15)) * 2 + 2]
         rows = [0, 0] * c + [p1, p2] * w
-        for r in range(len(rows), 128):
+        for r in range(len(rows), gen.VH):
             for end, q1, q2 in gen.FBANDS:
                 if r < end:
                     rows.append(q1 if r % 2 == 0 else q2); break
@@ -77,8 +77,8 @@ if __name__ == '__main__':
     rv = ref(px, py, s.m[0x2F04], mp)
     bad = 0
     for (r, c), b in rv.items():
-        if (22 <= c <= 25 and r >= 90): continue
-        if s.m[0xD000 + r * 64 + c] != b: bad += 1
+        if (20 <= c <= 27 and r >= gen.VH - 60): continue
+        if s.m[gen.VIDEO + r * 64 + c] != b: bad += 1
     print('rozdiely proti referencii:', bad, 'z', len(rv))
-    for r in range(0, 128, 4):
-        print(''.join(' .:*#'[min(4, bin(s.m[0xD000 + r * 64 + c] & 63).count('1') * 4 // 7)] for c in range(48)))
+    for r in range(0, gen.VH, 4):
+        print(''.join(' .:*#'[min(4, bin(s.m[gen.VIDEO + r * 64 + c] & 63).count('1') * 4 // 7)] for c in range(48)))
