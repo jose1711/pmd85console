@@ -1324,6 +1324,19 @@ proj:   push h
         pop d
         dad d
         shld DEPTH
+        lhld DEPTH
+        mov a,h
+        ora a
+        jm pj_no
+        ora l
+        jz pj_no
+        mov a,l
+        add a
+        mov a,h
+        ral
+        cpi 2
+        jc pj_no
+        sta SN
         lhld DYV
         xchg
         lda COSV
@@ -1342,19 +1355,6 @@ proj:   push h
         sbb d
         mov h,a
         shld SIDE
-        lhld DEPTH
-        mov a,h
-        ora a
-        jm pj_no
-        ora l
-        jz pj_no
-        mov a,l
-        add a
-        mov a,h
-        ral
-        cpi 2
-        jc pj_no
-        sta SN
         lhld DEPTH
         xchg
         lhld SIDE
