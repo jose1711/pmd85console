@@ -9,7 +9,7 @@ for i in range(14): s.m[0x5224 + 8 * i] = 0          # ziadne priserky
 import gen
 fn = os.path.join(HERE, 'faces_local.bin') if os.path.exists(os.path.join(HERE, 'faces_local.bin')) else os.path.join(HERE, 'faces.bin')
 fb = open(fn, 'rb').read()
-DST = 0xC000 + 194 * 64 + 20
+DST = 0xC000 + 196 * 64
 def shown():
     res = []
     for st in range(26):

@@ -116,7 +116,19 @@ FACETM  EQU 4FF3H
 FACEOV  EQU 4FF4H
 LHP     EQU 4FF5H
 LKL     EQU 4FF6H
-FACEDST EQU 0C000H+194*64+20
+FACEDST EQU 0C000H+196*64
+MAPDST  EQU 0C000H+196*64+40
+MAPBM   EQU 6200H
+TMP8    EQU 6380H
+HUDL1   EQU 0F580H+9
+HUDL2   EQU 0F980H+9
+HUDL3   EQU 0FD80H+9
+LASTMC  EQU 4F43H
+LASTMQ  EQU 4F44H
+MIY     EQU 4F45H
+MBP     EQU 4F46H
+SPX     EQU 4F48H
+SPY     EQU 4F49H
 FIDLE   EQU 4FF7H
 DIFFSEL EQU 4F30H
 NACT    EQU 4F31H
@@ -177,6 +189,7 @@ main:   call keys
         call sprhit
         call hud
         call facepick
+        call maptick
         call music
         lda HEALTH
         ora a
@@ -323,6 +336,9 @@ ig_sh:  mov a,m
         jnz ig_sh
 ig_ns:  xra a
         sta WPN
+        call mapinit
+        mvi a,0FFH
+        sta LASTMC
         lxi h,ENEM+8*NEN
         mvi b,NPK
 ip1:    push h
@@ -2822,37 +2838,35 @@ hud:    lda HEALTH
         rz
 hd_go:  lda WPN
         sta LASTW
-  lda HEALTH
+        lda HEALTH
         sta LASTH
         lda AMMO
         sta LASTA
         lda KILLS
         sta LASTK
-        lxi h,0FF00H
+        lxi h,HUDL1
         shld CURSOR
-        lxi h,S_HP
+        lxi h,S_HEALTH
         call puts
         lda HEALTH
         call pnum
-        lxi h,S_AM
+        lxi h,HUDL2
+        shld CURSOR
+        lxi h,S_AMMO
         call puts
         lda AMMO
         call pnum
-        lxi h,S_KL
+        lxi h,HUDL3
+        shld CURSOR
+        lxi h,S_KILLS
         call puts
         lda KILLS
-        adi '0'
+        call pnum
+        mvi a,'/'
         call PUTC
-        lda WPN
-        ora a
-        lxi h,S_KN
-        jnz puts
-        lda AMMO
-        ora a
-        lxi h,S_NOAM
-        jz puts
-        lxi h,S_BL
-        jmp puts
+        lda NACT
+        adi '0'
+        jmp PUTC
 puts:   mov a,m
         ora a
         rz
@@ -2893,7 +2907,7 @@ pp2:    call PUTC
 
 gameover: mvi a,25
         call facedraw
-        lxi h,0FF00H
+        lxi h,HUDL2
         shld CURSOR
         lxi h,S_GO
         call puts
@@ -2903,7 +2917,7 @@ gameover: mvi a,25
 victory: call faclev
         adi 20
         call facedraw
-        lxi h,0FF00H
+        lxi h,HUDL2
         shld CURSOR
         lxi h,S_WIN
         call puts
@@ -3405,6 +3419,215 @@ sfx_stab: mvi b,16
 sfx_swish: mvi c,10
         jmp noise
 TEXTT:  DW TEX,TEX2,TEX3,TEX4
+; ---------------------------------------------------------------- mapka (16x16 buniek po 3x3 bodoch = 48x48 bodov), bez priser
+; mapinit: zo steny bludiska postavi bitmapu MAPBM (8 B x 48 riadkov, bajt = 2 bunky)
+mapinit: lxi h,MAPBM
+        shld MBP
+        xra a
+        sta MIY
+mi_y:   mvi c,0
+mi_j:   lda MIY
+        adi MAPHI
+        mov h,a
+        mov a,c
+        add a
+        mov l,a
+        mov a,m
+        ora a
+        mvi a,0
+        jz mi_l
+        mvi a,7
+mi_l:   mov e,a
+        inx h
+        mov a,m
+        ora a
+        mvi a,0
+        jz mi_r
+        mvi a,38H
+mi_r:   ora e
+        jz mi_s
+        ori 40H
+mi_s:   push psw
+        lxi h,TMP8
+        mov e,c
+        mvi d,0
+        dad d
+        pop psw
+        mov m,a
+        inr c
+        mov a,c
+        cpi 8
+        jc mi_j
+        mvi b,3
+mi_t:   lxi h,TMP8
+        xchg
+        lhld MBP
+        xchg
+        mvi c,8
+mi_c:   mov a,m
+        stax d
+        inx h
+        inx d
+        dcr c
+        jnz mi_c
+        xchg
+        shld MBP
+        xchg
+        dcr b
+        jnz mi_t
+        lda MIY
+        inr a
+        sta MIY
+        cpi 16
+        jc mi_y
+        ret
+; maptick: pri zmene bunky hraca alebo smeru pohladu prekresli mapku s polohou hraca
+maptick: lda ANG
+        adi 8
+        rrc
+        rrc
+        rrc
+        rrc
+        ani 3
+        mov b,a
+        lda PY+1
+        add a
+        add a
+        add a
+        add a
+        mov c,a
+        lda PX+1
+        add c
+        mov c,a
+        lda LASTMC
+        cmp c
+        jnz mt_d
+        lda LASTMQ
+        cmp b
+        rz
+mt_d:   mov a,c
+        sta LASTMC
+        mov a,b
+        sta LASTMQ
+; mapdraw: MAPBM do videopamate + znacka hraca (3x3 body) a bod v smere pohladu
+mapdraw: lxi h,MAPBM
+        lxi d,MAPDST
+        mvi c,48
+md_r:   mvi b,8
+md_b:   mov a,m
+        stax d
+        inx h
+        inx d
+        dcr b
+        jnz md_b
+        push h
+        lxi h,56
+        dad d
+        xchg
+        pop h
+        dcr c
+        jnz md_r
+        lda LASTMC
+        mov b,a
+        ani 15
+        mov c,a
+        add a
+        add c
+        mov c,a
+        sta SPX
+        mov a,b
+        rrc
+        rrc
+        rrc
+        rrc
+        ani 15
+        mov c,a
+        add a
+        add c
+        sta SPY
+        mvi d,3
+md_y:   mvi e,3
+md_x:   lda SPX
+        add e
+        dcr a
+        mov b,a
+        lda SPY
+        add d
+        dcr a
+        mov c,a
+        push d
+        call setpix
+        pop d
+        dcr e
+        jnz md_x
+        dcr d
+        jnz md_y
+        lda LASTMQ
+        mov d,a
+        lda SPX
+        inr a
+        mov b,a
+        lda SPY
+        inr a
+        mov c,a
+        mov a,d
+        ora a
+        jnz mn_1
+        mov a,b
+        adi 2
+        mov b,a
+        jmp setpix
+mn_1:   cpi 1
+        jnz mn_2
+        mov a,c
+        adi 2
+        mov c,a
+        jmp setpix
+mn_2:   cpi 2
+        jnz mn_3
+        mov a,b
+        sui 2
+        mov b,a
+        jmp setpix
+mn_3:   mov a,c
+        sui 2
+        mov c,a
+; setpix: B = x, C = y (0-47) -> nastavi bod v mapke (6 bodov na bajt, bit 0 vlavo)
+setpix: mvi d,0
+        mov a,b
+sp_d:   cpi 6
+        jc sp_m
+        sui 6
+        inr d
+        jmp sp_d
+sp_m:   mov b,a
+        mvi a,1
+sp_s:   inr b
+        dcr b
+        jz sp_w
+        add a
+        dcr b
+        jmp sp_s
+sp_w:   mov e,a
+        mov l,c
+        mvi h,0
+        dad h
+        dad h
+        dad h
+        dad h
+        dad h
+        dad h
+        lxi b,MAPDST
+        dad b
+        mov a,d
+        mov c,a
+        mvi b,0
+        dad b
+        mov a,m
+        ora e
+        ani 3FH
+        mov m,a
+        ret
 S_KN:   DB " NOZ        ",0
 S_NOAM: DB " BEZ NABOJOV",0
 S_BL:   DB "            ",0
@@ -3412,8 +3635,8 @@ S_T1:   DB "DOOM85",0
 S_T2:   DB "E / DEL DOPREDU   Y / END DOZADU   <- -> OTAC.",0
 S_T3:   DB "ZLIKVIDUJ VSETKY PRISERY V BLUDISKU",0
 S_T4:   DB "1-5 ALEBO DEL / END + MEDZERNIK",0
-S_HP:   DB "ZDRAVIE ",0
-S_AM:   DB " NABOJE ",0
-S_KL:   DB " ZABITYCH ",0
-S_GO:   DB "KONIEC HRY - ENTER = ZNOVA           ",0
-S_WIN:  DB "VITAZSTVO! - ENTER = ZNOVA          ",0
+S_HEALTH: DB "HEALTH ",0
+S_AMMO: DB "AMMO   ",0
+S_KILLS: DB "KILLS  ",0
+S_GO:   DB "KONIEC HRY - ENTER = ZNOVA",0
+S_WIN:  DB "VITAZSTVO! - ENTER = ZNOVA",0
