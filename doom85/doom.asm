@@ -1243,13 +1243,6 @@ drawcol: mov e,a
         sta SIG
         mov c,a
         mvi b,0
-        lxi h,PATTAB
-        dad b
-        mov a,m
-        sta P1
-        inx h
-        mov a,m
-        sta P2
         lda COLIDX
         mov e,a
         mvi d,0
@@ -1269,6 +1262,8 @@ drawcol: mov e,a
         lda WP
         cmp c
         rz
+        call getpat
+        lda WP
         mov b,a
         mov a,c
         sta OLDW
@@ -1325,7 +1320,8 @@ dc_shrink: mov a,c
         sta FLIM
         call floor_rows
         jmp dc_done
-dc_full: lxi h,DIRTY
+dc_full: call getpat
+        lxi h,DIRTY
         dad d
         mvi m,0
         lhld COLP
@@ -1365,6 +1361,19 @@ dc_done: mvi a,1
         dad d
         lda SIG
         mov m,a
+        ret
+getpat: lda SIG
+        mov l,a
+        mvi h,0
+        push d
+        lxi d,PATTAB
+        dad d
+        pop d
+        mov a,m
+        sta P1
+        inx h
+        mov a,m
+        sta P2
         ret
 ; rowaddr: A = riadok pohladu (0-127) -> HL = adresa v stlpci COLIDX
 rowaddr: mov l,a
