@@ -770,35 +770,28 @@ cast:   lxi h,0
         sta mx1+1
         add a
         sbb a
-        sta mx2+1
+        sta mx1+2
         lda CRY+1
         sta my1+1
         add a
         sbb a
-        sta my2+1
+        sta my1+2
         lhld PY
+        lxi d,MAPHI*256
+        dad d
         xchg
         lhld PX
         lxi sp,0
-mloop:  mov a,l
-mx1:    adi 0
-        mov l,a
-        mov a,h
-mx2:    aci 0
-        mov h,a
+mloop:
+mx1:    lxi b,0
+        dad b
         xchg
-        mov a,l
-my1:    adi 0
-        mov l,a
-        mov a,h
-my2:    aci 0
-        mov h,a
+my1:    lxi b,0
+        dad b
         xchg
         dcx sp
         mov c,h
-        mov a,d
-        adi MAPHI
-        mov b,a
+        mov b,d
         ldax b
         ora a
         jz mloop

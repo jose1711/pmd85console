@@ -19,6 +19,8 @@ Stěny se kreslí rozdílově: pro každý sloupec se pamatuje výška a vzor z 
 ## Paprsky: interpolace (7,4 snímku/s)
 Paprsek se vrhá jen pro sudé sloupce a sloupec 47 (v bludišti v průměru 27 z 48). Lichý sloupec se vypočítá ze sousedů, pokud trefili stejnou buňku a vzdálenosti se liší nejvýš o 4 (`n = (levý + pravý) / 2`), jinak se jeho paprsek vrhne. Proti plnému vrhání se na 400 náhodných pohledech nelišila buňka ani jednou, `n` se lišilo nejvýš o 2 (průměr 0,06). `t_speed.py` měří průměrnou snímku při skriptovaném pohybu: 162 ms -> 135 ms (hudba ve hře je od teď vypnutá, M ji zapne).
 
+**Krok paprsku:** `lxi b,krok / dad b` s opraveným 16bitovým krokem (obě složky se zapisují do kódu přímo jako 16bitová čísla) místo `adi/aci` po bajtech a souřadnice Y je posunutá o `MAPHI*256`, takže ukazatel do mapy se skládá jen z `mov c,h / mov b,d`. Krok paprsku: 129 -> 89 cyklů, `cast` 38 -> 27 ms, snímka při pohybu 135 -> 128 ms (7,8 snímku/s). Zkoušeno: hrubší krok paprsku (x2 až x4) s doladěním jemnými kroky mění výsledek u 0,9 % až 2,7 % sloupců, proto se nepoužívá.
+
 **Zkoušený a zahozený nápad: DDA.** Paprsek po hranicích buněk (tabulka převrácených hodnot a násobení čtvrtkvadráty pro počáteční vzdálenosti) sedí s referencí bit po bitu, ale na 8080 je pomalejší (180 ms proti 162 ms): příprava paprsku (dvě násobení 16x8) stojí víc, než ušetří kratší smyčka, protože průměrný paprsek v bludišti vrhá jen asi 21 kroků po 1/8 buňky.
 
 ## Rychlost (původní měření)
