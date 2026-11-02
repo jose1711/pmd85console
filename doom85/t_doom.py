@@ -30,22 +30,30 @@ def frame(s, syms, keys=None):
     return s.tcycles - t0
 
 def ref(px, py, ang, mp):
+    """referencny render: luce pre parne stlpce a 47, nepárne interpolovane (presne ako v assembleri)"""
     ang_t, mov, wp, pat = gen.tables()[:4]
     r0x, r0y, ix, iy = ang_t[ang]
-    sg = lambda v: v - 65536 if v & 0x8000 else v
-    rx, ry = r0x, r0y
-    vram = {}
-    for col in range(48):
+    R = [((r0x + c * ix) & 0xFFFF, (r0y + c * iy) & 0xFFFF) for c in range(48)]
+    def cast(rx, ry):
         sdx = (rx >> 8) & 255; sdy = (ry >> 8) & 255
-        rx = (rx + ix) & 0xFFFF; ry = (ry + iy) & 0xFFFF
         sx = sdx if sdx < 128 else sdx - 256
         sy = sdy if sdy < 128 else sdy - 256
         x, y, n = px, py, 0
         while True:
             x = (x + sx) & 0xFFFF; y = (y + sy) & 0xFFFF; n += 1
             cell = mp[((y >> 8) & 255) * 16 + ((x >> 8) & 255)] if (y >> 8) < 16 and (x >> 8) < 16 else 1
-            if cell: break
-        w = wp[n & 255]
+            if cell: return n & 255, cell
+    cols = [None] * 48
+    cols[0] = cast(*R[0])
+    for c in range(1, 46, 2):
+        right = cast(*R[c + 1]); ln, lc = cols[c - 1]; rn, rc = right
+        if lc == rc and abs(ln - rn) < 5: cols[c] = ((ln + rn) >> 1, lc)
+        else: cols[c] = cast(*R[c])
+        cols[c + 1] = right
+    cols[47] = cast(*R[47])
+    vram = {}
+    for col, (n, cell) in enumerate(cols):
+        w = wp[n]
         c = 32 - (w >> 1)
         p1, p2 = pat[((cell - 1) * 16 + ((n >> 4) & 15)) * 2: ((cell - 1) * 16 + ((n >> 4) & 15)) * 2 + 2]
         rows = [0, 0] * c + [p1, p2] * w

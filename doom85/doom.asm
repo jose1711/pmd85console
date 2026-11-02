@@ -90,6 +90,16 @@ SLN     EQU 2FC3H
 SLP     EQU 2FC4H
 SLP2    EQU 2FC6H
 SLIST   EQU 3270H
+CIDX    EQU 2FC8H
+IX2     EQU 2FC9H
+IY2     EQU 2FCBH
+CRX     EQU 2FCDH
+CRY     EQU 2FCFH
+LN      EQU 2FD1H
+LC      EQU 2FD2H
+RN      EQU 2FD3H
+RC      EQU 2FD4H
+PCN     EQU 2FD5H
 PWP     EQU 3160H
 PSIG    EQU 3190H
 DIRTY   EQU 31C0H
@@ -150,6 +160,8 @@ ig_ang: sta ANG
         sta FIREF
         sta FLASH
         sta FHELD
+        mvi a,1
+        sta MUSOFF
         mvi a,100
         sta HEALTH
         mvi a,30
@@ -618,35 +630,152 @@ su1:    mov a,m
         jnz su1
         ret
 
-render: lxi h,0
-        dad sp
-        shld SAVESP
-        lxi h,ZBUF
+; render: lúče sa vrhajú len pre parné stlpce (a stlpec 47), nepárne sa interpoluju z oboch susedov,
+; ak trafili tú istú bunku a vzdialenosti sa lisia najviac o 4; inak sa vrhne aj ich lúč
+render: lxi h,ZBUF
         shld ZP
         lxi h,VIDEO
         shld COLP
-        mvi a,48
-        sta COLN
-rcol:   lda RX+1
-        sta mx1+1
-        add a
-        sbb a
-        sta mx2+1
-        lda RY+1
-        sta my1+1
-        add a
-        sbb a
-        sta my2+1
+        xra a
+        sta CIDX
+        lhld IX
+        dad h
+        shld IX2
+        lhld IY
+        dad h
+        shld IY2
+        lhld RX
+        shld CRX
+        lhld RY
+        shld CRY
+        call cast
+        sta LN
+        mov a,b
+        sta LC
+        lda LN
+        call emit
+        mvi a,23
+        sta PCN
+pair:   lhld RX
+        xchg
+        lhld IX2
+        dad d
+        shld RX
+        shld CRX
+        lhld RY
+        xchg
+        lhld IY2
+        dad d
+        shld RY
+        shld CRY
+        call cast
+        sta RN
+        mov a,b
+        sta RC
+        lda LC
+        cmp b
+        jnz pr_cast
+        lda RN
+        mov c,a
+        lda LN
+        sub c
+        jnc pr_a
+        cma
+        inr a
+pr_a:   cpi 5
+        jnc pr_cast
+        lda RN
+        mov c,a
+        lda LN
+        add c
+        rar
+        mov c,a
+        lda LC
+        mov b,a
+        mov a,c
+        jmp pr_emit
+pr_cast: lhld RX
+        xchg
+        lhld IX
+        mov a,e
+        sub l
+        mov l,a
+        mov a,d
+        sbb h
+        mov h,a
+        shld CRX
+        lhld RY
+        xchg
+        lhld IY
+        mov a,e
+        sub l
+        mov l,a
+        mov a,d
+        sbb h
+        mov h,a
+        shld CRY
+        call cast
+pr_emit: call emit
+        lda RN
+        mov c,a
+        sta LN
+        lda RC
+        sta LC
+        mov b,a
+        mov a,c
+        call emit
+        lda PCN
+        dcr a
+        sta PCN
+        jnz pair
         lhld RX
         xchg
         lhld IX
         dad d
-        shld RX
+        shld CRX
         lhld RY
         xchg
         lhld IY
         dad d
-        shld RY
+        shld CRY
+        call cast
+        jmp emit
+
+; emit: A=n, B=typ steny: ulozi vzdialenost, nakresli stlpec, prisery a zbran
+emit:   push psw
+        lhld ZP
+        mov m,a
+        inx h
+        shld ZP
+        pop psw
+        sta CURN
+        lda CIDX
+        sta COLIDX
+        inr a
+        sta CIDX
+        lda CURN
+        call drawcol
+        call sprcol
+        call guncol
+        lhld COLP
+        inx h
+        shld COLP
+        ret
+
+; cast: luc podla (CRX, CRY) -> A = n, B = typ steny (krokovanie po 1/8 bunky, SP je pocitadlo krokov)
+cast:   lxi h,0
+        dad sp
+        shld SAVESP
+        lda CRX+1
+        sta mx1+1
+        add a
+        sbb a
+        sta mx2+1
+        lda CRY+1
+        sta my1+1
+        add a
+        sbb a
+        sta my2+1
         lhld PY
         xchg
         lhld PX
@@ -681,28 +810,6 @@ my2:    aci 0
         sphl
         xra a
         sub e
-        push psw
-        lhld ZP
-        mov m,a
-        inx h
-        shld ZP
-        pop psw
-        sta CURN
-        lda COLN
-        cma
-        adi 49
-        sta COLIDX
-        lda CURN
-        call drawcol
-        call sprcol
-        call guncol
-        lhld COLP
-        inx h
-        shld COLP
-        lda COLN
-        dcr a
-        sta COLN
-        jnz rcol
         ret
 
 ; drawcol: A=n (vzdialenost), B=typ steny
