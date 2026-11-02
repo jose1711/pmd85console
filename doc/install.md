@@ -105,4 +105,9 @@ make PMD_BUILD=RELEASE PMD_SHARE="$HOME/share/"
 - `games.lst`,
 - the game tapes.
 
+`PMD_STATEHOME` is an optional compile-time setting: a directory relative to `$HOME` for the saved states of the games, for
+example `make PMD_BUILD=RELEASE PMD_SHARE=/usr/share/simpmd/ PMD_STATEHOME=.local/share/simpmd` (a shared read-only data
+directory and the states of every user in own home). Without it the states go to `<PMD_SHARE>states`; `PMD_STATEDIR` of the
+environment overrides both. After a change of this setting run `make clean` (the object files do not depend on it).
+
 `raspberry/deploy.sh` creates it as `~/share`. A change of `sim_common.h` rebuilds everything (about 10 minutes on the A+).
