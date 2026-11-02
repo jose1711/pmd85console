@@ -18,7 +18,7 @@ def source():
 
 if __name__ == '__main__':
     org, code, syms = asm8080.assemble(source())
-    assert org == 0x100 and org + len(code) < 0x2F00
+    assert org == 0x100 and org + len(code) < 0x4F00
     if len(sys.argv) > 1:
         open(sys.argv[1], 'wb').write(tape(bytes(code), org, 'DOOM85'))
     print('%d bajtov, koniec 0x%04X' % (len(code), org + len(code)))

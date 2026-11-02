@@ -15,7 +15,7 @@ for k in range(6, 150, 3):
     s.inport[0xF5] = f5
     s.pc = org; s.stop = {syms['main']}; s.run(5_000_000)
     times.append(s.tcycles)
-    mp = [[s.m[0x3000 + y * 256 + x] for x in range(16)] for y in range(16)]
+    mp = [[s.m[0x5000 + y * 256 + x] for x in range(16)] for y in range(16)]
     seeds.add(tuple(map(tuple, mp)))
     w = lambda x, y: mp[y][x] != 0
     ok = True
@@ -34,7 +34,7 @@ for k in range(6, 150, 3):
             if p in free and p not in seen: seen.add(p); st.append(p)
     if seen != free: ok = False
     for i in range(4):
-        ex = s.m[0x3221 + 8*i]; ey = s.m[0x3223 + 8*i]
+        ex = s.m[0x5221 + 8*i]; ey = s.m[0x5223 + 8*i]
         if (ex, ey) not in free or ((ex-1) + (ey-1)) < 8: ok = False
     if not ok: bad += 1
 print('behov', len(times), 'zle', bad, 'rozne mapy', len(seeds), 'T-cykly gen+init max', max(times), '= %.0f ms' % (max(times)/2000))

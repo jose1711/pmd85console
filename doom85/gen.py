@@ -125,9 +125,16 @@ def emit():
     db('GUNT', [gv[gun[k][c]] for c in range(8) for k in range(10)], 10)
     db('FLT', [gv[flash[k][c]] for c in range(6) for k in range(3)], 3)
     import faces
-    fb = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'faces.bin'), 'rb').read() if os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'faces.bin')) else b''.join(faces.build([]))
-    assert len(fb) == 3072
+    here = os.path.dirname(os.path.abspath(__file__))
+    for name in (('faces.bin',) if os.environ.get('DOOM_FACES') == 'default' else ('faces_local.bin', 'faces.bin')):
+        if os.path.exists(os.path.join(here, name)):
+            fb = open(os.path.join(here, name), 'rb').read(); break
+    else:
+        fb = b''.join(faces.build([]))
+    assert len(fb) == 26 * 384, len(fb)
     db('FACES', list(fb), 16)
+    out.append('FACETAB:')
+    out.append('        DW ' + ','.join('FACES+%d' % (384 * k) for k in range(26)))
     en = []
     for (cx, cy) in ENEMIES:
         en += [(cx * 256 + 128) & 255, (cx * 256 + 128) >> 8, (cy * 256 + 128) & 255, (cy * 256 + 128) >> 8, 2, 0, 0, 0]

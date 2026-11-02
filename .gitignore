@@ -1,3 +1,6 @@
 *.o
 *.dep
 simpmd/bin/simpmd
+doom85/faces_local.bin
+doom85/faces_local.png
+doom85/faces.png

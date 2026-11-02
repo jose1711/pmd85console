@@ -1,134 +1,136 @@
 ; doom85 - raycaster (Wolfenstein styl) pre PMD 85-1, i8080
 PUTC    EQU 8500H
 VIDEO   EQU 0D000H+((128-VH)/2)*64   ; pohlad 48 stlpcov x VH riadkov, vycentrovany v pasme 128 riadkov od riadku 64
-MAPHI   EQU 30H               ; mapa: 16 stranok po 16 bajtov (stranka = riadok y)
+MAPHI   EQU 50H               ; mapa: 16 stranok po 16 bajtov (stranka = riadok y)
 STACKTOP EQU 7E00H
-PX      EQU 2F00H
-PY      EQU 2F02H
-ANG     EQU 2F04H
-RX      EQU 2F06H
-RY      EQU 2F08H
-IX      EQU 2F0AH
-IY      EQU 2F0CH
-COLP    EQU 2F0EH
-COLN    EQU 2F10H
-WP      EQU 2F11H
-CP      EQU 2F12H
-P1      EQU 2F13H
-P2      EQU 2F14H
-KEYS    EQU 2F15H
-SAVESP  EQU 2F16H
-ZP      EQU 2F18H
-HEALTH  EQU 2F1AH
-AMMO    EQU 2F1BH
-KILLS   EQU 2F1CH
-FIREF   EQU 2F1DH
-RECOIL  EQU 2F1EH
-PRECOIL EQU 2FD6H
-GTOP    EQU 2FD7H
-GPTR    EQU 2FD8H
-FHELD   EQU 2F1FH
-DXV     EQU 2F50H
-DYV     EQU 2F52H
-COSV    EQU 2F54H
-SINV    EQU 2F55H
-DEPTH   EQU 2F56H
-SIDE    EQU 2F58H
-SN      EQU 2F5AH
-C0V     EQU 2F5BH
-HWV     EQU 2F5DH
-BASEADDR EQU 2F5EH
-USTEP   EQU 2F60H
-UACC    EQU 2F62H
-CCV     EQU 2F64H
-CNT     EQU 2F66H
-EPTR    EQU 2F67H
-NIDX    EQU 2F69H
-ADX     EQU 2F6AH
-ADY     EQU 2F6CH
-EXV     EQU 2F6EH
-EYV     EQU 2F70H
-BESTN   EQU 2F72H
-BESTP   EQU 2F73H
-SGN     EQU 2F75H
-SEED    EQU 2FB0H
-CX      EQU 2FB2H
-CY      EQU 2FB3H
-NX      EQU 2FB4H
-NY      EQU 2FB5H
-STKP    EQU 2FB6H
-STK     EQU 4000H
-TEXP    EQU 2F76H
-RECP    EQU 2F7BH
-CURN    EQU 2F7DH
-COLIDX  EQU 2F7EH
-SCN     EQU 2F7FH
-TMPU    EQU 2F80H
-VP      EQU 2F84H
-FROW    EQU 2F86H
-FBP     EQU 2F87H
-FEND    EQU 2F89H
-FP1     EQU 2F8AH
-FP2     EQU 2F8BH
-ESPR    EQU 3010H
-LASTH   EQU 2F78H
-LASTA   EQU 2F79H
-LASTK   EQU 2F7AH
-ENEM    EQU 3220H
-ZBUF    EQU 3120H
+PX      EQU 4F00H
+PY      EQU 4F02H
+ANG     EQU 4F04H
+RX      EQU 4F06H
+RY      EQU 4F08H
+IX      EQU 4F0AH
+IY      EQU 4F0CH
+COLP    EQU 4F0EH
+COLN    EQU 4F10H
+WP      EQU 4F11H
+CP      EQU 4F12H
+P1      EQU 4F13H
+P2      EQU 4F14H
+KEYS    EQU 4F15H
+SAVESP  EQU 4F16H
+ZP      EQU 4F18H
+HEALTH  EQU 4F1AH
+AMMO    EQU 4F1BH
+KILLS   EQU 4F1CH
+FIREF   EQU 4F1DH
+RECOIL  EQU 4F1EH
+PRECOIL EQU 4FD6H
+GTOP    EQU 4FD7H
+GPTR    EQU 4FD8H
+FHELD   EQU 4F1FH
+DXV     EQU 4F50H
+DYV     EQU 4F52H
+COSV    EQU 4F54H
+SINV    EQU 4F55H
+DEPTH   EQU 4F56H
+SIDE    EQU 4F58H
+SN      EQU 4F5AH
+C0V     EQU 4F5BH
+HWV     EQU 4F5DH
+BASEADDR EQU 4F5EH
+USTEP   EQU 4F60H
+UACC    EQU 4F62H
+CCV     EQU 4F64H
+CNT     EQU 4F66H
+EPTR    EQU 4F67H
+NIDX    EQU 4F69H
+ADX     EQU 4F6AH
+ADY     EQU 4F6CH
+EXV     EQU 4F6EH
+EYV     EQU 4F70H
+BESTN   EQU 4F72H
+BESTP   EQU 4F73H
+SGN     EQU 4F75H
+SEED    EQU 4FB0H
+CX      EQU 4FB2H
+CY      EQU 4FB3H
+NX      EQU 4FB4H
+NY      EQU 4FB5H
+STKP    EQU 4FB6H
+STK     EQU 6000H
+TEXP    EQU 4F76H
+RECP    EQU 4F7BH
+CURN    EQU 4F7DH
+COLIDX  EQU 4F7EH
+SCN     EQU 4F7FH
+TMPU    EQU 4F80H
+VP      EQU 4F84H
+FROW    EQU 4F86H
+FBP     EQU 4F87H
+FEND    EQU 4F89H
+FP1     EQU 4F8AH
+FP2     EQU 4F8BH
+ESPR    EQU 5010H
+LASTH   EQU 4F78H
+LASTA   EQU 4F79H
+LASTK   EQU 4F7AH
+ENEM    EQU 5220H
+ZBUF    EQU 5120H
 NEN     EQU 4
 NPK     EQU 5
 NOBJ    EQU 9
-BHV     EQU 2FB8H
-PKP     EQU 2FB9H
-MUSI    EQU 2FBBH
-MUSOFF  EQU 2FBCH
-SFXF    EQU 2FBDH
-MHELD   EQU 2FBEH
-SIG     EQU 2FBFH
-OLDW    EQU 2FC0H
-NP      EQU 2FC1H
-FLIM    EQU 2FC2H
-SLN     EQU 2FC3H
-SLP     EQU 2FC4H
-SLP2    EQU 2FC6H
-SLIST   EQU 3270H
-PCELLV  EQU 2FE0H
-QH      EQU 2FE1H
-QT      EQU 2FE2H
-GRC     EQU 2FE3H
-GROWL   EQU 2FE4H
-CC      EQU 2FE5H
-NN      EQU 2FE6H
-BD      EQU 2FE7H
-KK      EQU 2FE8H
-K0      EQU 2FE9H
-PASS    EQU 2FEAH
-DCUR    EQU 2FEBH
-TXV     EQU 2FECH
-TYV     EQU 2FEDH
-STV     EQU 2FEEH
-SPDV    EQU 2FEFH
-AIP     EQU 2FF0H
-FACECUR EQU 2FF2H
-FACETM  EQU 2FF3H
-FACEOV  EQU 2FF4H
-LHP     EQU 2FF5H
-LKL     EQU 2FF6H
+BHV     EQU 4FB8H
+PKP     EQU 4FB9H
+MUSI    EQU 4FBBH
+MUSOFF  EQU 4FBCH
+SFXF    EQU 4FBDH
+MHELD   EQU 4FBEH
+SIG     EQU 4FBFH
+OLDW    EQU 4FC0H
+NP      EQU 4FC1H
+FLIM    EQU 4FC2H
+SLN     EQU 4FC3H
+SLP     EQU 4FC4H
+SLP2    EQU 4FC6H
+SLIST   EQU 5270H
+PCELLV  EQU 4FE0H
+QH      EQU 4FE1H
+QT      EQU 4FE2H
+GRC     EQU 4FE3H
+GROWL   EQU 4FE4H
+CC      EQU 4FE5H
+NN      EQU 4FE6H
+BD      EQU 4FE7H
+KK      EQU 4FE8H
+K0      EQU 4FE9H
+PASS    EQU 4FEAH
+DCUR    EQU 4FEBH
+TXV     EQU 4FECH
+TYV     EQU 4FEDH
+STV     EQU 4FEEH
+SPDV    EQU 4FEFH
+AIP     EQU 4FF0H
+FACECUR EQU 4FF2H
+FACETM  EQU 4FF3H
+FACEOV  EQU 4FF4H
+LHP     EQU 4FF5H
+LKL     EQU 4FF6H
 FACEDST EQU 0C000H+194*64+20
-CIDX    EQU 2FC8H
-IX2     EQU 2FC9H
-IY2     EQU 2FCBH
-CRX     EQU 2FCDH
-CRY     EQU 2FCFH
-LN      EQU 2FD1H
-LC      EQU 2FD2H
-RN      EQU 2FD3H
-RC      EQU 2FD4H
-PCN     EQU 2FD5H
-PWP     EQU 3160H
-PSIG    EQU 3190H
-DIRTY   EQU 31C0H
+FIDLE   EQU 4FF7H
+IDLEV   EQU 4FF8H
+CIDX    EQU 4FC8H
+IX2     EQU 4FC9H
+IY2     EQU 4FCBH
+CRX     EQU 4FCDH
+CRY     EQU 4FCFH
+LN      EQU 4FD1H
+LC      EQU 4FD2H
+RN      EQU 4FD3H
+RC      EQU 4FD4H
+PCN     EQU 4FD5H
+PWP     EQU 5160H
+PSIG    EQU 5190H
+DIRTY   EQU 51C0H
 CURSOR  EQU 0C03EH
 FLOOR1  EQU 48H
 FLOOR2  EQU 40H
@@ -1170,7 +1172,7 @@ ud2:    pop psw
 ; Priserky chodia z bunky do bunky: v patrole nahodne (bez otocenia sa spat), ak je cesta k hracovi kratsia ako 10 buniek
 ; (pri 15 sa vzdaju), nasleduju najkratsiu cestu z mapy vzdialenosti (BFS od bunky hraca, pocita sa pri zmene bunky hraca).
 ; Zaznam (8 B): +0/1 x, +2/3 y (1/256 bunky), +4 hp, +5 cielova bunka x, +6 cielova bunka y, +7 smer (bity 0-1), bit 2 = naháňa
-QPAGE   EQU 41H
+QPAGE   EQU 61H
 SPD_PAT EQU 9
 SPD_CH  EQU 14
 OFFT:   DB 1,16,0FFH,0F0H
@@ -2525,7 +2527,7 @@ pp2:    call PUTC
         adi '0'
         jmp PUTC
 
-gameover: mvi a,7
+gameover: mvi a,25
         call facedraw
         lxi h,0FF00H
         shld CURSOR
@@ -2534,7 +2536,8 @@ gameover: mvi a,7
         call jingle_over
         call waitkey
         jmp start
-victory: mvi a,6
+victory: call faclev
+        adi 20
         call facedraw
         lxi h,0FF00H
         shld CURSOR
@@ -2691,7 +2694,6 @@ mk_up:  xra a
         ret
 
 ; ---------------------------------------------------------------- tvar (HUD)
-FACETAB: DW FACES,FACES+384,FACES+768,FACES+1152,FACES+1536,FACES+1920,FACES+2304,FACES+2688
 ; facedraw: A = stav (0-4 zdravie, 5 bolest, 6 spokojnost, 7 mrtva) -> 48x48 bodov na obrazovku
 facedraw: sta FACECUR
         mov e,a
@@ -2720,7 +2722,27 @@ fd_b:   mov a,m
         dcr c
         jnz fd_r
         ret
-; facepick: vyber tvare podla zdravia, zranenia a zabitia
+; faclev: A = uroven zdravia 0-4 (100-81, 80-61, 60-41, 40-21, <=20)
+faclev: lda HEALTH
+        cpi 81
+        jc fv_1
+        xra a
+        ret
+fv_1:   cpi 61
+        jc fv_2
+        mvi a,1
+        ret
+fv_2:   cpi 41
+        jc fv_3
+        mvi a,2
+        ret
+fv_3:   cpi 21
+        jc fv_4
+        mvi a,3
+        ret
+fv_4:   mvi a,4
+        ret
+; facepick: vyber tvare podla zdravia (3 vyrazy v pokoji), zranenia (bolest) a zabitia (usmev); stavy 0-14 pokoj, 15-19 bolest, 20-24 usmev, 25 mrtva
 facepick: lda HEALTH
         mov b,a
         lda LHP
@@ -2729,7 +2751,7 @@ facepick: lda HEALTH
         jz fp_k
         mvi a,3
         sta FACETM
-        mvi a,5
+        mvi a,1
         sta FACEOV
 fp_k:   mov a,b
         sta LHP
@@ -2740,35 +2762,45 @@ fp_k:   mov a,b
         jnc fp_s
         mvi a,8
         sta FACETM
-        mvi a,6
+        mvi a,2
         sta FACEOV
 fp_s:   mov a,c
         sta LKL
+        lda FIDLE
+        ora a
+        jz fp_nv
+        dcr a
+        sta FIDLE
+        jmp fp_u
+fp_nv:  call rnd
+        ani 3
+        cpi 3
+        jc fp_v
+        mvi a,1
+fp_v:   sta IDLEV
+        mvi a,14
+        sta FIDLE
+fp_u:   call faclev
+        mov c,a
         lda FACETM
         ora a
-        jz fp_b
+        jz fp_i
         dcr a
         sta FACETM
         lda FACEOV
+        cpi 1
+        mov a,c
+        jnz fp_g
+        adi 15
         jmp fp_d
-fp_b:   mov a,b
-        cpi 81
-        jc fp_1
-        xra a
+fp_g:   adi 20
         jmp fp_d
-fp_1:   cpi 61
-        jc fp_2
-        mvi a,1
-        jmp fp_d
-fp_2:   cpi 41
-        jc fp_3
-        mvi a,2
-        jmp fp_d
-fp_3:   cpi 21
-        jc fp_4
-        mvi a,3
-        jmp fp_d
-fp_4:   mvi a,4
+fp_i:   mov a,c
+        add a
+        add c
+        mov c,a
+        lda IDLEV
+        add c
 fp_d:   mov b,a
         lda FACECUR
         cmp b
