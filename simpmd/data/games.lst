@@ -144,7 +144,7 @@ REVERZ;2;ROM basic2.rmm, FONT, TYPE LOAD 0, TYPE RUN;;;uroven 0-3, tahy souradni
 REVERZ-MC;2;MGLD 00, JUMP 0000;;;Reverz alias Othello (strojovy kod, SEN Software): libovolna klavesa start;;Deskove hry/REVERZ
 REZ;2;ROM basic2.rmm, FONT, TYPE LOAD 0, TYPE RUN;;;ukazka: Enter pokracuje;;Naucne
 ROBINSON;2;ROM basic2.rmm, FONT, TYPE LOAD 1, TYPE RUN;;;libovolna klavesa start, uhel vystrelu cislem a Enter;;
-ROBOTIK;1;MGLD 00, JUMP 0000;;Left:Left,Right:Right,Fast left:End,Fast right:PageDown,Space:Space,Enter:Return,RCL:Keypad +,F12:F12,Esc:Escape;sipky, End/PgDn rychle, Space, Enter, Num+ (RCL), F12;;Pro nejmensi
+ROBOTIK;2;MGLD 00, JUMP 0000;;Left:Left,Right:Right,Fast left:End,Fast right:PageDown,Space:Space,Enter:Return,RCL:Keypad +,F12:F12,Esc:Escape;sipky, End/PgDn rychle, Space, Enter, Num+ (RCL), F12;;Pro nejmensi
 SABOTER;2;MGLD 03;Up=E,Down=Z,H=/,I=0;Left:Left,Right:Right,Up:E,Down:Z,Slash:/,Return:Return,Start:0,Stop:Left Ctrl,Esc:Escape;vlevo/vpravo sipky, nahoru E, dolu Y, / a Enter (sbirani/hod), menu: Enter, 0 = start hry (pad: Y), Ctrl = STOP, ovladani meni menu 3;P;
 SACH;1;MGLD 00, JUMP 0000;;;;;Deskove hry
 SASKO;2;MGLD 00;;Left:Left,Right:Right,Fast left:End,Fast right:PageDown,Space:Space,Enter:Return,RCL:Keypad +,F12:F12,Esc:Escape;sipky, End/PgDn rychle, Space, Enter, Num+ (RCL), F12;;Pro nejmensi
