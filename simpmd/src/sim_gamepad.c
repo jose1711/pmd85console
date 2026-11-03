@@ -61,6 +61,8 @@ static const SDL_Keycode aiPadDefault [PAD_COUNT] =
 
 /// Key assigned to each input.
 static SDL_Keycode aiPadKey [PAD_COUNT];
+/// Keys without the per-game overrides (the defaults and PMD_PAD).
+static SDL_Keycode aiPadBase [PAD_COUNT];
 /// Pressed inputs, bit mask by tPadInput (all devices together).
 static Uint32 iPadState;
 /// Pressed inputs of a device, bit masks by tPadInput.
@@ -224,6 +226,37 @@ void GPDInitialize ()
       if (!bFound)
         fprintf (stderr, "PMD_PAD: unknown input in '%s'\n", sItem.c_str ());
     }
+  }
+  for (int i = 0 ; i < PAD_COUNT ; i ++)
+    aiPadBase [i] = aiPadKey [i];
+}
+
+
+/** Keys of the pad for the running game: "input=key,..." (the names of PMD_PAD), the rest is as without a game.
+ *  Called when a game starts (REMAP "pad:lb=F2,pad:rb=F3" in games.lst) and with an empty text when it ends.
+ */
+void GPDSetGameKeys (const std::string &sSpec)
+{
+  for (int i = 0 ; i < PAD_COUNT ; i ++)
+    aiPadKey [i] = aiPadBase [i];
+  size_t iPos = 0;
+  while (iPos < sSpec.size ())
+  {
+    size_t iEnd = sSpec.find (',', iPos);
+    if (iEnd == std::string::npos)
+      iEnd = sSpec.size ();
+    std::string sItem = sSpec.substr (iPos, iEnd - iPos);
+    iPos = iEnd + 1;
+    size_t iEqual = sItem.find ('=');
+    if (iEqual == std::string::npos)
+      continue;
+    std::string sName = sItem.substr (0, iEqual);
+    SDL_Keycode iKey = SDL_GetKeyFromName (sItem.substr (iEqual + 1).c_str ());
+    if (iKey == SDLK_UNKNOWN)
+      continue;
+    for (int i = 0 ; i < PAD_COUNT ; i ++)
+      if (sName == apPadName [i])
+        aiPadKey [i] = iKey;
   }
 }
 
