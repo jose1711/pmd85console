@@ -38,7 +38,10 @@ Details and options: [service.md](service.md).
 
 ## 3. Faster boot (optional)
 
-Cloud-init, swap resize and network wait take about 2 minutes on the A+:
+Cloud-init, swap resize and network wait take about 2 minutes on the A+. The script also disables unused services and
+timers, the swap generator and the camera modules, mounts `/boot/firmware` on demand and starts `pmd85.service` early
+(it does not wait for the network or for udev to set the permissions of the DRM nodes). Avahi stays on, so
+`pmd85.local` keeps working. On a Pi A+ the emulator is up about 64 s after power-on instead of about 2 minutes:
 
 ```sh
 scp raspberry/fastboot pmd85@pmd85.local:

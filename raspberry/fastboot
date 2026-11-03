@@ -8,7 +8,14 @@
 #  - replaces the netplan generated NetworkManager profile of the ethernet interface with a native
 #    NetworkManager keyfile (netplan generate made NetworkManager run `systemctl daemon-reload`
 #    4 times at start, ~30 s each on a slow SD card),
-#  - masks Pi 5 only tests rp1-test and glamor-test.
+#  - masks Pi 5 only tests rp1-test and glamor-test,
+#  - disables services the console never uses (apt/man-db/fstrim timers, cups, bluetooth, accounts-daemon, udisks2,
+#    rpcbind/NFS client, rpi-eeprom-update, wayvnc-control); Avahi (pmd85.local) is left on,
+#  - masks rpi-swap-generator (11 s of every boot, the Pi runs without swap),
+#  - blacklists the camera/V4L2 modules (bcm2835 codec/isp/v4l2/mmal),
+#  - mounts /boot/firmware on demand (no fsck and mount in the boot path),
+#  - starts pmd85.service early (drop-ins in /etc/systemd/system/pmd85.service.d): it does not wait for basic.target,
+#    sets the permissions of the DRM nodes itself (udev does it ~25 s later on this Pi) and quits Plymouth first.
 # Only DHCP ethernet is recreated, Wi-Fi profiles from netplan are NOT (they are backed up).
 # Originals are saved in /root/fastboot-backup, `revert` restores them.
 
@@ -18,6 +25,13 @@ ACTION=${1:-apply}
 IFACE=${2:-eth0}
 BACKUP=/root/fastboot-backup
 MASK="rpi-resize-swap-file.service NetworkManager-wait-online.service rp1-test.service glamor-test.service"
+# Not needed by the console. Only units that are enabled are touched; they are listed in $BACKUP/disabled for revert.
+DISABLE="apt-daily.timer apt-daily-upgrade.timer man-db.timer dpkg-db-backup.timer e2scrub_all.timer fstrim.timer
+  cups.path cups.socket cups.service bluetooth.service accounts-daemon.service udisks2.service wayvnc-control.service
+  rpi-eeprom-update.service e2scrub_reap.service rpcbind.service rpcbind.socket nfs-client.target remote-fs.target"
+GENERATOR=/etc/systemd/system-generators/rpi-swap-generator
+MODPROBE=/etc/modprobe.d/pmd85-nocamera.conf
+DROPIN=/etc/systemd/system/pmd85.service.d
 
 [ "$(id -u)" = 0 ] || { echo "run as root" >&2; exit 1; }
 
@@ -39,11 +53,54 @@ apply)
       { echo "profile $IFACE was not saved, netplan files left untouched" >&2; exit 1; }
     rm -f /etc/netplan/90-NM-*.yaml
   fi
+  # Units the console does not use.
+  : > "$BACKUP/disabled.new"
+  for u in $DISABLE; do
+    systemctl is-enabled "$u" >/dev/null 2>&1 && echo "$u" >> "$BACKUP/disabled.new"
+  done
+  [ -s "$BACKUP/disabled.new" ] && cat "$BACKUP/disabled.new" >> "$BACKUP/disabled"
+  rm -f "$BACKUP/disabled.new"
+  # shellcheck disable=SC2046
+  systemctl disable $(cat "$BACKUP/disabled" 2>/dev/null) >/dev/null 2>&1 || true
+
+  mkdir -p /etc/systemd/system-generators
+  ln -sf /dev/null "$GENERATOR"
+
+  printf 'blacklist bcm2835_codec\nblacklist bcm2835_isp\nblacklist bcm2835_v4l2\nblacklist bcm2835_mmal_vchiq\n' > "$MODPROBE"
+
+  # /boot/firmware on demand
+  [ -e "$BACKUP/fstab" ] || cp /etc/fstab "$BACKUP/fstab"
+  sed -i '/[[:space:]]\/boot\/firmware[[:space:]]/{/x-systemd.automount/!s/\(vfat[[:space:]]\+\)\([^[:space:]]\+\)\([[:space:]]\+[0-9]\+[[:space:]]\+\)[0-9]\+/\1\2,noauto,x-systemd.automount,x-systemd.idle-timeout=120\30/}' /etc/fstab
+
+  # Early start of the emulator (pmd85.service itself is installed by deploy.sh).
+  mkdir -p "$DROPIN"
+  cat > "$DROPIN/early.conf" <<'EOF'
+[Unit]
+DefaultDependencies=no
+After=systemd-remount-fs.service systemd-udevd.service systemd-journald.socket tmp.mount
+Conflicts=shutdown.target
+Before=shutdown.target
+EOF
+  cat > "$DROPIN/plymouth.conf" <<'EOF'
+[Service]
+# udev sets the DRM node permissions late (its queue is slow on the A+); set them as soon as the nodes exist.
+ExecStartPre=+/bin/sh -c 'for i in $(seq 1 300); do [ -c /dev/dri/card0 ] && [ -c /dev/dri/renderD128 ] && break; sleep 0.2; done; chgrp video /dev/dri/card0; chgrp render /dev/dri/renderD128; chmod 660 /dev/dri/card0 /dev/dri/renderD128'
+# Release DRM from Plymouth (without it SDL kmsdrm fails). Not --retain-splash: it makes every pageflip fail (ENOSPC).
+ExecStartPre=-+/usr/bin/plymouth quit
+RestartSec=2
+EOF
+  systemctl daemon-reload
   echo "done, reboot and check: systemd-analyze; systemd-analyze critical-chain"
   ;;
 revert)
   rm -f /etc/cloud/cloud-init.disabled
   systemctl unmask $MASK
+  # shellcheck disable=SC2046
+  [ -s "$BACKUP/disabled" ] && systemctl enable $(cat "$BACKUP/disabled") >/dev/null 2>&1 || true
+  rm -f "$BACKUP/disabled" "$GENERATOR" "$MODPROBE" "$DROPIN/early.conf" "$DROPIN/plymouth.conf"
+  rmdir "$DROPIN" 2>/dev/null || true
+  [ -e "$BACKUP/fstab" ] && cp "$BACKUP/fstab" /etc/fstab
+  systemctl daemon-reload
   [ -d "$BACKUP" ] && cp -a "$BACKUP"/. /etc/netplan/
   nmcli con delete "$IFACE" 2>/dev/null || true
   echo "reverted, reboot"
