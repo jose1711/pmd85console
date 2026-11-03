@@ -35,14 +35,14 @@ enum tPadInput
   PAD_UP, PAD_DOWN, PAD_LEFT, PAD_RIGHT,
   PAD_A, PAD_B, PAD_X, PAD_Y,
   PAD_LB, PAD_RB, PAD_BACK, PAD_START,
-  PAD_LT, PAD_RT,
+  PAD_LT, PAD_RT, PAD_LS, PAD_RS,
   PAD_COUNT
 };
 
 /// Names of the inputs, used by PMD_PAD=<name>=<key>,...
 static const char *apPadName [PAD_COUNT] =
 {
-  "up", "down", "left", "right", "a", "b", "x", "y", "lb", "rb", "back", "start", "lt", "rt"
+  "up", "down", "left", "right", "a", "b", "x", "y", "lb", "rb", "back", "start", "lt", "rt", "ls", "rs"
 };
 
 /// Default keys, taken from the instructions of the games: up and down are [E] and [Y] of the PMD 85
@@ -55,7 +55,7 @@ static const SDL_Keycode aiPadDefault [PAD_COUNT] =
   SDLK_e, SDLK_z, SDLK_LEFT, SDLK_RIGHT,
   SDLK_SPACE, SDLK_RETURN, SDLK_h, SDLK_i,
   SDLK_LSHIFT, SDLK_KP_PLUS, SDLK_ESCAPE, SDLK_RETURN,
-  SDLK_UNKNOWN, SDLK_UNKNOWN
+  SDLK_UNKNOWN, SDLK_UNKNOWN, SDLK_UNKNOWN, SDLK_UNKNOWN
 };
 
 /// Stick dead zone, the axis range is -32768 to 32767.
@@ -158,6 +158,8 @@ static int GPDControllerButton (Uint8 iButton)
     case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:   return (PAD_RB);
     case SDL_CONTROLLER_BUTTON_BACK:            return (PAD_BACK);
     case SDL_CONTROLLER_BUTTON_START:           return (PAD_START);
+    case SDL_CONTROLLER_BUTTON_LEFTSTICK:       return (PAD_LS);
+    case SDL_CONTROLLER_BUTTON_RIGHTSTICK:      return (PAD_RS);
   }
   return (-1);
 }
@@ -195,7 +197,7 @@ void GPDInitialize ()
   for (int i = 0 ; i < PAD_COUNT ; i ++)
     aiPadKey [i] = aiPadDefault [i];
   // PMD_PAD=<input>=<key>,... overrides the keys, for example PMD_PAD='a=Space,b=Return,x=H,back=Escape'.
-  // The input names are up, down, left, right, a, b, x, y, lb, rb, back, start, lt, rt (triggers, no key by default), the keys are SDL key names.
+  // The input names are up, down, left, right, a, b, x, y, lb, rb, back, start, lt, rt (triggers), ls, rs (stick clicks), no key by default, the keys are SDL key names.
   const char *pPad = getenv ("PMD_PAD");
   if (pPad)
   {
