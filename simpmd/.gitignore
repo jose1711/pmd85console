@@ -1,8 +1,0 @@
-*.o
-*.dep
-# data copied by make install-data PMD_SHARE=bin/ (run from bin/ with the default build)
-/bin/*
-!/bin/mem2raw
-!/bin/ptp2raw
-!/bin/rawinfo
-tests/tape_test
