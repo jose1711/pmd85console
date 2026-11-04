@@ -14,8 +14,8 @@ Raspberry Pi 1A+ Tesla PMD-85 retro console powered by modified Petr Tůma
 - Boots straight into a menu of 49 games, the load commands are typed automatically.
 - Plays with the keyboard, a gamepad, a TV remote control (HDMI-CEC) or a browser (phone).
 - Icons in the games list show which game suits which device.
-- Saved state of a game ([Alt]+[F5] save, [Alt]+[F9] load), **experimental and not verified in real play**, see
-  [doc/usage.md](doc/usage.md#saved-state-experimental).
+- Saved state of a game ([Alt]+[F5] save, [Alt]+[F9] load), see
+  [doc/usage.md](doc/usage.md#saved-state).
 - Runs as a service on a Raspberry Pi A+ (KMS/DRM, ALSA directly, no desktop; PipeWire is switched off by `deploy.sh`
   to leave the only core to the emulator).
 
