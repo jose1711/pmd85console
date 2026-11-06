@@ -151,9 +151,24 @@ inline word MemReadWord (word iAddr)
 /// The RAM under the monitor ROM of the PMD 85-2A (AllRAM), written while the ROM is mapped.
 static byte abRamUnderRom [4096];
 
+/// Debug: PMD_MEMTRACE=<first>-<last> (hex addresses) logs the writes to that range with the address of the instruction.
+static int iTraceFirst = -1, iTraceLast = -1;
+static void MemTraceInit ()
+{
+  const char *pTrace = getenv ("PMD_MEMTRACE");
+  unsigned iFirst, iLast;
+  if (pTrace && sscanf (pTrace, "%x-%x", &iFirst, &iLast) == 2)
+  {
+    iTraceFirst = (int) iFirst;
+    iTraceLast = (int) iLast;
+  }
+}
+
 /// Writes a byte to simulated memory array if it is writable.
 inline void MemWriteByte (word iAddr, byte iData)
 {
+  if (iTraceFirst >= 0 && iAddr >= iTraceFirst && iAddr <= iTraceLast)
+    fprintf (stderr, "W %04x=%02x pc %04x\n", iAddr, iData, (int) RegPC);
   byte iMask = abMemoryMask [iAddr];
   if (iMask == 1)
     abMemoryData [iAddr] = iData;
@@ -1879,6 +1894,7 @@ void CPUTerminateThread ()
 
 void CPUInitialize ()
 {
+  MemTraceInit ();
   // Initialize the semaphores for suspend and resume handling.
   //CheckZero (sem_init (&sSignalSuspend, false, 0));
   //printf("Suspend semaphore init..\n");
