@@ -2,6 +2,8 @@
 # Lokalny build simpmd z aktualneho repa + spustenie (bez sudo, nic sa neinstaluje do /usr).
 #   tools/run-local.sh            prebuildovat (ak treba), obnovit data a spustit
 #   tools/run-local.sh -n         len prebuildovat a obnovit data
+#   tools/run-local.sh JETPAC     prebuildovat a rovno spustit hru (nazov podla games.lst, na velkosti pismen nezalezi)
+#   tools/run-local.sh --list     vypisat nazvy hier
 # Build: ~/tmp/simpmd-local/{src,bin}, data (plochy adresar): /data/jose/tmp/ss-share/ (PMD_SHARE)
 set -e
 REPO=$(cd "$(dirname "$0")/.." && pwd)/simpmd
@@ -16,4 +18,4 @@ find "$REPO/data/tapes" -type f -exec cp -u {} "$SHARE" \;
 cp "$REPO/data/games.lst" "$SHARE/games.lst"
 echo "build OK: $L/bin/simpmd, data: $SHARE"
 [ "$1" = "-n" ] && exit 0
-cd "$L/bin" && exec ./simpmd
+cd "$L/bin" && exec ./simpmd "$@"
