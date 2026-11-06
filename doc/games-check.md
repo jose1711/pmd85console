@@ -47,3 +47,23 @@ How to go through the games one by one and write down what works, so that `games
 - `PMD_SNDLEVEL=1` tells a silent game from a lost sound, see [service.md](service.md#sound).
 - For games controlled by the function keys: find out from the instructions which of `K0`-`K3` are the directions,
   then `REMAP` (`Up=F1,...`); the original keys keep working.
+
+## Gamepad on the Pi (hot-plug, found by the rescan)
+
+The pad must work however it gets connected. The emulator opens a pad from the device event and, as a second chance, from a
+rescan every 2 seconds (`Gamepad: <name> (found by the rescan)` in the journal). Check each case and write down what the journal says
+(`journalctl -u pmd85 | grep -i gamepad`; `PMD_PADTRACE=1` in `~/pmd85.env` also prints the pad events and the inputs):
+
+1. **Pad plugged in before the Pi boots** (power up with the pad connected): a `Gamepad: <name>` line after the boot, and the D-pad
+   moves the menu selection. This case was reported as not working.
+2. **Pad plugged in while the service runs:** the `Gamepad:` line appears, the pad works without a restart.
+3. **Pad unplugged and plugged in again:** `Gamepad removed: <name>`, then `Gamepad: <name>`; the keys do not stay pressed.
+4. **Pad that is already held when it is opened** (hold a button while plugging in): no stuck key afterwards, release works.
+5. **A game with the pad in it:** JOE1 (D-pad right starts it, A jumps), JETPAC with the joystick in the menu (`4`): the D-pad and A move
+   and fire; JSWILLY with `1` = JOYSTICK A: A (jump) does not pause the game.
+6. **Two pads (or the pad and a keyboard that SDL reports as a joystick):** none keeps a direction pressed.
+
+On the PC a pad can be tested without one: `PMD_VIRTPAD=<file>` attaches a virtual game controller inside the process, the first two
+bytes of the file are the pressed buttons (see [usage.md](usage.md)); `PMD_PADSKIPADDED=1` ignores the device events, so only the
+rescan can open it.
+
