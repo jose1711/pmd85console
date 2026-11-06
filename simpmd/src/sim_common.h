@@ -225,6 +225,7 @@ void SNDInitialize ();
 void SNDShutdown ();
 
 byte TAPReadData ();
+int TAPMsSinceRead ();
 void TAPWriteData (byte iData);
 byte TAPReadStatus ();
 void TAPInitialize ();

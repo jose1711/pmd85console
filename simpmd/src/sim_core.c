@@ -783,7 +783,8 @@ static std::string AutoloadKeys (const std::string &sNote)
 static std::string WebStateBuild ()
 {
   std::string sState = std::string ("{\"mode\":\"") + (!inMenu ? "game" : inList ? "list" : "menu") + "\",\"typing\":" +
-                       (iKeyPos < (int) sKeys.size () ? "true" : "false") + ",\"index\":" +
+                       (iKeyPos < (int) sKeys.size () ? "true" : "false") + ",\"tape_idle_ms\":" +
+                       std::to_string (TAPMsSinceRead ()) + ",\"index\":" +
                        std::to_string (inList ? listIndex : gameIndex) + ",\"pad\":\"" + (inMenu ? pPadMenu : sPad.c_str ()) +
                        "\",\"featured\":[\"FLAPPY\",\"BOULDER\",\"MANIC\",\"FRED\"],\"games\":[";
   std::vector <int> oView = ListView ();

@@ -136,10 +136,19 @@ class Emu:
     def mode(self):
         return self.state().get('mode', '?')
 
-    def wait_loaded(self, limit=180):
-        """Wait until the autoload of the game (typed monitor commands, tape) is done."""
+    def wait_loaded(self, limit=240):
+        """Wait until the autoload is done: the typed monitor/BASIC commands are out and the program has stopped reading
+        the tape (tape_idle_ms > 4 s). Typing=false alone is too early: the tape of a game loads for a minute or more."""
         t = time.monotonic()
-        while time.monotonic() - t < limit and self.state().get('typing', True):
+        read = False
+        while time.monotonic() - t < limit:
+            st = self.state()
+            if st and not st.get('typing', True):
+                idle = st.get('tape_idle_ms', -1)
+                if idle >= 0:
+                    read = True
+                if (read and idle > 4000) or (not read and time.monotonic() - t > 20):
+                    break
             time.sleep(0.5)
         return time.monotonic() - t
 
@@ -283,6 +292,16 @@ class Session:
             self.emu.start(os.path.join(self.out, 'emulator.log'))
             self.ev('loading', 'autoload finished after %.0f s' % self.emu.wait_loaded())
             time.sleep(2)
+            if 'ROM basic' in self.g['note']:
+                # a BASIC program can compute for a minute after RUN (ADC: "PROSIM CEKEJTE 70 SEKUND"): wait for the first change
+                a = self.emu.screen(); t = time.monotonic()
+                while time.monotonic() - t < 100 and self.emu.alive():
+                    time.sleep(1)
+                    if changed(a, self.emu.screen()) > 300:
+                        break
+                self.ev('loading', 'BASIC program running after %.0f s more' % (time.monotonic() - t))
+                time.sleep(3)
+            self.t0 = time.monotonic()      # the play time starts after the load
             self.shot(self.emu.screen(), 'title')
             self.start_game(acts)
             self.probe((dirs + acts)[:10])
@@ -303,7 +322,7 @@ class Session:
         return self.notes
 
     def play(self, dirs, acts):
-        end = self.t0 + self.minutes * 60
+        end = time.monotonic() + self.minutes * 60
         prev = self.emu.screen()
         last_change = last_shot = last_ocr = self.t()
         ocr_job = None

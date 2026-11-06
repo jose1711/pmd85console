@@ -386,6 +386,14 @@ byte TAPReadData ()
 }
 
 
+/** Milliseconds since the program last read a byte of the tape input, -1 if it has not read any yet (web state).
+ */
+int TAPMsSinceRead ()
+{
+  return (iLastInputTime == 0 ? -1 : (int) (SDL_GetTicks () + 1 - iLastInputTime));
+}
+
+
 /** Write to tape data register.
  *
  *  @arg iData The written value.
