@@ -92,6 +92,7 @@ SDL_VIDEODRIVER=dummy SDL_RENDER_DRIVER=software SDL_AUDIODRIVER=disk bin/simpmd
 | `PMD_PADDLETRACE=1` | Debug: ARKANOID paddle sampler (2 ms): edge, `x`, speed, ball x, key bits and carry of the speed routine. |
 | `PMD_PADTRACE=1` | Debug: prints the events of the gamepad (buttons, axes) and the pad inputs the emulator derived from them. |
 | `PMD_VIRTPAD=<file>` | Debug: attaches a virtual game controller inside the process (no other program sees it) and takes the pressed buttons from the first two bytes of the file, bit n = SDL controller button n (0 A, 1 B, 2 X, 3 Y, 4 Back, 6 Start, 9 LB, 10 RB, 11 up, 12 down, 13 left, 14 right). `PMD_VIRTPAD_AXES=<x>,<y>` sets its left stick. |
+| `PMD_NOJOY=1` | Joystick ports `0x4C`/`0x4D` always read 0xFF (no joystick), also for games without `NOJOY` in the note. |
 | `PMD_PADSKIPADDED=1` | Debug: ignores the device-added events of the pads, so only the 2 s rescan can open a pad (tests the rescan). |
 | `PMD_SCANTRACE=1` | Debug: moments the emulated program starts to scan the keyboard (`SCAN`) and sees a pressed key (`SEEN`). |
 
