@@ -40,7 +40,7 @@ echo "== install packages, build, install data"
 rssh 'bash -se' <<'REMOTE'
 set -euo pipefail
 cd ~/pmd85console
-PKGS="build-essential libsdl2-dev libsdl2-ttf-dev libasound2-dev libgl1-mesa-dri"
+PKGS="build-essential libsdl2-dev libsdl2-ttf-dev zlib1g-dev libasound2-dev libgl1-mesa-dri"
 MISSING=$(for p in $PKGS; do dpkg -s "$p" >/dev/null 2>&1 || echo "$p"; done)
 if [ -n "$MISSING" ]; then
 	sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
@@ -50,6 +50,8 @@ mkdir -p ~/share simpmd/bin
 cp -n simpmd/data/roms/M* simpmd/data/roms/*.rmm simpmd/data/font/* simpmd/data/logo/* \
 	simpmd/data/tapes/games-pmd1/* simpmd/data/tapes/games-pmd2/* ~/share/
 cp -f simpmd/data/games.lst ~/share/
+mkdir -p ~/share/screenshots
+cp -f simpmd/data/screenshots/* ~/share/screenshots/
 cd simpmd/src
 make clean
 make -j"$(nproc)" PMD_BUILD=RELEASE PMD_SHARE="$HOME/share/"

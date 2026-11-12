@@ -92,7 +92,7 @@ a late emulation thread is a dropout) need the headroom.
 
 ## Build without `deploy.sh`
 
-On the Pi (needs `libsdl2-dev`, `libsdl2-ttf-dev` and a C++ compiler):
+On the Pi (needs `libsdl2-dev`, `libsdl2-ttf-dev`, `zlib1g-dev` and a C++ compiler):
 
 ```sh
 cd simpmd

@@ -33,6 +33,7 @@ limitations under the License.
 #include "sim_common.h"
 #include <algorithm>
 #include <unistd.h>
+#include <sys/stat.h>
 #include <strings.h>
 #include <fstream>
 #include <iterator>
@@ -198,7 +199,10 @@ static Uint32 iKeyTime;
 static int iKeyMs = 150;
 /// All games of the list menu.
 static std::vector <tGame> oGames;
-/// The list menu is shown instead of the four games.
+/// Names (tapes) of the favorite games in the order of the main menu. Without a file: the four games the menu always had.
+static std::vector <std::string> oFavorites;
+
+/// The list menu is shown instead of the favorite games.
 static bool inList = false;
 /// Selected row of the list (see ListView).
 static int listIndex = 0;
@@ -373,7 +377,7 @@ static void InitializePMD2A ()
  *  PMD_STATEDIR when set; else, when built with PMD_STATEHOME, "$HOME/<PMD_STATEHOME>" of the running user (every user has
  *  own states); else "states" in the share directory.
  */
-static std::string StatePathOf (const std::string &sTape)
+static std::string StateDir ()
 {
   const char *pDir = getenv ("PMD_STATEDIR");
   std::string sDir = pDir && *pDir ? pDir : PMD_SHARE "states";
@@ -382,6 +386,12 @@ static std::string StatePathOf (const std::string &sTape)
   if (!(pDir && *pDir) && pHome && *pHome)
     sDir = std::string (pHome) + "/" PMD_STATEHOME;
 #endif
+  return (sDir);
+}
+
+static std::string StatePathOf (const std::string &sTape)
+{
+  std::string sDir = StateDir ();
   size_t iSlash = sTape.rfind ('/');
   return (sDir + "/" + (iSlash == std::string::npos ? sTape : sTape.substr (iSlash + 1)) + ".sav");
 }
@@ -791,7 +801,10 @@ static std::string WebStateBuild ()
                        (iKeyPos < (int) sKeys.size () ? "true" : "false") + ",\"tape_idle_ms\":" +
                        std::to_string (TAPMsSinceRead ()) + ",\"index\":" +
                        std::to_string (inList ? listIndex : gameIndex) + ",\"pad\":\"" + (inMenu ? pPadMenu : sPad.c_str ()) +
-                       "\",\"featured\":[\"FLAPPY\",\"BOULDER\",\"MANIC\",\"FRED\"],\"games\":[";
+                       "\",\"featured\":[";
+  for (size_t i = 0 ; i < oFavorites.size () ; i ++)
+    sState += std::string (i ? "," : "") + "\"" + oFavorites [i] + "\"";
+  sState += "],\"games\":[";
   std::vector <int> oView = ListView ();
   for (size_t i = 0 ; i < oView.size () ; i ++)
     sState += std::string (i ? "," : "") + "\"" + (oView [i] == LIST_LEVEL_UP ? std::string ("(o uroven vys)") :
@@ -1019,15 +1032,96 @@ static void GamesLoad ()
 }
 
 
+//--------------------------------------------------------------------------
+// Favorites: the games of the main menu
+
+/// File of the favorites: PMD_FAVORITES, else favorites.lst in the directory of the saved states.
+static std::string FavoritesPath ()
+{
+  const char *pFile = getenv ("PMD_FAVORITES");
+  return (pFile && *pFile ? std::string (pFile) : StateDir () + "/favorites.lst");
+}
+
+/// Index of the game of the games list, -1 if there is none of the name.
+static int GameFind (const std::string &sTape)
+{
+  for (size_t i = 0 ; i < oGames.size () ; i ++)
+    if (oGames [i].sTape == sTape)
+      return ((int) i);
+  return (-1);
+}
+
+static bool IsFavorite (const std::string &sTape)
+{
+  return (std::find (oFavorites.begin (), oFavorites.end (), sTape) != oFavorites.end ());
+}
+
+/// Creates the directories of a file path.
+static void MakeDirs (const std::string &sFile)
+{
+  for (size_t iSlash = sFile.find ('/', 1) ; iSlash != std::string::npos ; iSlash = sFile.find ('/', iSlash + 1))
+    mkdir (sFile.substr (0, iSlash).c_str (), 0755);
+}
+
+static void FavoritesSave ()
+{
+  std::string sPath = FavoritesPath ();
+  MakeDirs (sPath);
+  std::ofstream oFile (sPath);
+  for (size_t i = 0 ; i < oFavorites.size () ; i ++)
+    oFile << oFavorites [i] << "\n";
+  if (!oFile.good ())
+    fprintf (stderr, "Favorites not saved: %s\n", sPath.c_str ());
+}
+
+/// Reads the favorites, the games that are not in games.lst (any more) are dropped.
+static void FavoritesLoad ()
+{
+  oFavorites.clear ();
+  std::ifstream oFile (FavoritesPath ());
+  if (!oFile.good ())
+  {
+    static const char *apDefault [] = {"FLAPPY", "BOULDER", "MANIC+", "FRED"};
+    for (size_t i = 0 ; i < sizeof (apDefault) / sizeof (apDefault [0]) ; i ++)
+      if (GameFind (apDefault [i]) >= 0)
+        oFavorites.push_back (apDefault [i]);
+    return;
+  }
+  std::string sLine;
+  while (std::getline (oFile, sLine))
+  {
+    while (!sLine.empty () && (sLine [sLine.size () - 1] == '\r' || sLine [sLine.size () - 1] == ' '))
+      sLine.erase (sLine.size () - 1);
+    if (!sLine.empty () && GameFind (sLine) >= 0 && !IsFavorite (sLine))
+      oFavorites.push_back (sLine);
+  }
+}
+
+/// The picture of a game in the main menu: the logo the four first games always had (BOULD+3 has the one of BOULDER), else its screenshot (screenshots/<name>.png).
+static std::string FavoriteImage (const std::string &sTape)
+{
+  if (sTape == "FLAPPY") return (PMD_SHARE "flappy.bmp");
+  if (sTape == "BOULDER" || sTape == "BOULD+3") return (PMD_SHARE "boulder.bmp");
+  if (sTape == "MANIC+") return (PMD_SHARE "manic.bmp");
+  if (sTape == "FRED") return (PMD_SHARE "fred.bmp");
+  std::string sPath = std::string (PMD_SHARE "screenshots/") + sTape + ".png";
+  return (access (sPath.c_str (), F_OK) == 0 ? sPath : std::string ());
+}
+
 /// Draw the main menu or the games list.
 static void MenuRender ()
 {
   if (!inList)
   {
-    bool abState [4];
-    for (int i = 0 ; i < 4 ; i ++)
-      abState [i] = HasState (gameSelect [i]);
-    DSPRenderMenu (fullscreen.w, fullscreen.h, gameIndex, abState);
+    if (gameIndex >= (int) oFavorites.size ())
+      gameIndex = oFavorites.empty () ? 0 : (int) oFavorites.size () - 1;
+    std::vector <tMenuItem> oItems;
+    for (size_t i = 0 ; i < oFavorites.size () ; i ++)
+    {
+      tMenuItem sItem = {oFavorites [i], FavoriteImage (oFavorites [i]), HasState (oFavorites [i])};
+      oItems.push_back (sItem);
+    }
+    DSPRenderMenu (fullscreen.w, fullscreen.h, gameIndex, oItems);
     return;
   }
   std::vector <std::string> oNames, oNotes, oInputs;
@@ -1069,7 +1163,7 @@ static void MenuRender ()
       oNotes.push_back ("");
       continue;
     }
-    oInputs.push_back (oGames [oView [i]].sInput + (HasState (oGames [oView [i]].sTape) ? "S" : ""));
+    oInputs.push_back (oGames [oView [i]].sInput + (HasState (oGames [oView [i]].sTape) ? "S" : "") + (IsFavorite (oGames [oView [i]].sTape) ? "V" : ""));
     oNames.push_back (oGames [oView [i]].sTape);
     oNotes.push_back ((oGames [oView [i]].iModel == 3 ? "PMD 85-2A " : oGames [oView [i]].iModel == 2 ? "PMD 85-2  " : "PMD 85-1  ") + ListNote (oGames [oView [i]].sNote));
   }
@@ -1292,6 +1386,225 @@ static void EmulationShutdown ()
 //--------------------------------------------------------------------------
 // Main
 
+
+//--------------------------------------------------------------------------
+// Menu actions: Enter, the popup menu of a held Enter, the test script
+
+/// Own event types: the hold of Enter in a menu, a step of the menu script (SDL_USEREVENT +1 Esc, +2 long press, +3 tap, +4 Ctrl).
+static const Uint32 iOkEvent = SDL_USEREVENT + 5;
+static const Uint32 iScriptEvent = SDL_USEREVENT + 6;
+/// Enter held this long [ms] in a menu opens the popup menu of the game (PMD_OK_MS, 0 = no popup menu, Enter acts at once).
+static int iOkHoldMs = 600;
+static int iOkSerial = 0;
+static bool bOkDown = false, bOkFired = false;
+/// The popup menu: the game it is about, its choices (0 is always Run) and the selected one.
+static bool bPopup = false;
+static std::string sPopupGame;
+static int iPopupSel = 0;
+
+static Uint32 OkTimerCallback (Uint32 iInterval, void *pSerial)
+{
+  SDL_Event sEvent;
+  SDL_zero (sEvent);
+  sEvent.type = iOkEvent;
+  sEvent.user.code = (Sint32) (intptr_t) pSerial;
+  SDL_PushEvent (&sEvent);
+  return (0);
+}
+
+/// Starts a game of the games list from a menu.
+static void GameRun (int iGame)
+{
+  DSPClearPopup ();
+  DSPMenuShutdown ();
+  EmulationInitialize (PMD_SHARE + oGames [iGame].sTape, oGames [iGame].iModel);
+  inMenu = false;
+}
+
+/// What Enter does in a menu: starts the selected favorite or game, opens a category or goes one level up.
+static void MenuEnter ()
+{
+  if (inList) {
+    std::vector <int> oView = ListView ();
+    int iCount = (int) oView.size ();
+    if (iCount <= 0)
+      return;
+    if (oView [listIndex] == LIST_LEVEL_UP) {
+      ListBack ();
+    } else if (oView [listIndex] < 0) {
+      // Open the category, the cursor on its first game.
+      iCategory = -oView [listIndex] - 1;
+      listIndex = 1;
+      MenuRender ();
+    } else {
+      GameRun (oView [listIndex]);
+    }
+  } else if (gameIndex < (int) oFavorites.size ()) {
+    int iGame = GameFind (oFavorites [gameIndex]);
+    if (iGame >= 0)
+      GameRun (iGame);
+  }
+}
+
+/// The choices of the popup menu: the game of the main menu is a favorite, the game of the list may or may not be.
+static std::vector <std::string> PopupChoices ()
+{
+  std::vector <std::string> oChoices;
+  oChoices.push_back ("Spusti");
+  oChoices.push_back (IsFavorite (sPopupGame) ? "Odebrat z oblibenych" : "Pridat do oblibenych");
+  return (oChoices);
+}
+
+static void PopupDraw ()
+{
+  DSPSetPopup (sPopupGame, PopupChoices (), iPopupSel);
+  MenuRender ();
+}
+
+/// Held Enter: the popup menu of the selected game (not of a category).
+static void PopupOpen ()
+{
+  sPopupGame.clear ();
+  if (inList)
+  {
+    std::vector <int> oView = ListView ();
+    if (!oView.empty () && oView [listIndex] >= 0)
+      sPopupGame = oGames [oView [listIndex]].sTape;
+  }
+  else if (gameIndex < (int) oFavorites.size ())
+    sPopupGame = oFavorites [gameIndex];
+  if (sPopupGame.empty ())
+    return;
+  bPopup = true;
+  iPopupSel = 0;
+  PopupDraw ();
+}
+
+static void PopupClose ()
+{
+  bPopup = false;
+  DSPClearPopup ();
+  MenuRender ();
+}
+
+/// Enter in the popup menu: Spusti (run), or adds / removes the favorite and saves the file.
+static void PopupActivate ()
+{
+  if (iPopupSel == 0)
+  {
+    bPopup = false;
+    int iGame = GameFind (sPopupGame);
+    if (iGame >= 0)
+      GameRun (iGame);
+    return;
+  }
+  std::vector <std::string>::iterator xFound = std::find (oFavorites.begin (), oFavorites.end (), sPopupGame);
+  if (xFound == oFavorites.end ())
+    oFavorites.push_back (sPopupGame);
+  else
+  {
+    int iRemoved = (int) (xFound - oFavorites.begin ());
+    oFavorites.erase (xFound);
+    // The selection of the main menu stays on the neighbour of the removed tile.
+    if (!inList && gameIndex >= iRemoved && gameIndex > 0 && gameIndex >= (int) oFavorites.size ())
+      gameIndex = (int) oFavorites.size () - 1;
+  }
+  FavoritesSave ();
+  PopupClose ();
+}
+
+/// PMD_MENUSCRIPT: a test script for the menus, steps separated by spaces: an SDL key name (a tap), "<key>:hold" (held
+/// PMD_OK_MS and a bit more), "shot=<file>" (BMP of the menu) and "quit". One step in about 400 ms.
+struct tScriptStep
+{
+  int iKind;                    // 0 key down, 1 key up, 2 screenshot, 3 quit
+  SDL_Keycode iSym;
+  std::string sFile;
+  Uint32 iDelay;
+};
+static std::vector <tScriptStep> oScript;
+
+static void ScriptParse (const std::string &sText, int iHoldMs)
+{
+  size_t iPos = 0;
+  while (iPos < sText.size ())
+  {
+    size_t iEnd = sText.find (' ', iPos);
+    if (iEnd == std::string::npos)
+      iEnd = sText.size ();
+    std::string sToken = sText.substr (iPos, iEnd - iPos);
+    iPos = iEnd + 1;
+    if (sToken.empty ())
+      continue;
+    tScriptStep sStep = {0, SDLK_UNKNOWN, "", 400};
+    if (sToken == "quit")
+    {
+      sStep.iKind = 3;
+      oScript.push_back (sStep);
+    }
+    else if (sToken.compare (0, 5, "shot=") == 0)
+    {
+      sStep.iKind = 2;
+      sStep.sFile = sToken.substr (5);
+      oScript.push_back (sStep);
+    }
+    else
+    {
+      bool bHold = sToken.size () > 5 && sToken.compare (sToken.size () - 5, 5, ":hold") == 0;
+      if (bHold)
+        sToken.erase (sToken.size () - 5);
+      SDL_Keycode iSym = SDL_GetKeyFromName (sToken.c_str ());
+      if (iSym == SDLK_UNKNOWN)
+      {
+        fprintf (stderr, "PMD_MENUSCRIPT: unknown key '%s'\n", sToken.c_str ());
+        continue;
+      }
+      sStep.iSym = iSym;
+      oScript.push_back (sStep);
+      sStep.iKind = 1;
+      sStep.iDelay = bHold ? iHoldMs + 300 : 100;
+      oScript.push_back (sStep);
+    }
+  }
+}
+
+static Uint32 ScriptTimerCallback (Uint32 iInterval, void *pStep)
+{
+  SDL_Event sEvent;
+  SDL_zero (sEvent);
+  sEvent.type = iScriptEvent;
+  sEvent.user.code = (Sint32) (intptr_t) pStep;
+  SDL_PushEvent (&sEvent);
+  return (0);
+}
+
+/// Runs a step of the script and schedules the next one.
+static void ScriptStep (size_t iStep)
+{
+  if (iStep >= oScript.size ())
+    return;
+  const tScriptStep &sStep = oScript [iStep];
+  if (sStep.iKind == 0 || sStep.iKind == 1)
+  {
+    SDL_Event sEvent;
+    SDL_zero (sEvent);
+    sEvent.type = sStep.iKind == 0 ? SDL_KEYDOWN : SDL_KEYUP;
+    sEvent.key.state = sStep.iKind == 0 ? SDL_PRESSED : SDL_RELEASED;
+    sEvent.key.keysym.sym = sStep.iSym;
+    sEvent.key.keysym.scancode = SDL_GetScancodeFromKey (sStep.iSym);
+    SDL_PushEvent (&sEvent);
+  }
+  else if (sStep.iKind == 2)
+    DSPSaveMenuScreenshot (sStep.sFile.c_str ());
+  else
+  {
+    SIMRequestShutdown ();
+    return;
+  }
+  if (iStep + 1 < oScript.size ())
+    SDL_AddTimer (oScript [iStep + 1].iDelay, ScriptTimerCallback, (void *) (intptr_t) (iStep + 1));
+}
+
 static void Usage (FILE *pOut)
 {
   fprintf (pOut, "Usage: simpmd [GAME]   start the game GAME of games.lst (the case does not matter), no argument: the menu\n"
@@ -1350,6 +1663,7 @@ int main (int iArgC, const char *apArgV [])
   // The game of the command line wins over PMD_GAME.
   const char *pGame = pArgGame ? pArgGame : getenv ("PMD_GAME");
   GamesLoad ();
+  FavoritesLoad ();
   if (bList)
   {
     for (size_t i = 0 ; i < oGames.size () ; i ++)
@@ -1401,6 +1715,16 @@ int main (int iArgC, const char *apArgV [])
     // Menu
     DSPMenuInitialize ();
     MenuRender ();
+  }
+  const char *pOkMs = getenv ("PMD_OK_MS");
+  if (pOkMs && atoi (pOkMs) >= 0)
+    iOkHoldMs = atoi (pOkMs);
+  const char *pScript = getenv ("PMD_MENUSCRIPT");
+  if (pScript && inMenu)
+  {
+    ScriptParse (pScript, iOkHoldMs);
+    if (!oScript.empty ())
+      SDL_AddTimer (1500, ScriptTimerCallback, (void *) (intptr_t) 0);
   }
   const char *pEscMs = getenv ("PMD_ESC_MS");
   if (pEscMs && atoi (pEscMs) >= 0)
@@ -1456,6 +1780,21 @@ int main (int iArgC, const char *apArgV [])
       }
       continue;
     }
+    if (sEvent.type == iScriptEvent)
+    {
+      ScriptStep ((size_t) sEvent.user.code);
+      continue;
+    }
+    if (sEvent.type == iOkEvent)
+    {
+      // Enter was held PMD_OK_MS in a menu: the popup menu of the game.
+      if (inMenu && bOkDown && !bOkFired && !bPopup && sEvent.user.code == iOkSerial)
+      {
+        bOkFired = true;
+        PopupOpen ();
+      }
+      continue;
+    }
     if (sEvent.type == iEscEvent)
     {
       // The hold time of Esc has passed, unless the key was released meanwhile.
@@ -1467,6 +1806,58 @@ int main (int iArgC, const char *apArgV [])
       }
       continue;
     }
+    if (inMenu && bPopup && (sEvent.type == SDL_KEYDOWN || sEvent.type == SDL_KEYUP) && sEvent.key.keysym.sym == SDLK_ESCAPE)
+    {
+      // Esc closes the popup menu at once (the hold of Esc is for leaving the menu).
+      if (sEvent.type == SDL_KEYDOWN && !sEvent.key.repeat)
+        PopupClose ();
+      continue;
+    }
+    if (inMenu && (sEvent.type == SDL_KEYDOWN || sEvent.type == SDL_KEYUP) && sEvent.key.keysym.sym == SDLK_RETURN && (bPopup || iOkHoldMs > 0))
+    {
+      if (bPopup)
+      {
+        // In the popup menu a new press of Enter chooses, the release of the Enter that opened it is ignored.
+        if (sEvent.type == SDL_KEYDOWN && !sEvent.key.repeat)
+          PopupActivate ();
+        else if (sEvent.type == SDL_KEYUP)
+          bOkDown = false;
+      }
+      else if (sEvent.type == SDL_KEYDOWN)
+      {
+        if (!sEvent.key.repeat)
+        {
+          bOkDown = true;
+          bOkFired = false;
+          SDL_AddTimer (iOkHoldMs, OkTimerCallback, (void *) (intptr_t) ++iOkSerial);
+        }
+      }
+      else
+      {
+        // A short press acts when the key is released, unless the hold has opened the popup menu.
+        if (bOkDown && !bOkFired)
+          MenuEnter ();
+        bOkDown = false;
+        iOkSerial ++;
+      }
+      continue;
+    }
+    if (inMenu && bPopup && sEvent.type == SDL_KEYDOWN)
+    {
+      // Up and down choose in the popup menu, the other keys do nothing.
+      SDL_Keycode iPopupSym = sEvent.key.keysym.sym;
+      bool bPopupUp = iPopupSym == SDLK_UP || iPopupSym == SDLK_e;
+      bool bPopupDown = iPopupSym == SDLK_DOWN || iPopupSym == SDLK_z;
+      if (bPopupUp || bPopupDown)
+      {
+        int iChoices = (int) PopupChoices ().size ();
+        iPopupSel = (iPopupSel + (bPopupDown ? 1 : iChoices - 1)) % iChoices;
+        PopupDraw ();
+      }
+      continue;
+    }
+    if (inMenu && bPopup)
+      continue;
     if ((sEvent.type == SDL_KEYDOWN || sEvent.type == SDL_KEYUP) && sEvent.key.keysym.sym == SDLK_ESCAPE && iEscHoldMs > 0)
     {
       if (sEvent.type == SDL_KEYDOWN)
@@ -1511,41 +1902,26 @@ int main (int iArgC, const char *apArgV [])
                    listIndex = std::max (0, std::min (iCount - 1, listIndex + iStep));
                  MenuRender ();
                }
-               if (iSym == SDLK_RETURN && iCount > 0) {
-                 if (oView [listIndex] == LIST_LEVEL_UP) {
-                   ListBack ();
-                 } else if (oView [listIndex] < 0) {
-                   // Open the category, the cursor on its first game.
-                   iCategory = -oView [listIndex] - 1;
-                   listIndex = 1;
-                   MenuRender ();
-                 } else {
-                   DSPMenuShutdown ();
-                   EmulationInitialize (PMD_SHARE + oGames [oView [listIndex]].sTape, oGames [oView [listIndex]].iModel);
-                   inMenu = false;
-                 }
-               }
+               if (iSym == SDLK_RETURN)
+                 MenuEnter ();
              } else {
                if (iSym == SDLK_ESCAPE) { 
                 SIMRequestShutdown ();
                }
-               if (iSym == SDLK_LEFT) {
-                 (gameIndex == 0) ? gameIndex = 3 : gameIndex--;
+               if (iSym == SDLK_LEFT && !oFavorites.empty ()) {
+                 gameIndex = (gameIndex + (int) oFavorites.size () - 1) % (int) oFavorites.size ();
                  MenuRender ();
                }
-               if (iSym == SDLK_RIGHT) { 
-                 (gameIndex == 3) ? gameIndex = 0 : gameIndex++;
+               if (iSym == SDLK_RIGHT && !oFavorites.empty ()) {
+                 gameIndex = (gameIndex + 1) % (int) oFavorites.size ();
                  MenuRender ();
                }
                if (bUp && !oGames.empty ()) {
                  inList = true;
                  MenuRender ();
                }
-               if (iSym == SDLK_RETURN) {
-                 DSPMenuShutdown ();
-                 EmulationInitialize (gameSelect[gameIndex], 1);
-                 inMenu = false;	
-               }
+               if (iSym == SDLK_RETURN)
+                 MenuEnter ();
              }
            }
         } else {

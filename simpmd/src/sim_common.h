@@ -186,9 +186,20 @@ void DSPMenuShutdown ();
 void DSPLogoShutdown ();
 
 void DSPRenderLogo (int screen_width, int screen_height);
-void DSPRenderText (int screen_width, int screen_height);
-void DSPRenderImage (int screen_width, int screen_height);
-void DSPRenderMenu (int screen_width, int screen_height, int index, const bool *abState);
+/// A game of the main menu (a favorite): the name under the tile, the picture, the saved state icon.
+struct tMenuItem
+{
+  std::string sName;
+  std::string sImage;
+  bool bState;
+};
+
+void DSPRenderText (int screen_width, int screen_height, int index, const std::vector <tMenuItem> &oItems);
+void DSPRenderImage (int screen_width, int screen_height, int index, const std::vector <tMenuItem> &oItems);
+void DSPRenderMenu (int screen_width, int screen_height, int index, const std::vector <tMenuItem> &oItems);
+void DSPSetPopup (const std::string &sTitle, const std::vector <std::string> &oItems, int iSelected);
+void DSPClearPopup ();
+void DSPSaveMenuScreenshot (const char *pPath);
 void DSPRenderGameList (int screen_width, int screen_height, int index, const std::string &sTitle, const std::vector <std::string> &oNames, const std::vector <std::string> &oNotes, const std::vector <std::string> &oInputs, const std::string &sHelp);
 
 byte KBDReadRow ();
