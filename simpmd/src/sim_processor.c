@@ -1847,9 +1847,11 @@ bool CPUPause ()
   for (int i = 0 ; i < 2000 && !bPaused ; i ++)
     usleep (1000);
   std::atomic_thread_fence (std::memory_order_seq_cst);
-  if (!bPaused)
+  // One look at the flag: the answer and the withdrawn request must agree (the thread may park itself just now).
+  bool bStopped = bPaused;
+  if (!bStopped)
     bPauseRequest = false;
-  return (bPaused);
+  return (bStopped);
 }
 
 

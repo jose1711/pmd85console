@@ -9,8 +9,9 @@ raspberry/deploy.sh [-p port] [-i identity] [-n] [-o] [user@]host
 ```
 
 It copies `simpmd` and `raspberry` to the Pi, installs missing build packages and builds (`PMD_SHARE=$HOME/share/`).
-It also installs the tapes, the screenshots of the games (`~/share/screenshots`) and `games.lst` to `~/share` (existing files are kept, `games.lst` and the screenshots are replaced) and
-installs and starts `pmd85.service`.
+It also installs the tapes, the screenshots of the games (`~/share/screenshots`) and `games.lst` to `~/share` (a file is
+replaced only by a newer one of the repository, `games.lst` and the screenshots always) and installs, enables and restarts
+`pmd85.service` (a running game ends, the new build runs at once).
 
 | Option | Meaning |
 |---|---|

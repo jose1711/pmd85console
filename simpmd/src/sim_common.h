@@ -48,6 +48,7 @@ limitations under the License.
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <sys/stat.h>
 #include <vector>
 
 #include <SDL2/SDL.h>
@@ -278,13 +279,23 @@ void TIMShutdown ();
 #undef DEBUG_CPU_TRACE_REGISTERS
 
 /// Executes a function and makes sure it returned 0.
-#define CheckZero(X) if (X) { assert (false); }
+#define CheckZero(X) do { if (X) { assert (false); } } while (0)
 /// Executes an SDL function and makes sure it returned 0.
-#define SDL_CheckZero(X) if (X) { DEBUG_LOG (SDL_GetError ()); assert (false); }
+#define SDL_CheckZero(X) do { if (X) { DEBUG_LOG (SDL_GetError ()); assert (false); } } while (0)
 /// Executes an SDL function and makes sure it returned TRUE.
-#define SDL_CheckTrue(X) if (!X) { DEBUG_LOG (SDL_GetError ()); assert (false); }
+#define SDL_CheckTrue(X) do { if (!(X)) { DEBUG_LOG (SDL_GetError ()); assert (false); } } while (0)
 /// Executes an SDL function and makes sure it did not return NULL.
-#define SDL_CheckNotNull(X) if ((X) == NULL) { DEBUG_LOG (SDL_GetError ()); assert (false); }
+#define SDL_CheckNotNull(X) do { if ((X) == NULL) { DEBUG_LOG (SDL_GetError ()); assert (false); } } while (0)
+
+/// Creates the directories of a file path, all levels (as mkdir -p of its directory).
+static inline void SIMMakeDirs (const std::string &sFile)
+{
+  size_t iLast = sFile.rfind ('/');
+  if (iLast == std::string::npos)
+    return;
+  for (size_t iPos = sFile.find ('/', 1) ; iPos != std::string::npos && iPos <= iLast ; iPos = sFile.find ('/', iPos + 1))
+    mkdir (sFile.substr (0, iPos).c_str (), 0755);
+}
 
 //--------------------------------------------------------------------------
 

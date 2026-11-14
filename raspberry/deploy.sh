@@ -3,7 +3,7 @@
 # build dependencies, build, install data to ~/share, install and enable pmd85.service.
 #
 # Usage: raspberry/deploy.sh [-p ssh-port] [-i identity] [-n] [-o] [user@]host
-#   -n    do not enable/start the systemd service (build and install data only)
+#   -n    do not enable/restart the systemd service (build and install data only)
 #   -o    overclock: set arm_freq=1000, gpu_mem=128 and vc4-kms-v3d in config.txt (real Pi only,
 #         takes effect after reboot; prints vcgencmd get_throttled)
 #
@@ -47,7 +47,9 @@ if [ -n "$MISSING" ]; then
 	sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq $MISSING
 fi
 mkdir -p ~/share simpmd/bin
-cp -n simpmd/data/roms/M* simpmd/data/roms/*.rmm simpmd/data/font/* simpmd/data/logo/* \
+# -u: a file of the share directory is replaced only by a newer one (a tape fixed in the repository gets to the Pi,
+# a file changed on the Pi later stays).
+cp -u simpmd/data/roms/M* simpmd/data/roms/*.rmm simpmd/data/font/* simpmd/data/logo/* \
 	simpmd/data/tapes/games-pmd1/* simpmd/data/tapes/games-pmd2/* ~/share/
 cp -f simpmd/data/games.lst ~/share/
 mkdir -p ~/share/screenshots
@@ -75,8 +77,10 @@ sudo systemctl daemon-reload
 sudo systemctl enable pmd85.service
 # PipeWire is not needed (the emulator talks to ALSA directly) and takes CPU from the only core of the Pi
 for u in pipewire.socket pipewire-pulse.socket pipewire.service pipewire-pulse.service wireplumber.service; do
-	if [ -e /usr/lib/systemd/user/$u ]; then sudo systemctl --global mask $u 2>/dev/null; fi
+	if [ -e /usr/lib/systemd/user/$u ]; then sudo systemctl --global mask $u 2>/dev/null || true; fi
 done
+# The new build runs from now on (a running game is ended).
+sudo systemctl restart pmd85.service
 systemctl cat pmd85.service | sed -n '1,12p'
 REMOTE
 fi

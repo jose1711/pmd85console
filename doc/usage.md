@@ -98,8 +98,6 @@ SDL_VIDEODRIVER=dummy SDL_RENDER_DRIVER=software SDL_AUDIODRIVER=disk bin/simpmd
 | `PMD_KEYLOG=<file>` | Log keyboard and window events, paint duration and queue lag. |
 | `PMD_KBD_HOLD_MS=<ms>` | Minimal time a key stays pressed in the emulated keyboard, default 60; the game can set another one with `KEYHOLD <ms>` in its note of `games.lst` (BOMBARDE 170: its `INKEY` reads a key once in a pass of the loop of about 150 ms and a shorter tap would be missed, in VOTRELCI such a long hold moves the gun by 2 positions); this variable overrides both. |
 | `PMD_PAINTSTATS=1` | Debug: every 10 s the number of paint calls, painted frames, the slowest paint and the longest gap between paints (stderr). |
-| `PMD_PAINTTRACE=1` | Debug: the position of the leftmost lit pixel in lines 206-215 at each painted frame. |
-| `PMD_PADDLETRACE=1` | Debug: ARKANOID paddle sampler (2 ms): edge, `x`, speed, ball x, key bits and carry of the speed routine. |
 | `PMD_PADTRACE=1` | Debug: prints the events of the gamepad (buttons, axes) and the pad inputs the emulator derived from them. |
 | `PMD_VIRTPAD=<file>` | Debug: attaches a virtual game controller inside the process (no other program sees it) and takes the pressed buttons from the first two bytes of the file, bit n = SDL controller button n (0 A, 1 B, 2 X, 3 Y, 4 Back, 6 Start, 9 LB, 10 RB, 11 up, 12 down, 13 left, 14 right); the third and the fourth byte (optional) are the triggers LT and RT, 0 to 255. `PMD_VIRTPAD_AXES=<x>,<y>` sets its left stick. |
 | `PMD_MEMTRACE=<first>-<last>` | Debug: logs every write to that range of memory (hex addresses) with the address of the instruction (`W 0e600=00 pc 179b`). |
@@ -132,7 +130,7 @@ The characters of `PMD_KEYS`:
 | Variable | Meaning |
 |---|---|
 | `PMD_ESC_MS=<ms>` | Hold time of [Esc] (back from a game or the list, quit in the main menu), default 800, 0 = at once. |
-| `PMD_OK_MS=<ms>` | Hold time of [Enter] in the menus that opens the popup menu of the game (Spusti, favorites), default 600, 0 = no popup menu and [Enter] acts at once, see [games.md](games.md#favorites). |
+| `PMD_OK_MS=<ms>` | Hold time of [Enter] in the menus that opens the popup menu of the game (Spusti, favorites), default 800, 0 = no popup menu and [Enter] acts at once, see [games.md](games.md#favorites). |
 | `PMD_FAVORITES=<file>` | File of the favorite games of the main menu, default `favorites.lst` in `PMD_STATEDIR`. |
 | `PMD_PAD=<input>=<key>,...` | Gamepad keys, see [remote.md](remote.md#gamepad). |
 | `PMD_WEB=<port>` | Remote control from a browser, see [remote.md](remote.md#web-remote-control). `PMD_WEB_TOKEN=<secret>` protects it. |

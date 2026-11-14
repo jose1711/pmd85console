@@ -17,7 +17,11 @@ EnvironmentFile=-@HOME@/pmd85.env
 # Esc in the emulator exits it; the machine is halted only with PMD_HALT=1 in pmd85.env (off while debugging,
 # the unit then just stays stopped: `systemctl start pmd85`). A stop/restart of the unit (SIGTERM) never halts.
 # Output of the emulator goes to the journal (kept over reboots, see journald-pmd85.conf).
-ExecStartPre=-/bin/rm -f /tmp/pmd85.halt
+# The mark of the halt is in /run/pmd85, which only the user of the service (and root) can write: a file in /tmp could be
+# made by anybody and the next stop of the unit would halt the machine.
+RuntimeDirectory=pmd85
+RuntimeDirectoryPreserve=yes
+ExecStartPre=-/bin/rm -f /run/pmd85/halt
 # Wake the TV over HDMI-CEC (if the Pi has /dev/cec0), a sleeping TV reports no monitor.
 ExecStartPre=+/usr/local/sbin/pmd85-hdmi wake
 # OK of the TV remote control = Enter (KEY_OK is unknown to SDL).
@@ -25,8 +29,8 @@ ExecStartPre=+/usr/local/sbin/pmd85-hdmi keymap
 # Wait for the monitor (up to PMD_HDMI_WAIT s, default 45); started without one, the emulator restarts when it appears.
 ExecStartPre=+/usr/local/sbin/pmd85-hdmi wait
 TimeoutStartSec=90
-ExecStart=/bin/bash -c 'trap "STOP=1" TERM; @HOME@/pmd85console/simpmd/bin/simpmd; rc=$?; [ -z "$STOP" ] && [ $rc -eq 0 ] && [ "$PMD_HALT" = 1 ] && touch /tmp/pmd85.halt; exit $rc'
-ExecStopPost=+/bin/sh -c 'if [ -f /tmp/pmd85.halt ]; then rm -f /tmp/pmd85.halt; /sbin/halt; fi'
+ExecStart=/bin/bash -c 'trap "STOP=1" TERM; @HOME@/pmd85console/simpmd/bin/simpmd; rc=$?; [ -z "$STOP" ] && [ $rc -eq 0 ] && [ "$PMD_HALT" = 1 ] && touch /run/pmd85/halt; exit $rc'
+ExecStopPost=+/bin/sh -c 'if [ -f /run/pmd85/halt ]; then rm -f /run/pmd85/halt; /sbin/halt; fi'
 
 [Install]
 WantedBy=multi-user.target

@@ -22,7 +22,7 @@ A star after the name marks a favorite.
 ## Favorites
 
 The main menu shows four favorites on a page (a "Strana 1/2" at the bottom right when there are more, [Left] / [Right]
-move over the pages). Hold [Enter] (the OK button of the TV remote control) on a game for 0.6 s and a popup menu opens:
+move over the pages). Hold [Enter] (the OK button of the TV remote control) on a game for 0.8 s and a popup menu opens:
 
 - in the list: `Spusti` and `Pridat do oblibenych` (`Odebrat z oblibenych` for a game that is already one),
 - in the main menu: `Spusti` and `Odebrat z oblibenych`.
