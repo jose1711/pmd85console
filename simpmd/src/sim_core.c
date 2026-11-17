@@ -1214,7 +1214,13 @@ static void MenuRender ()
   std::string sHelp;
   if (!oView.empty ())
     sHelp = oView [listIndex] == LIST_LEVEL_UP ? "Enter vrati o uroven vys" : oView [listIndex] < 0 ? (CategoryIsFamily (oCategories [-oView [listIndex] - 1]) ? "Enter otevre verze hry" : "Enter otevre kategorii") : oGames [oView [listIndex]].sHelp;
-  DSPRenderGameList (fullscreen.w, fullscreen.h, listIndex, iCategory < 0 ? std::string ("Vsechny hry") : CategoryPath (oCategories [iCategory]), oNames, oNotes, oInputs, sHelp);
+  // The picture of the selected game, of a family the one of the game it is named after (BOULDER).
+  std::string sImage;
+  if (!oView.empty () && oView [listIndex] >= 0)
+    sImage = FavoriteImage (oGames [oView [listIndex]].sTape);
+  else if (!oView.empty () && oView [listIndex] != LIST_LEVEL_UP && CategoryIsFamily (oCategories [-oView [listIndex] - 1]))
+    sImage = FavoriteImage (CategoryLabel (oCategories [-oView [listIndex] - 1]));
+  DSPRenderGameList (fullscreen.w, fullscreen.h, listIndex, iCategory < 0 ? std::string ("Vsechny hry") : CategoryPath (oCategories [iCategory]), oNames, oNotes, oInputs, sHelp, sImage);
 }
 
 

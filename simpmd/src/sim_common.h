@@ -201,7 +201,7 @@ void DSPRenderMenu (int screen_width, int screen_height, int index, const std::v
 void DSPSetPopup (const std::string &sTitle, const std::vector <std::string> &oItems, int iSelected);
 void DSPClearPopup ();
 void DSPSaveMenuScreenshot (const char *pPath);
-void DSPRenderGameList (int screen_width, int screen_height, int index, const std::string &sTitle, const std::vector <std::string> &oNames, const std::vector <std::string> &oNotes, const std::vector <std::string> &oInputs, const std::string &sHelp);
+void DSPRenderGameList (int screen_width, int screen_height, int index, const std::string &sTitle, const std::vector <std::string> &oNames, const std::vector <std::string> &oNotes, const std::vector <std::string> &oInputs, const std::string &sHelp, const std::string &sImage);
 
 byte KBDReadRow ();
 uint32 KBDScanCount ();

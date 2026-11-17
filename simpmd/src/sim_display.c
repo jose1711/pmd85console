@@ -1150,7 +1150,7 @@ static void DSPDrawWrapped (TTF_Font *pFont, const std::string &sText, int iX, i
   }
 }
 
-void DSPRenderGameList (int screen_width, int screen_height, int index, const std::string &sTitle, const std::vector <std::string> &oNames, const std::vector <std::string> &oNotes, const std::vector <std::string> &oInputs, const std::string &sHelp)
+void DSPRenderGameList (int screen_width, int screen_height, int index, const std::string &sTitle, const std::vector <std::string> &oNames, const std::vector <std::string> &oNotes, const std::vector <std::string> &oInputs, const std::string &sHelp, const std::string &sImage)
 {
   const int iRowHeight = FONT_HEIGHT + 8;
   const int iTop = 140;
@@ -1212,6 +1212,19 @@ void DSPRenderGameList (int screen_width, int screen_height, int index, const st
   int iChars = std::max (20, (screen_width - iX - 24) / FONT_WIDTH);
   DSPDrawWrapped (pFont, sHelp.empty () ? "Ovladani: neznamo (zkus sipky, mezernik, Enter)" : "Ovladani: " + sHelp, iX, screen_height - 170, iChars, 2, 28);
   DSPDrawWrapped (pFont, "Sipky nebo [ E ] [ Y ]: vyber  <- -> strana  [ Enter ]: spust  [ Esc ]: zpet  [ Enter ] drzet: menu", iX, screen_height - 100, iChars, 2, 28);
+  // The picture of the selected game (the one of the main menu) in the bottom left corner, left of the texts under the list. Smaller
+  // when the margin is narrow, none when it is narrower than half of the picture.
+  SDL_Texture *pPicture = sImage.empty () ? NULL : DSPPictureTexture (sImage);
+  int iSide = std::min (IMAGE_WIDTH, iX - 12 - 2 * 16);
+  if (pPicture && iSide >= IMAGE_WIDTH / 2)
+  {
+    int iW = 0, iH = 0;
+    SDL_QueryTexture (pPicture, NULL, NULL, &iW, &iH);
+    SDL_Rect sPicture = {0, 0, iW >= iH ? iSide : iSide * iW / iH, iW >= iH ? iSide * iH / iW : iSide};
+    sPicture.x = (iX - 12 - sPicture.w) / 2;
+    sPicture.y = screen_height - 20 - iSide + (iSide - sPicture.h) / 2;
+    SDL_RenderCopy (mRenderer, pPicture, NULL, &sPicture);
+  }
   DSPDrawPopup (screen_width, screen_height);
   SDL_RenderPresent (mRenderer);
   DSPMenuStat (iPerfBegin);
