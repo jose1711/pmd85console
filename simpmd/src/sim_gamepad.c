@@ -244,6 +244,17 @@ static void GPDSyncController (SDL_JoystickID iId, SDL_GameController *pControll
   Uint32 iStick = 0;
   int iX = SDL_GameControllerGetAxis (pController, SDL_CONTROLLER_AXIS_LEFTX);
   int iY = SDL_GameControllerGetAxis (pController, SDL_CONTROLLER_AXIS_LEFTY);
+  static const bool bTrace = getenv ("PMD_PADTRACE") != NULL;
+  if (bTrace)
+  {
+    printf ("PAD sync: buttons %#x, left stick %d %d\n", iButtons, iX, iY);
+    fflush (stdout);
+  }
+  // Right after the open the axes can read SDL_JOYSTICK_AXIS_MIN before the first report of the device (seen with 8BitDo SN30 Pro+
+  // on the rescan): that is not a held stick, the menu would move up and left on its own. A stick really held at the very end of
+  // its range is rare at the open and comes back with its next event.
+  if (iX == SDL_JOYSTICK_AXIS_MIN) iX = 0;
+  if (iY == SDL_JOYSTICK_AXIS_MIN) iY = 0;
   if (iX < -PMD_PAD_DEADZONE) iStick |= 1u << PAD_LEFT;
   if (iX > PMD_PAD_DEADZONE)  iStick |= 1u << PAD_RIGHT;
   if (iY < -PMD_PAD_DEADZONE) iStick |= 1u << PAD_UP;
