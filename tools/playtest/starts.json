@@ -1,0 +1,5 @@
+{"AIRRAID":{"pad":["r"],"remote":["Up"]},
+ "SPACE-RA":{"pad":["a"],"remote":["Up"]},
+ "PANGO":{"pad":["Return"],"remote":["Return"]},
+ "VOTRELCI":{"pad":["Return"],"remote":["Return"]},
+ "DOOM85":{"pad":["Return","wait:2","Return"],"remote":["Return","wait:2","Return"]}}
