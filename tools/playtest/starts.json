@@ -232,5 +232,26 @@
    "2",
    "wait:3"
   ]
+ },
+ "CROSFIRE": {
+  "pad": [
+   "Return"
+  ]
+ },
+ "CROSSI": {
+  "pad": [
+   "g",
+   "wait:2"
+  ]
+ },
+ "LAVICKA": {
+  "pad": [
+   "n",
+   "Return",
+   "wait:2",
+   "0",
+   "Return",
+   "wait:3"
+  ]
  }
 }
