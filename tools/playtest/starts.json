@@ -61,9 +61,13 @@
  },
  "SOLITER": {
   "pad": [
+   "e",
+   "e",
    "Return"
   ],
   "remote": [
+   "Up",
+   "Up",
    "Return"
   ]
  },
