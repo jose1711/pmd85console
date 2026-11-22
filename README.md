@@ -39,6 +39,7 @@ Details and the optional steps: [doc/install.md](doc/install.md).
 | PC keyboard mapping and the PMD 85 keys | [doc/keyboard.md](doc/keyboard.md) |
 | Gamepad, TV remote control, web remote control | [doc/remote.md](doc/remote.md) |
 | Manual check of the games (a procedure) | [doc/games-check.md](doc/games-check.md) |
+| Gamepad and TV remote: what can be played | [doc/gamepad-cec.md](doc/gamepad-cec.md) |
 | Splash screen (Plymouth) | [doc/splash.md](doc/splash.md) |
 | KAREL and KAREL3D commands | [README.karel.md](README.karel.md) |
 | EVIDENCE and EVIDEDIT (database program) | [README.evidence.md](README.evidence.md) |

@@ -1,5 +1,236 @@
-{"AIRRAID":{"pad":["r"],"remote":["Up"]},
- "SPACE-RA":{"pad":["a"],"remote":["Up"]},
- "PANGO":{"pad":["Return"],"remote":["Return"]},
- "VOTRELCI":{"pad":["Return"],"remote":["Return"]},
- "DOOM85":{"pad":["Return","wait:2","Return"],"remote":["Return","wait:2","Return"]}}
+{
+ "AIRRAID": {
+  "pad": [
+   "r"
+  ],
+  "remote": [
+   "Up"
+  ]
+ },
+ "SPACE-RA": {
+  "pad": [
+   "a"
+  ],
+  "remote": [
+   "Up"
+  ]
+ },
+ "PANGO": {
+  "pad": [
+   "g",
+   "wait:12",
+   "Return"
+  ]
+ },
+ "VOTRELCI": {
+  "pad": [
+   "Return"
+  ],
+  "remote": [
+   "Return"
+  ]
+ },
+ "DOOM85": {
+  "pad": [
+   "Return",
+   "wait:2",
+   "Return"
+  ],
+  "remote": [
+   "Return",
+   "wait:2",
+   "Return"
+  ]
+ },
+ "GAME2048": {
+  "pad": [
+   "s"
+  ],
+  "remote": [
+   "Return"
+  ]
+ },
+ "ATOMIX": {
+  "pad": [
+   "1",
+   "wait:3"
+  ],
+  "remote": [
+   "Return"
+  ]
+ },
+ "SOLITER": {
+  "pad": [
+   "Return"
+  ],
+  "remote": [
+   "Return"
+  ]
+ },
+ "TRAILBLA": {
+  "pad": [
+   "Return"
+  ],
+  "remote": [
+   "Return"
+  ]
+ },
+ "FFRUITS": {
+  "pad": [
+   "Return"
+  ],
+  "remote": [
+   "Return"
+  ]
+ },
+ "KVADRO": {
+  "pad": [
+   "s"
+  ],
+  "remote": [
+   "Return"
+  ]
+ },
+ "KVADRO.E": {
+  "pad": [
+   "s"
+  ],
+  "remote": [
+   "Return"
+  ]
+ },
+ "TVARE": {
+  "pad": [
+   "1",
+   "0",
+   "wait:2"
+  ],
+  "remote": [
+   "Return"
+  ]
+ },
+ "PLOTTING": {
+  "pad": [
+   "1",
+   "5",
+   "wait:2"
+  ],
+  "remote": [
+   "Return"
+  ]
+ },
+ "PONTRIS": {
+  "pad": [
+   "F1"
+  ],
+  "remote": [
+   "Return"
+  ]
+ },
+ "PONTRIS2": {
+  "pad": [
+   "F1"
+  ],
+  "remote": [
+   "Return"
+  ]
+ },
+ "SMYCKY": {
+  "pad": [
+   "F1"
+  ],
+  "remote": [
+   "Return"
+  ]
+ },
+ "JETPAC": {
+  "pad": [
+   "Space",
+   "wait:2",
+   "4",
+   "5"
+  ]
+ },
+ "PSSST": {
+  "pad": [
+   "Space",
+   "wait:2",
+   "4",
+   "5"
+  ]
+ },
+ "JSWILLY": {
+  "pad": [
+   "3"
+  ]
+ },
+ "MANIC23C": {
+  "pad": [
+   "h",
+   "wait:2",
+   "0"
+  ]
+ },
+ "TETRIS": {
+  "pad": [
+   "2",
+   "0"
+  ]
+ },
+ "MISSION": {
+  "pad": [
+   "g",
+   "wait:3",
+   "Return"
+  ]
+ },
+ "TANK": {
+  "pad": [
+   "s",
+   "wait:2"
+  ]
+ },
+ "STRIPPED": {
+  "pad": [
+   "g",
+   "wait:6",
+   "2",
+   "wait:2"
+  ]
+ },
+ "HLIPA": {
+  "pad": [
+   "h",
+   "wait:5"
+  ]
+ },
+ "FLAPPY": {
+  "pad": [
+   "h"
+  ]
+ },
+ "FLAPPY-V1": {
+  "pad": [
+   "h"
+  ]
+ },
+ "VIDEOSTP": {
+  "pad": [
+   "Return",
+   "wait:2",
+   "Return"
+  ]
+ },
+ "PEXESO": {
+  "pad": [
+   "2",
+   "wait:3"
+  ]
+ },
+ "PEXESO2": {
+  "pad": [
+   "2",
+   "wait:3"
+  ]
+ }
+}
