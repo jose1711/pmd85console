@@ -176,6 +176,7 @@ void CPUShutdown ();
 void DSPPaintHandler ();
 void DSPInvalidate ();
 void DSPSetNoBlink (bool);
+void CPUSetBeepSlow (bool);
 bool DSPNoBlink ();
 void DSPSaveScreenshot (const char *pPath);
 void DSPResizeHandler ();

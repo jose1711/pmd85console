@@ -54,6 +54,10 @@ routine when `39A4` is 0, so its note is `MGLD 00, JUMP 0000, POKE 39A4 01`.
 it at the start of the load and then runs in the monochrome mode (no blink and gray bits in the video memory); pressing
 it later does not help, the load takes 15 s with it.
 
+`BEEPSLOW` in the note makes the notes the game plays with the beep routine of the monitor as long as with the ROM of
+the PMD 85-2/2A (its delay loop is 87 clocks a round, the model 1 one 15): the hits of INVADERS then sound as in GPMD85.
+`PMD_BEEPSLOW=0/1` overrides it for every game.
+
 `NOBLINK` in the note ignores the blink bit of the video memory (bit 7) in the picture and in the web remote. Magicland
 Dizzy (for the PMD 85-2A/3) sets the bit on large areas, probably as a color that this emulator cannot show, and the
 picture would flash.
@@ -380,6 +384,7 @@ Free text shown under the list for the selected game. "neznamo" is shown for gam
   The TV remote plays in a limited mode: OK (Enter) is remapped to [Space], so it fires, and the cursor up and down
   select the difficulty `0` and `1` (the tested TV does not send the digits over CEC, so `2` and `3` are only on the
   gamepad). The fast arrows are not on the TV remote either.
+- `BEEPSLOW`: the notes of the hits are about 35 ms long (as in GPMD85), with the model 1 ROM delay they are 5.5 times shorter.
 
 ### MANIC
 

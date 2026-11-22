@@ -437,7 +437,7 @@ static std::string ListNote (const std::string &sNote)
     iPos = iEnd + 1;
     while (!sPart.empty () && sPart [0] == ' ')
       sPart.erase (0, 1);
-    if (sPart == "FONT" || sPart == "NOBLINK" || sPart == "TAPESIGNAL" || sPart == "TAPELOOP" || sPart == "TAPEAUTOREWIND" || sPart.compare (0, 8, "TAPESAVE") == 0 || sPart.compare (0, 7, "KEYHOLD") == 0)
+    if (sPart == "FONT" || sPart == "NOBLINK" || sPart == "BEEPSLOW" || sPart == "TAPESIGNAL" || sPart == "TAPELOOP" || sPart == "TAPEAUTOREWIND" || sPart.compare (0, 8, "TAPESAVE") == 0 || sPart.compare (0, 7, "KEYHOLD") == 0)
       continue;
     if (sPart.compare (0, 4, "ROM ") == 0 || sPart.compare (0, 5, "TYPE ") == 0)
       bBasic = bBasic || sPart.find ("basic") != std::string::npos;
@@ -1141,15 +1141,36 @@ static void FavoritesLoad ()
   }
 }
 
-/// The picture of a game in the main menu: the logo the four first games always had (BOULD+3 has the one of BOULDER), else its screenshot (screenshots/<name>.png).
-static std::string FavoriteImage (const std::string &sTape)
+/// The own picture of a game (or of a family by its name): the logo the four first games always had (BOULD+3 has the one of BOULDER,
+/// the family MANIC the one of MANIC+), else its screenshot (screenshots/<name>.png).
+static std::string OwnImage (const std::string &sTape)
 {
   if (sTape == "FLAPPY") return (PMD_SHARE "flappy.bmp");
   if (sTape == "BOULDER" || sTape == "BOULD+3") return (PMD_SHARE "boulder.bmp");
-  if (sTape == "MANIC+") return (PMD_SHARE "manic.bmp");
+  if (sTape == "MANIC+" || sTape == "MANIC") return (PMD_SHARE "manic.bmp");
   if (sTape == "FRED") return (PMD_SHARE "fred.bmp");
   std::string sPath = std::string (PMD_SHARE "screenshots/") + sTape + ".png";
   return (access (sPath.c_str (), F_OK) == 0 ? sPath : std::string ());
+}
+
+/// The picture of a family (the versions of one game): the one of its name (screenshots/MTRON.png), else of its first game that has one.
+static std::string FamilyImage (const std::string &sFamily)
+{
+  std::string sImage = OwnImage (CategoryLabel (sFamily));
+  for (size_t j = 0 ; j < oGames.size () && sImage.empty () ; j ++)
+    if (oGames [j].sCategory == sFamily)
+      sImage = OwnImage (oGames [j].sTape);
+  return (sImage);
+}
+
+/// The picture of a game in the menus: its own one, else the one of its family (all the versions of MTRON share one).
+static std::string FavoriteImage (const std::string &sTape)
+{
+  std::string sImage = OwnImage (sTape);
+  int iGame = sImage.empty () ? GameFind (sTape) : -1;
+  if (iGame >= 0 && CategoryIsFamily (oGames [iGame].sCategory))
+    sImage = FamilyImage (oGames [iGame].sCategory);
+  return (sImage);
 }
 
 /// Draw the main menu or the games list.
@@ -1214,12 +1235,14 @@ static void MenuRender ()
   std::string sHelp;
   if (!oView.empty ())
     sHelp = oView [listIndex] == LIST_LEVEL_UP ? "Enter vrati o uroven vys" : oView [listIndex] < 0 ? (CategoryIsFamily (oCategories [-oView [listIndex] - 1]) ? "Enter otevre verze hry" : "Enter otevre kategorii") : oGames [oView [listIndex]].sHelp;
-  // The picture of the selected game, of a family the one of the game it is named after (BOULDER).
+  // The picture of the selected game or family.
   std::string sImage;
   if (!oView.empty () && oView [listIndex] >= 0)
     sImage = FavoriteImage (oGames [oView [listIndex]].sTape);
   else if (!oView.empty () && oView [listIndex] != LIST_LEVEL_UP && CategoryIsFamily (oCategories [-oView [listIndex] - 1]))
-    sImage = FavoriteImage (CategoryLabel (oCategories [-oView [listIndex] - 1]));
+  {
+    sImage = FamilyImage (oCategories [-oView [listIndex] - 1]);
+  }
   DSPRenderGameList (fullscreen.w, fullscreen.h, listIndex, iCategory < 0 ? std::string ("Vsechny hry") : CategoryPath (oCategories [iCategory]), oNames, oNotes, oInputs, sHelp, sImage);
 }
 
@@ -1373,6 +1396,7 @@ static void EmulationInitialize (const std::string &sTape, int iModel)
   iCtrlSerial ++;
 
   DSPSetNoBlink (GameHasCommand (sTape, "NOBLINK"));
+  CPUSetBeepSlow (GameHasCommand (sTape, "BEEPSLOW"));
   if (iModel >= 2)
   {
     if (iModel == 3)
